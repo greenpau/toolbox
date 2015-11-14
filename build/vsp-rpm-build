@@ -1,0 +1,38 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <logfile>"
+	exit 1
+}
+
+progname=`basename $0`
+version=$(git rev-parse --abbrev-ref HEAD)
+package_name=nuage-openvswitch-toolbox
+rpmbuild=/root/rpmbuild
+rpm_srcdir=${rpmbuild}/SOURCES
+rpm_builddir=${rpmbuild}/BUILD
+logfile=$1
+
+if [ -z "${logfile}" ]; then
+	usage
+fi
+
+set -e
+
+echo "Logfile: ${logfile}"
+printf "${progname}: creating source tar ... "
+
+mkdir -p `dirname ${logfile}`
+mkdir -p ${rpmbuild}/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+tar zcf ${rpm_srcdir}/${package_name}.tgz vsp
+echo "done"
+
+printf "${progname}: preparing build area ... "
+mkdir -p ${rpm_builddir}/${package_name}
+cd ${rpm_builddir}/${package_name}
+tar zxf ${rpm_srcdir}/${package_name}.tgz
+echo "done"
+
+printf "${progname}: building RPM ... "
+rpmbuild -ba vsp/package-scripts/rhel/nuage-openvswitch-toolbox.spec --define "version ${version}" > ${logfile} 2>&1
+echo "done"
