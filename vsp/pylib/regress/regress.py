@@ -3,8 +3,8 @@
 import os
 import sys
 
-home = os.environ['HOME']
-sys.path.append(home + "/bin/testbin/pylib")
+sys.path.append("/usr/local/openvswitch/pylib/regress")
+sys.path.append("/usr/local/openvswitch/pylib/system")
 
 import shell
 

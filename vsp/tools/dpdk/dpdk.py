@@ -4,9 +4,8 @@ import sys
 import os
 import getopt
 
-home = os.environ['HOME'] 
-sys.path.append(home + "/bin/testbin/pylib")
-sys.path.append(home + "/bin/testbin/pylib/dpdk")
+sys.path.append("/usr/local/openvswitch/pylib/system")
+sys.path.append("/usr/local/openvswitch/pylib/dpdk")
 
 # DPDK library classes
 import dpdk_sys

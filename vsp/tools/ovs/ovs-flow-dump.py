@@ -4,10 +4,9 @@ import sys
 import os
 import getopt
 
-home = os.environ['HOME'] 
-sys.path.append(home + "/bin/testbin/pylib")
-sys.path.append(home + "/bin/testbin/pylib/ovs")
-sys.path.append(home + "/bin/testbin/pylib/vca")
+sys.path.append("/usr/local/openvswitch/pylib/system")
+sys.path.append("/usr/local/openvswitch/pylib/ovs")
+sys.path.append("/usr/local/openvswitch/pylib/vca")
 
 # generic utility classes
 import logger

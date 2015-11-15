@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+sys.path.append("/usr/local/openvswitch/pylib/system")
 import shell
 
 def get_nprocs():

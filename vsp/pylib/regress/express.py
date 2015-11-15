@@ -5,8 +5,7 @@ import subprocess
 import os
 import getopt
 
-home = os.environ['HOME']
-sys.path.append(home + "/bin/testbin/pylib")
+sys.path.append("/usr/local/openvswitch/pylib/regress")
 
 import regress
 

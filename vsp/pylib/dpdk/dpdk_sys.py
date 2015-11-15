@@ -4,6 +4,7 @@ import os
 import sys
 
 # generic utility classes
+sys.path.append("/usr/local/openvswitch/pylib/system")
 import logger
 from cd import cd
 import shell

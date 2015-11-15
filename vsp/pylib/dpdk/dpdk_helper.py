@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import os
+
+sys.path.append("/usr/local/openvswitch/pylib/system")
 import cpu
 
 def set_defaults(home, progname, tgt_config, type):

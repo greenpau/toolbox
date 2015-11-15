@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+sys.path.append("/usr/local/openvswitch/pylib/system")
+sys.path.append("/usr/local/openvswitch/pylib/vca")
 import time
 import shell
 import vca_vrf

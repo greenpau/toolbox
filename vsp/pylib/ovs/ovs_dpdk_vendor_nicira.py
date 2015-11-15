@@ -1,4 +1,7 @@
 #!/usr/bin/python
+
+sys.path.append("/usr/local/openvswitch/pylib/dpdk")
+sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import abc
 import dpdk_helper
 import ovs_dpdk_vendor

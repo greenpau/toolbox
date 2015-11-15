@@ -3,9 +3,8 @@
 import sys, os, getopt
 from os.path import basename
 
-home = os.environ['HOME'] 
-sys.path.append(home + "/bin/testbin/pylib")
-sys.path.append(home + "/bin/testbin/pylib/ovs")
+sys.path.append("/usr/local/openvswitch/pylib/system")
+sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import ovs_flows
 import ovs_ofproto
 

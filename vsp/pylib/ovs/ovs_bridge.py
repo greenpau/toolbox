@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+sys.path.append("/usr/local/openvswitch/pylib/system")
+sys.path.append("/usr/local/openvswitch/pylib/ovs")
+sys.path.append("/usr/local/openvswitch/pylib/vca")
 import shell
 import vca_flows
 import vca_evpn
