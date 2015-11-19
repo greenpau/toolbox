@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 sys.path.append("/usr/local/openvswitch/pylib/dpdk")
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import abc

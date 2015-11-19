@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
+import sys
 sys.path.append("/usr/local/openvswitch/pylib/system")
 
-import sys
 import os
 import subprocess
 import select

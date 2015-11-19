@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 sys.path.append("/usr/local/openvswitch/pylib/dpdk")
 import ovs_dpdk_vendor_01org
 import ovs_dpdk_vendor_nicira

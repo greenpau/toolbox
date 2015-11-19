@@ -2,6 +2,7 @@
 
 import os
 
+import sys
 sys.path.append("/usr/local/openvswitch/pylib/system")
 import cpu
 
