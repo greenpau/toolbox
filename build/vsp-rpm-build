@@ -11,6 +11,7 @@ package_name=nuage-openvswitch-toolbox
 rpmbuild=/root/rpmbuild
 rpm_srcdir=${rpmbuild}/SOURCES
 rpm_builddir=${rpmbuild}/BUILD
+rpm_outdir=${rpmbuild}/RPMS/x86_64
 logfile=$1
 
 if [ -z "${logfile}" ]; then
@@ -36,3 +37,6 @@ echo "done"
 printf "${progname}: building RPM ... "
 rpmbuild -ba vsp/package-scripts/rhel/nuage-openvswitch-toolbox.spec --define "version ${version}" > ${logfile} 2>&1
 echo "done"
+rpm_outfile=`ls ${rpm_outdir}/${package_name}*.rpm`
+echo "RPM location: ${rpm_outfile}"
+
