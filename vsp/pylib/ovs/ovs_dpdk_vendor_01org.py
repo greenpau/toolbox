@@ -20,7 +20,7 @@ class SDK_OVS_01org(ovs_dpdk_vendor.SDK_OVS):
 		self.port_name_prefix = "ovs_dpdk_"
 		self.ovs_datapath_type = "datapath_type=" + self.__dp_type
 		self.ovs_port_type = "type=" + self.__port_type
-		self.vswitchd_cmdline = "sudo " + vswitchd_path + "/ovs-vswitchd -c " + self.__cpu_coremask + " --proc-type=secondary -- --detach"
+		self.vswitchd_cmdline = vswitchd_path + "/ovs-vswitchd -c " + self.__cpu_coremask + " --proc-type=secondary -- --detach"
 		self.bridge_type_arg = " -- set bridge " + self.br + " " + self.ovs_datapath_type
 
 	def get_vswitchd_cmdline(self):

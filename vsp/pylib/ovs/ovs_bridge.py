@@ -42,13 +42,13 @@ class Bridge(object):
 		vrf.reset()
 
 	def show(self):
-		cmd = [ "sudo", self.appctl_path, "dpif/show", ]
+		cmd = [ self.appctl_path, "dpif/show", ]
 		shell.execute_hdr("DPIF configuration", cmd)
 
-		cmd = [ "sudo", self.ofctl_path, "dump-ports-desc", self.br ]
+		cmd = [ self.ofctl_path, "dump-ports-desc", self.br ]
 		shell.execute_hdr("OFProto configuration", cmd)
 
-		cmd = [ "sudo", self.appctl_path, "bridge/port-show" ]
+		cmd = [ self.appctl_path, "bridge/port-show" ]
 		shell.execute_hdr("Bridge Port configuration", cmd)
 
 	def dump_flows(self):

@@ -13,10 +13,10 @@ class DHCP(vca_evpn.EVPN):
 	def __show_dhcp_evpn_appctl(self, evpn_id, dhcp_cmd_hdr,
 				    dhcp_cmd, need_br):
 		if (need_br == True):
-			cmd = [ "sudo", self.appctl_path, "evpn/" + dhcp_cmd,
+			cmd = [ self.appctl_path, "evpn/" + dhcp_cmd,
 				self.br, evpn_id ]
 		else :
-			cmd = [ "sudo", self.appctl_path, "evpn/" + dhcp_cmd,
+			cmd = [ self.appctl_path, "evpn/" + dhcp_cmd,
 				evpn_id ]
 		shell.execute_hdr(dhcp_cmd_hdr + ":", cmd)
 	def __show_dhcp_evpn_appctls(self, evpn_id):
@@ -35,7 +35,7 @@ class DHCP(vca_evpn.EVPN):
 
 	def __show_dhcp_evpn_ovsdb_table(self, table):
 		print "Content of table: " + table
-		cmd = 'sudo /usr/bin/ovsdb-client transact \'["Open_vSwitch", {"op" : "select", "table" : "' + table + '", "where" : [] } ]\''
+		cmd = '/usr/bin/ovsdb-client transact \'["Open_vSwitch", {"op" : "select", "table" : "' + table + '", "where" : [] } ]\''
 		output = shell.call_prog_as_is(cmd)
 		parsed = json.loads(output)
 		print json.dumps(parsed, indent=4, sort_keys=True)

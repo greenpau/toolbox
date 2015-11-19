@@ -41,13 +41,13 @@ def get_iface_ip(iface):
 		return None
 
 def __set_ifconfig_iface_ip(iface, ip, netmask, logfd):
-	cmd = [ "sudo", "ifconfig", iface, "up" ]
+	cmd = [ "ifconfig", iface, "up" ]
 	shell.run_cmd("Bringing up " + iface, cmd, logfd)
-	cmd = [ "sudo", "ifconfig", iface, ip, "netmask", netmask ]
+	cmd = [ "ifconfig", iface, ip, "netmask", netmask ]
 	shell.run_cmd("Setting IP " + ip + " to " + iface, cmd, logfd)
 
 def __set_ip_iface_ip(iface, ip, netmask, logfd):
-	cmd = [ "sudo", "ip", "addr", "add", ip, "dev", iface ]
+	cmd = [ "ip", "addr", "add", ip, "dev", iface ]
 	shell.run_cmd("Setting IP " + ip + " to " + iface, cmd, logfd)
 
 def set_iface_ip(iface, netmask, ip, logfd):
@@ -68,7 +68,7 @@ def __get_ip_iface_mac(iface):
 		return mac
 
 def __get_ifconfig_iface_mac(iface):
-	cmd = [ "sudo", "ifconfig", iface ]
+	cmd = [ "ifconfig", iface ]
 	ifconfig_out = shell.execute(cmd).splitlines()
 	for line in ifconfig_out:
 		mac_token = 0
@@ -94,7 +94,7 @@ def add_vlan(iface, logfd):
 	vlan_tok = iface.split(".")
 	mgmt_iface = vlan_tok[0]
 	vlan_id = vlan_tok[1]
-	cmd = [ "sudo", "vconfig", "add", mgmt_iface, vlan_id ]
+	cmd = [ "vconfig", "add", mgmt_iface, vlan_id ]
 	rc = shell.run_cmd("Creating vlan " + mgmt_iface + "." + vlan_id,
 			   cmd, logfd);
 
@@ -106,7 +106,7 @@ def del_vlan(iface, logfd):
 	else:
 	 	vlan_id = None
 	if (vlan_id != None):
-		cmd = [ "sudo", "vconfig", "rem", iface ]
+		cmd = [ "vconfig", "rem", iface ]
 		shell.run_cmd("Deleting vlan " + iface, cmd, logfd)
 
 def __ip_route_add(iface, ip, subnet, netmask, logfd):
@@ -114,7 +114,7 @@ def __ip_route_add(iface, ip, subnet, netmask, logfd):
 	subnet = val[0] + ".0.0.0"
 	val = ip.split(".")
 	gateway = val[0] + "." + val[1] + "." + val[2] + ".1"
-	cmd = [ "sudo", "ip", "route", "add", subnet + "/32", "via", gateway,
+	cmd = [ "ip", "route", "add", subnet + "/32", "via", gateway,
        		"dev", iface ]
 	shell.run_cmd("Setting ip route for iface " + iface + " ip " + ip,
 		      cmd, logfd)
@@ -124,7 +124,7 @@ def __ifconfig_route_add(iface, ip, subnet, netmask, logfd):
 	subnet = val[0] + ".0.0.0"
 	val = netmask.split(".")
 	netmask = val[0] + ".0.0.0"
-	cmd = [ "sudo", "route", "add", "-net", subnet, "netmask", netmask,
+	cmd = [ "route", "add", "-net", subnet, "netmask", netmask,
        		"dev", iface ]
 	shell.run_cmd("Setting route for iface " + iface + " ip " + ip,
 		      cmd, logfd)
@@ -142,7 +142,7 @@ def route_del(iface, ip, subnet, netmask, logfd):
 	subnet = val[0] + ".0.0.0"
 	val = netmask.split(".")
 	netmask = val[0] + ".0.0.0"
-	cmd = [ "sudo", "route", "del", "-net", subnet, "netmask", netmask,
+	cmd = [ "route", "del", "-net", subnet, "netmask", netmask,
        		"dev", iface ]
 	shell.run_cmd("Removing route for iface " + iface + " ip " + ip,
 		      cmd, logfd)

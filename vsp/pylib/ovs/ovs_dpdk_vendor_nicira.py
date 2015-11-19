@@ -21,7 +21,7 @@ class SDK_OVS_nicira(ovs_dpdk_vendor.SDK_OVS):
 		self.port_name_prefix = "dpdk"
 		self.ovs_datapath_type = "datapath_type=" + self.__dp_type
 		self.ovs_port_type = "type=" + self.__port_type
-		self.vswitchd_cmdline = "sudo " + vswitchd_path + "/ovs-vswitchd --dpdk -c " + self.__cpu_coremask + " -n " + str(self.__n_mem_channels) + " --use-device " + dpdk_device_list + " -- --pidfile --detach"
+		self.vswitchd_cmdline = vswitchd_path + "/ovs-vswitchd --dpdk -c " + self.__cpu_coremask + " -n " + str(self.__n_mem_channels) + " --use-device " + dpdk_device_list + " -- --pidfile --detach"
 		self.ofport_request_arg = ""
 		self.bridge_type_arg = " -- set bridge " + self.br + " " + self.ovs_datapath_type
 

@@ -29,12 +29,12 @@ class Tap(object):
 
 	def __create(self, ip):
 		if (self.port_type == "internal"):
-			cmd = [ "sudo", self.vsctl_path, "add-port", self.br,
+			cmd = [ self.vsctl_path, "add-port", self.br,
 	       			self.iface, "--", "set", "interface",
 				self.iface, "type=internal"]
 		else:
 			net.add_vlan(self.iface, self.logfd)
-			cmd = [ "sudo", self.vsctl_path, "add-port", self.br,
+			cmd = [ self.vsctl_path, "add-port", self.br,
 	       			self.iface ]
 		rc = shell.run_cmd("Creating port " + self.iface, cmd,
 				   self.logfd);
@@ -46,7 +46,7 @@ class Tap(object):
 				      self.netmask, self.logfd)
 
 	def reset(self):
-		cmd = [ "sudo", self.vsctl_path, "del-port", self.br,
+		cmd = [ self.vsctl_path, "del-port", self.br,
 			self.iface ]
 		shell.run_cmd("Deleting port " + self.iface + " on bridge " +
 			      self.br, cmd, self.logfd)

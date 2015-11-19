@@ -53,10 +53,10 @@ def main(argc, argv):
 			OVS_DIR = home + "/Linux/src/sandbox/" + ovs_sb + "/VCA"
 			ovs_path = OVS_DIR + "/utilities"
 		elif opt == "-C":
-			cmd = "sudo ovs-vsctl show | grep Port | grep -v alubr0 | grep -v svc | awk '{print $2}' | sed 's/\"//g'"
+			cmd = "ovs-vsctl show | grep Port | grep -v alubr0 | grep -v svc | awk '{print $2}' | sed 's/\"//g'"
 			port_list = shell.call_prog_as_is(cmd)
 			for port in port_list.splitlines():
-				cmd = "sudo ovs-vsctl del-port " + port
+				cmd = "ovs-vsctl del-port " + port
 				print "Running " + cmd
 				shell.call_prog_as_is(cmd)
 			sys.exit(1)

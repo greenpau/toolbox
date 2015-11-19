@@ -12,7 +12,7 @@ class OFProto(object):
 
 	def ofp_port(self, br, port):
 		ofp_port_num = 0
-		port_info = shell.execute(["sudo", self.ofctl_path,
+		port_info = shell.execute([self.ofctl_path,
 					   "dump-ports-desc",
 					   br]).splitlines()
 		for line in port_info:
@@ -29,7 +29,7 @@ class OFProto(object):
 
 	def odp_port(self, port):
 		odp_port_num = 0
-		cmd = [ "sudo", self.appctl_path, "dpif/show" ]
+		cmd = [ self.appctl_path, "dpif/show" ]
 		dpif_port_show = shell.execute(cmd).splitlines()
 		for line in dpif_port_show:
 			if (line.find(port) < 0):
@@ -44,7 +44,7 @@ class OFProto(object):
 	def get_bridge(self):
 		ovs_vswitchd_pid = shell.get_pid("ovs-vswitchd")
 		ovs_vswitchd_target = self.ovs_db_path + "/ovs-vswitchd." + ovs_vswitchd_pid + ".ctl"
-		br = shell.execute(["sudo", self.appctl_path, "-t",
+		br = shell.execute([self.appctl_path, "-t",
 				    ovs_vswitchd_target,
 				    "ofproto/list"]).splitlines()
 		return br[0]

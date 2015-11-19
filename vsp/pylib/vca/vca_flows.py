@@ -17,7 +17,7 @@ class Flows(object):
 		self.ofproto = ovs_ofproto.OFProto(ovs_path)
 
 	def dump_flows(self):
-		cmd = [ "sudo", self.appctl_path, "bridge/dump-flows", self.br ]
+		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		shell.execute_hdr("Displaying flows in " + self.br, cmd)
 
 	def reset(self):

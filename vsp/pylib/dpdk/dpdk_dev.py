@@ -36,6 +36,6 @@ class DPDK_Device:
 				driver = "igb_uio"
 			else:
 				driver = "vmxnet3-usermap"
-		cmd = [ "sudo", self.pci_bind_tool, "--bind=" + driver,
+		cmd = [ self.pci_bind_tool, "--bind=" + driver,
 	       		self.device ]
 		shell.run_cmd("Setting up " + self.device + " as DPDK device to " + driver, cmd, self.logfd)

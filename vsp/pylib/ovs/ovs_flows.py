@@ -13,12 +13,12 @@ class Flows(object):
 		self.ofproto = ovs_ofproto.OFProto(ovs_path)
 
 	def set_flow_execute(self, hdr, br, flow_str):
-		cmd = [ "sudo", self.ofctl_path, "add-flow", br, flow_str ]
+		cmd = [ self.ofctl_path, "add-flow", br, flow_str ]
 		shell.run_cmd(hdr, cmd, self.logfd);
 
 	def reset(self, br):
 		hdr = "Deleting all flows in bridge " + br
-		cmd = ["sudo", self.ofctl_path, "del-flows", br]
+		cmd = [ self.ofctl_path, "del-flows", br ]
 		shell.run_cmd(hdr, cmd, self.logfd)
 
 	def __set_b2b_flow(self, br, port_1, ofp_port_1, port_2, ofp_port_2):

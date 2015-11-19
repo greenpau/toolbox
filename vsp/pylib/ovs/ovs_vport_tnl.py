@@ -52,7 +52,7 @@ class Tunnel(object):
 	def __create(self):
 		ipstr = self.__set_tnl_ipstr()
 		keystr = self.__set_tnl_keystr()
-		cmd = [ "sudo", self.vsctl_path, "add-port", self.br,
+		cmd = [ self.vsctl_path, "add-port", self.br,
 	       		self.iface, "--", "set", "interface", self.iface,
 		       	"type=" + self.tnl_type, ipstr, keystr ]
 		rc = shell.run_cmd("Creating tunnel port " + self.iface, cmd,

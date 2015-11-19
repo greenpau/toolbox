@@ -129,7 +129,7 @@ class DPDK_System:
 			return 0
 		print ""
 		for device in devices.splitlines():
-			output = shell.execute_raw("sudo lspci -nn -s " + device)
+			output = shell.execute_raw("lspci -nn -s " + device)
 			print "lspci of DPDK device " + device + ":"
 			print output
 		return 0
@@ -146,22 +146,22 @@ class DPDK_System:
 		return 0
 
 	def __cleanup_drivers(self):
-		cmd = [ "sudo", "rmmod", "vmxnet3-usermap" ]
+		cmd = [ "rmmod", "vmxnet3-usermap" ]
 		shell.run_cmd("Removing vmxnet3-usermap driver", cmd,
 			      self.logfd)
-		cmd = [ "sudo", "rmmod", "igb_uio" ]
+		cmd = [ "rmmod", "igb_uio" ]
 		shell.run_cmd("Removing igb_uio driver", cmd, self.logfd)
-		cmd = [ "sudo", "rmmod", "rte_kni" ]
+		cmd = [ "rmmod", "rte_kni" ]
 		shell.run_cmd("Removing rte_kni driver", cmd, self.logfd)
-		cmd = [ "sudo", "rmmod", "uio" ]
+		cmd = [ "rmmod", "uio" ]
 		shell.run_cmd("Removing uio driver", cmd, self.logfd)
 
 	def __cleanup_processes(self):
-		cmd = [ "sudo", "killall", "-9", "ovs-vswitchd" ]
+		cmd = [ "killall", "-9", "ovs-vswitchd" ]
 		shell.run_cmd("Killing ovs-vswitchd", cmd, self.logfd)
 
 	def __cleanup_hugetlbfs(self):
-		cmd = [ "sudo", "umount", "-f", self.hugetlbfs_mount ]
+		cmd = [ "umount", "-f", self.hugetlbfs_mount ]
 		shell.run_cmd("Unmounting " + self.hugetlbfs_mount, cmd,
 			      self.logfd)
 
@@ -170,7 +170,7 @@ class DPDK_System:
 		scriptfile_fd = open(scriptfile, "w")
 		print >> scriptfile_fd, "echo " + str(n_pages) + " > " + self.proc_nr_hugepages_file
 		scriptfile_fd.close()
-		cmd = [ "sudo", "sh", scriptfile ]
+		cmd = [ "sh", scriptfile ]
 		shell.run_cmd(caption + " " + self.proc_nr_hugepages_file,
 			      cmd, self.logfd)
 		os.unlink(scriptfile)
@@ -187,15 +187,15 @@ class DPDK_System:
 		self.__cleanup_huge_pages()
 
 	def __setup_drivers(self):
-		cmd = [ "sudo", "modprobe", "uio" ]
+		cmd = [ "modprobe", "uio" ]
 		shell.run_cmd("Adding uio driver", cmd, self.logfd)
-		cmd = [ "sudo", "insmod",
+		cmd = [ "insmod",
 	       		self.dpdk_path + "/" + self.tgt + "/kmod/igb_uio.ko" ]
 		shell.run_cmd("Adding igb_uio driver", cmd, self.logfd)
-		cmd = [ "sudo", "insmod",
+		cmd = [ "insmod",
 	       		self.dpdk_path + "/" + self.tgt + "/kmod/rte_kni.ko" ]
 		shell.run_cmd("Adding rte_kni driver", cmd, self.logfd)
-		cmd = [ "sudo", "insmod",
+		cmd = [ "insmod",
 	       		self.vmxnet3_path + "/vmxnet3-usermap.ko",
 	       		"enable_shm=2", "num_rqs=1", "num_tqs=1,1" ]
 		shell.run_cmd("Adding vmxnet3-usermap driver", cmd, self.logfd)
@@ -210,10 +210,10 @@ class DPDK_System:
 			dpdk_device.setup()
 
 	def __setup_hugetlbfs(self):
-		cmd = [ "sudo", "mkdir", "-p", self.hugetlbfs_mount ]
+		cmd = [ "mkdir", "-p", self.hugetlbfs_mount ]
 		shell.run_cmd("Creating " + self.hugetlbfs_mount, cmd,
 			      self.logfd)
-		cmd = [ "sudo", "mount", "-t", "hugetlbfs", "nodev",
+		cmd = [ "mount", "-t", "hugetlbfs", "nodev",
 	       		self.hugetlbfs_mount ]
 		shell.run_cmd("Mounting " + self.hugetlbfs_mount, cmd,
 			      self.logfd)

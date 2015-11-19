@@ -21,18 +21,18 @@ class VRF(object):
 			self.__add_vrf()
 
 	def __add_vrf(self):
-		cmd = [ "sudo", self.ofctl_path, "add-vrf", self.br,
+		cmd = [ self.ofctl_path, "add-vrf", self.br,
 	       		self.vrf_id, self.vrf_tnl_key,
 		       	"type=" + self.vrf_tnl_type + \
 			",local_ip=" + self.local_ip ]
 		shell.run_cmd("Creating VRF ID " + self.vrf_id, cmd, self.logfd)
 
 	def show(self):
-		cmd = [ "sudo", self.appctl_path, "vrf/show", self.br ]
+		cmd = [ self.appctl_path, "vrf/show", self.br ]
 		shell.execute_hdr("VRF configuration", cmd)
 
 	def list_vrfs(self):
-		cmd = [ "sudo", self.appctl_path, "vrf/show", self.br ]
+		cmd = [ self.appctl_path, "vrf/show", self.br ]
 		vrf_show_out = shell.execute(cmd).splitlines()
 		vrf_list = []
 		for line in vrf_show_out:
@@ -46,7 +46,7 @@ class VRF(object):
 	def reset(self):
 		vrf_list = self.list_vrfs()
 		for vrf_id in vrf_list:
-			cmd = [ "sudo", self.ofctl_path, "del-vrf", self.br,
+			cmd = [ self.ofctl_path, "del-vrf", self.br,
 				str(int(str(vrf_id), 16)) ]
 			shell.run_cmd("Deleting VRF " + vrf_id,
 				      cmd, self.logfd)

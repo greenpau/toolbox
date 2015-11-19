@@ -53,35 +53,35 @@ class VM(object):
 		xmlout.close()
 
 	def define(self):
-		cmd = [ "sudo", self.appctl_path, "vm/send-event", "define",
+		cmd = [ self.appctl_path, "vm/send-event", "define",
 			self.work_xml, self.vm_type ]
 		shell.run_cmd("Sending fake-VM define event of type: " + self.vm_type, cmd, self.logfd)
 
 	def start(self):
-		cmd = [ "sudo", self.appctl_path, "vm/send-event", self.uuid,
+		cmd = [ self.appctl_path, "vm/send-event", self.uuid,
 			"start" ]
 		shell.run_cmd("Sending fake-VM start event", cmd, self.logfd)
 
 	def destroy(self):
-		cmd = [ "sudo", self.appctl_path, "vm/send-event", self.uuid,
+		cmd = [ self.appctl_path, "vm/send-event", self.uuid,
 			"destroy" ]
 		shell.run_cmd("Sending fake-VM destroy event", cmd, self.logfd)
 
 	def undefine(self):
-		cmd = [ "sudo", self.appctl_path, "vm/send-event", self.uuid,
+		cmd = [ self.appctl_path, "vm/send-event", self.uuid,
 			"undefine" ]
 		shell.run_cmd("Sending fake-VM undefine event", cmd, self.logfd)
 
 	def show(self):
-		cmd = [ "sudo", self.appctl_path, "vm/port-show" ]
+		cmd = [ self.appctl_path, "vm/port-show" ]
 		shell.execute_hdr("VM status", cmd)
 
 	def vm_port(self):
 		vm_port_no = 0
 		if (self.vm_type == "bridge") :
-			cmd = [ "sudo", self.appctl_path, "bridge/port-show" ]
+			cmd = [ self.appctl_path, "bridge/port-show" ]
 		else :
-			cmd = [ "sudo", self.appctl_path, "vm/port-show" ]
+			cmd = [ self.appctl_path, "vm/port-show" ]
 		vm_port_show = shell.execute(cmd).splitlines()
 		for line in vm_port_show:
 			if (line.find("Bridge:") < 0):

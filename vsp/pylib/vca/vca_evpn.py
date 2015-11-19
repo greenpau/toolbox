@@ -52,13 +52,13 @@ class EVPN(vca_vrf.VRF):
 			   ",gw_mac=" + self.evpn_gw_mac + \
 			   ",flags=" + self.evpn_tnl_type + \
 			   ",flags=" + self.evpn_dhcp_cfg
-		cmd = [ "sudo", self.ofctl_path, "-v", "add-evpn", self.br,
+		cmd = [ self.ofctl_path, "-v", "add-evpn", self.br,
 	       		self.vrf_id, evpn_str ]
 		shell.run_cmd("Creating EVPN ID " + self.evpn_id,
 			      cmd, self.logfd)
 
 	def list_evpns(self):
-		cmd = [ "sudo", self.appctl_path, "evpn/show", self.br ]
+		cmd = [ self.appctl_path, "evpn/show", self.br ]
 		evpn_show_out = shell.execute(cmd).splitlines()
 		evpn_list = []
 		for line in evpn_show_out:
@@ -70,7 +70,7 @@ class EVPN(vca_vrf.VRF):
 		return evpn_list
 
 	def show(self):
-		cmd = [ "sudo", self.appctl_path, "evpn/show", self.br ]
+		cmd = [ self.appctl_path, "evpn/show", self.br ]
 		shell.execute_hdr("EVPN configuration", cmd)
 
 	def reset(self):
@@ -78,7 +78,7 @@ class EVPN(vca_vrf.VRF):
 		for vrf_id in vrf_list:
 			evpn_list = self.list_evpns()
 			for evpn_id in evpn_list:
-				cmd = [ "sudo", self.ofctl_path, "del-evpn",
+				cmd = [ self.ofctl_path, "del-evpn",
 			       		self.br, vrf_id, "evpn_id=" + evpn_id ]
 				shell.run_cmd("Deleting EVPN " + evpn_id,
 					      cmd, self.logfd)
