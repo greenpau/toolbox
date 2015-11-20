@@ -23,7 +23,8 @@ class VM(object):
 		self.master_xml = vm_xml
 		self.vm_type = vm_type
 		self.logfd = logfd
-		self.__create_work_xml()
+		if (self.uuid != None):
+			self.__create_work_xml()
 
 	def __create_work_xml(self):
 		self.work_xml = "/var/tmp/" + self.uuid + ".xml"
@@ -90,3 +91,31 @@ class VM(object):
 			vm_port_no = line_tok[3]
 			break
 		return vm_port_no
+
+	def set_vm_name(self, vm_name):
+		self.vm_name = vm_name
+
+	def vm_uuid(self):
+		cmd = [ self.appctl_path, "vm/port-show" ]
+		vm_port_show = shell.execute(cmd).splitlines()
+		vm_uuid = None
+		for line in vm_port_show:
+			if (line.find(self.vm_name) < 0):
+				continue
+			line_tok = line.split()
+			vm_uuid = line_tok[3]
+			break
+		return vm_uuid
+
+	def vport(self):
+		vm_uuid = self.vm_uuid()
+		cmd = [ self.appctl_path, "vm/port-show", vm_uuid ]
+		vm_port_show = shell.execute(cmd).splitlines()
+		vport = None
+		for line in vm_port_show:
+			if (line.find("port-UUID") < 0):
+				continue
+			line_tok = line.split()
+			vport = line_tok[3]
+			break
+		return vport
