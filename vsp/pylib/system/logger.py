@@ -1,8 +1,15 @@
 #!/usr/bin/python
 
 import time
+import os
+import sys
+sys.path.append("/usr/local/openvswitch/pylib/system")
+import shell
 
 def open_log(logfile):
+	dir = os.path.dirname(logfile)
+	cmd = 'mkdir -p ' + dir
+	shell.call_prog_as_is(cmd)
 	log = open(logfile, 'a')
 	date = time.strftime("%H:%M:%S")
 	dash = ""
