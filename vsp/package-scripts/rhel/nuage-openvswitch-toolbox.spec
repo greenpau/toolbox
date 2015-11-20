@@ -48,6 +48,9 @@ install__ 0755 pylib/vca/vca_flows.py
 install__ 0755 pylib/vca/vca_vm.py
 install__ 0755 pylib/vca/vca_evpn_dhcp.py
 install__ 0755 pylib/vca/vca_evpn.py
+install__ 0755 pylib/vca/vca_pbm.py
+install__ 0755 pylib/vca/vca_vpm.py
+install__ 0755 pylib/vca/vca_mirror.py
 
 install__ 0755 pylib/ovs/ovs_flows.py
 install__ 0755 pylib/ovs/ovs_dpdk_vendor_nicira.py
@@ -79,14 +82,12 @@ install__ 0755 tools/ovs/ovs-switch-cleanup.py
 install__ 0755 tools/ovs/ovs-switch-status.py
 install__ 0755 tools/vca/vm.xml
 install__ 0755 tools/vca/vca-switch-status.py
+install__ 0755 tools/vca/vca-mirror-tests.py
 install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
 install__ 0755 tools/regress/run_regress.py
 
 
 %clean
-if [ "$RPM_BUILD_ROOT" != "/" ]; then
-	rm -rf $RPM_BUILD_ROOT
-fi
 
 %files
 %defattr(-,root,root)
@@ -103,6 +104,9 @@ fi
 /usr/local/openvswitch/pylib/vca/vca_vm.py
 /usr/local/openvswitch/pylib/vca/vca_evpn_dhcp.py
 /usr/local/openvswitch/pylib/vca/vca_evpn.py
+/usr/local/openvswitch/pylib/vca/vca_pbm.py
+/usr/local/openvswitch/pylib/vca/vca_vpm.py
+/usr/local/openvswitch/pylib/vca/vca_mirror.py
 
 /usr/local/openvswitch/pylib/ovs/ovs_flows.py
 /usr/local/openvswitch/pylib/ovs/ovs_dpdk_vendor_nicira.py
@@ -135,6 +139,7 @@ fi
 /usr/local/openvswitch/tools/vca/vm.xml
 /usr/local/openvswitch/tools/vca/vca-switch-status.py
 /usr/local/openvswitch/tools/vca/vca-vport-tap-vrf-tnl-create.py
+/usr/local/openvswitch/tools/vca/vca-mirror-tests.py
 /usr/local/openvswitch/tools/regress/run_regress.py
 
 %pre
