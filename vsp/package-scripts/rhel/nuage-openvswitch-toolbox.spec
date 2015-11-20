@@ -72,6 +72,8 @@ install__ 0755 pylib/regress/regular.py
 install__ 0755 pylib/regress/express.py
 install__ 0755 pylib/regress/quick.py
 
+install__ 0755 templates/vm.xml
+
 install__ 0755 tools/dpdk/dpdk.py
 install__ 0755 tools/ovs/ovs-flow-create.py
 install__ 0755 tools/ovs/ovs-vport-tap-create.py
@@ -80,7 +82,6 @@ install__ 0755 tools/ovs/ovs-flow-dump.py
 install__ 0755 tools/ovs/ovs-vport-tnl-create-l2.py
 install__ 0755 tools/ovs/ovs-switch-cleanup.py
 install__ 0755 tools/ovs/ovs-switch-status.py
-install__ 0755 tools/vca/vm.xml
 install__ 0755 tools/vca/vca-switch-status.py
 install__ 0755 tools/vca/vca-mirror-tests.py
 install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
@@ -128,6 +129,8 @@ install__ 0755 tools/regress/run_regress.py
 /usr/local/openvswitch/pylib/regress/express.py
 /usr/local/openvswitch/pylib/regress/quick.py
 
+/usr/local/openvswitch/templates/vm.xml
+
 /usr/local/openvswitch/tools/dpdk/dpdk.py
 /usr/local/openvswitch/tools/ovs/ovs-flow-create.py
 /usr/local/openvswitch/tools/ovs/ovs-vport-tap-create.py
@@ -136,7 +139,6 @@ install__ 0755 tools/regress/run_regress.py
 /usr/local/openvswitch/tools/ovs/ovs-vport-tnl-create-l2.py
 /usr/local/openvswitch/tools/ovs/ovs-switch-cleanup.py
 /usr/local/openvswitch/tools/ovs/ovs-switch-status.py
-/usr/local/openvswitch/tools/vca/vm.xml
 /usr/local/openvswitch/tools/vca/vca-switch-status.py
 /usr/local/openvswitch/tools/vca/vca-vport-tap-vrf-tnl-create.py
 /usr/local/openvswitch/tools/vca/vca-mirror-tests.py
