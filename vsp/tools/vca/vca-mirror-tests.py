@@ -23,7 +23,7 @@ def usage():
 	print "usage: " + progname + " [options]"
 	sys.exit(1)
 
-def pbm_run_basic_test(param):
+def pbm_default_acl__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
 	logfd = param['logfd']
@@ -51,7 +51,29 @@ def pbm_run_basic_test(param):
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
 
-def vpm_run_basic_test(param):
+def pbm_default_acl(ovs_path, br, logfd, testcase_id):
+	acl_types = [ "default" ]
+	acl_dirs = [ "ingress", "egress" ]
+
+	for acl_type in acl_types:
+		for acl_dir in acl_dirs:
+			param = { 'ovs_path' : ovs_path,
+				  'br' : br,
+				  'logfd' : logfd,
+			          'mirror_id': "9900",
+				  'mirror_dst_ip': "10.15.55.254",
+				  'vm_name': "mvdcdev05-1-vm1",
+				  'acl_type' : acl_type,
+				  'acl_dir' : acl_dir,
+				}
+			testcase_desc = acl_dir + " " + acl_type + " ACL Mirror"
+			test = vca_test.TEST(testcase_id, testcase_desc,
+					     pbm_default_acl__, param)
+			test.run()
+			testcase_id = testcase_id + 1
+	return testcase_id
+
+def vpm_single_mirror__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
 	logfd = param['logfd']
@@ -78,41 +100,7 @@ def vpm_run_basic_test(param):
 		print "Mirror Internal Name verification passed"
 	vpm.local_destroy()
 
-def main(argc, argv):
-	testcase_id = 1
-	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
-	try:
-		opts, args = getopt.getopt(argv, "h")
-	except getopt.GetoptError as err:
-		print progname + ": invalid argument, " + str(err)
-		usage()
-	for opt, arg in opts:
-		if opt == "-h":
-			usage()
-		else:
-			usage()
-	logfd = logger.open_log(logfile)
-
-	acl_types = [ "default" ]
-	acl_dirs = [ "ingress", "egress" ]
-
-	for acl_type in acl_types:
-		for acl_dir in acl_dirs:
-			param = { 'ovs_path' : ovs_path,
-				  'br' : br,
-				  'logfd' : logfd,
-			          'mirror_id': "9900",
-				  'mirror_dst_ip': "10.15.55.254",
-				  'vm_name': "mvdcdev05-1-vm1",
-				  'acl_type' : acl_type,
-				  'acl_dir' : acl_dir,
-				}
-			testcase_desc = acl_type + " " + acl_dir + " ACL Mirror"
-			test = vca_test.TEST(testcase_id, testcase_desc,
-					     pbm_run_basic_test, param)
-			test.run()
-			testcase_id = testcase_id + 1
-
+def vpm_single_mirror(ovs_path, br, logfd, testcase_id):
 	mirror_dirs = [ "ingress", "egress" ]
 
 	for mirror_dir in mirror_dirs:
@@ -126,9 +114,28 @@ def main(argc, argv):
 			}
 		testcase_desc = mirror_dir + " Port Mirror"
 		test = vca_test.TEST(testcase_id, testcase_desc,
-				     vpm_run_basic_test, param)
+				     vpm_single_mirror__, param)
 		test.run()
 		testcase_id = testcase_id + 1
+	return testcase_id
+
+def main(argc, argv):
+	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
+	testcase_id = 1
+	try:
+		opts, args = getopt.getopt(argv, "h")
+	except getopt.GetoptError as err:
+		print progname + ": invalid argument, " + str(err)
+		usage()
+	for opt, arg in opts:
+		if opt == "-h":
+			usage()
+		else:
+			usage()
+	logfd = logger.open_log(logfile)
+
+	testcase_id = pbm_default_acl(ovs_path, br, logfd, testcase_id)
+	testcase_id = vpm_single_mirror(ovs_path, br, logfd, testcase_id)
 
 	exit(0)
 
