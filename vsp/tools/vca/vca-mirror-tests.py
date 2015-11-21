@@ -21,6 +21,9 @@ import vca_vpm
 
 def usage():
 	print "usage: " + progname + " [options]"
+	print "options:"
+	print "    -v <vm_name>: name of VM whose ACLs/ports are to be mirrored"
+	print "    -i <ip>: mirror destination IPv4 address"
 	sys.exit(1)
 
 def pbm_default_acl__(param):
@@ -51,7 +54,7 @@ def pbm_default_acl__(param):
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
 
-def pbm_default_acl(ovs_path, br, logfd, testcase_id):
+def pbm_default_acl(ovs_path, br, logfd, vm_name, mirror_dst_ip, testcase_id):
 	acl_types = [ "default" ]
 	acl_dirs = [ "ingress", "egress" ]
 
@@ -61,8 +64,8 @@ def pbm_default_acl(ovs_path, br, logfd, testcase_id):
 				  'br' : br,
 				  'logfd' : logfd,
 			          'mirror_id': "9900",
-				  'mirror_dst_ip': "10.15.55.254",
-				  'vm_name': "mvdcdev05-1-vm1",
+				  'mirror_dst_ip': mirror_dst_ip,
+				  'vm_name': vm_name,
 				  'acl_type' : acl_type,
 				  'acl_dir' : acl_dir,
 				}
@@ -100,7 +103,8 @@ def vpm_single_mirror__(param):
 		print "Mirror Internal Name verification passed"
 	vpm.local_destroy()
 
-def vpm_single_mirror(ovs_path, br, logfd, testcase_id):
+def vpm_single_mirror(ovs_path, br, logfd, vm_name, mirror_dst_ip,
+		      testcase_id):
 	mirror_dirs = [ "ingress", "egress" ]
 
 	for mirror_dir in mirror_dirs:
@@ -108,8 +112,8 @@ def vpm_single_mirror(ovs_path, br, logfd, testcase_id):
 			  'br' : br,
 			  'logfd' : logfd,
 			  'mirror_id': "9900",
-			  'mirror_dst_ip': "10.15.55.254",
-			  'vm_name': "mvdcdev05-1-vm1",
+			  'mirror_dst_ip': mirror_dst_ip,
+			  'vm_name': vm_name,
 			  'mirror_dir' : mirror_dir,
 			}
 		testcase_desc = mirror_dir + " Port Mirror"
@@ -122,20 +126,30 @@ def vpm_single_mirror(ovs_path, br, logfd, testcase_id):
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	testcase_id = 1
+	vm_name = None
+	mirror_dst_ip = None
 	try:
-		opts, args = getopt.getopt(argv, "h")
+		opts, args = getopt.getopt(argv, "hv:i:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
 	for opt, arg in opts:
 		if opt == "-h":
 			usage()
+		elif opt == "-v":
+			vm_name = arg
+		elif opt == "-i":
+			mirror_dst_ip = arg
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
+	if (vm_name == None or mirror_dst_ip == None):
+		usage()
 
-	testcase_id = pbm_default_acl(ovs_path, br, logfd, testcase_id)
-	testcase_id = vpm_single_mirror(ovs_path, br, logfd, testcase_id)
+	testcase_id = pbm_default_acl(ovs_path, br, logfd, vm_name,
+				      mirror_dst_ip, testcase_id)
+	testcase_id = vpm_single_mirror(ovs_path, br, logfd,
+					vm_name, mirror_dst_ip, testcase_id)
 
 	exit(0)
 
