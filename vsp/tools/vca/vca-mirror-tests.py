@@ -16,6 +16,7 @@ import ovs_helper
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
 import vca_pbm
+import vca_vpm
 
 def usage():
 	print "usage: " + progname + " [options]"
@@ -40,6 +41,26 @@ def pbm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 	else :
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
+
+def vpm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+		       vm_name, mirror_dir):
+	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  vm_name)
+	vpm.local_create(mirror_dir)
+	vpm.dump()
+	vpm.show()
+	vpm_dst_ip = vpm.get_dst_ip()
+	if (mirror_dst_ip != vpm_dst_ip):
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + "got: " + vpm_dst_ip + ")"
+	else :
+		print "Mirror Destination IP verification passed"
+	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
+	vpm_internal_name = vpm.get_internal_name()
+	if (mirror_tunnel != vpm_internal_name):
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + "got: " + vpm_internal_name + ")"
+	else :
+		print "Mirror Internal Name verification passed"
+	vpm.local_destroy()
 
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
@@ -66,6 +87,16 @@ def main(argc, argv):
 			pbm_run_basic_test(ovs_path, br, logfd,
 					   mirror_id, mirror_dst_ip, vm_name,
 					   acl_type, acl_dir)
+
+	mirror_id = "9900"
+	mirror_dst_ip = "10.15.55.254"
+	vm_name = "mvdcdev05-1-vm1"
+	mirror_dirs = [ "ingress", "egress" ]
+
+	for mirror_dir in mirror_dirs:
+		vpm_run_basic_test(ovs_path, br, logfd,
+				   mirror_id, mirror_dst_ip, vm_name,
+				   mirror_dir)
 
 	exit(0)
 
