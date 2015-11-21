@@ -29,15 +29,15 @@ def pbm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 	pbm.local_create(acl_type, acl_dir)
 	pbm.dump()
 	pbm.show()
-	pbm_dst_ip = pbm.get_dst_ip()
+	pbm_dst_ip = str(pbm.get_dst_ip())
 	if (mirror_dst_ip != pbm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + "got: " + pbm_dst_ip + ")"
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
 	else :
 		print "Mirror Destination IP verification passed"
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	pbm_internal_name = pbm.get_internal_name()
+	pbm_internal_name = str(pbm.get_internal_name())
 	if (mirror_tunnel != pbm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + "got: " + pbm_internal_name + ")"
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
 	else :
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
@@ -49,15 +49,15 @@ def vpm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 	vpm.local_create(mirror_dir)
 	vpm.dump()
 	vpm.show()
-	vpm_dst_ip = vpm.get_dst_ip()
+	vpm_dst_ip = str(vpm.get_dst_ip())
 	if (mirror_dst_ip != vpm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + "got: " + vpm_dst_ip + ")"
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + vpm_dst_ip + ")"
 	else :
 		print "Mirror Destination IP verification passed"
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	vpm_internal_name = vpm.get_internal_name()
+	vpm_internal_name = str(vpm.get_internal_name())
 	if (mirror_tunnel != vpm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + "got: " + vpm_internal_name + ")"
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + vpm_internal_name + ")"
 	else :
 		print "Mirror Internal Name verification passed"
 	vpm.local_destroy()
