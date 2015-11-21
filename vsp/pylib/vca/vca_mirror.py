@@ -34,6 +34,8 @@ class Mirror(object):
 		process_this_block = False
 		for line in mirror_show:
 			line_tok = line.split()
+			if (line_tok == None) or (line_tok == []):
+				continue
 			if (line_tok[0] == self.mirror_id):
 				mirror_type = line_tok[2]
 				if (mirror_type == self.mirror_type):
