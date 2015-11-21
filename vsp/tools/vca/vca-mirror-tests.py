@@ -15,6 +15,7 @@ import ovs_helper
 
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
+import vca_test
 import vca_pbm
 import vca_vpm
 
@@ -22,8 +23,16 @@ def usage():
 	print "usage: " + progname + " [options]"
 	sys.exit(1)
 
-def pbm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
-		       vm_name, acl_type, acl_dir):
+def pbm_run_basic_test(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	acl_type = param['acl_type']
+	acl_dir = param['acl_dir']
+
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
 	pbm.local_create(acl_type, acl_dir)
@@ -42,8 +51,15 @@ def pbm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
 
-def vpm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
-		       vm_name, mirror_dir):
+def vpm_run_basic_test(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	mirror_dir = param['mirror_dir']
+
 	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
 	vpm.local_create(mirror_dir)
@@ -63,6 +79,7 @@ def vpm_run_basic_test(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 	vpm.local_destroy()
 
 def main(argc, argv):
+	testcase_id = 1
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	try:
 		opts, args = getopt.getopt(argv, "h")
@@ -76,27 +93,42 @@ def main(argc, argv):
 			usage()
 	logfd = logger.open_log(logfile)
 
-	mirror_id = "9900"
-	mirror_dst_ip = "10.15.55.254"
-	vm_name = "mvdcdev05-1-vm1"
 	acl_types = [ "default" ]
 	acl_dirs = [ "ingress", "egress" ]
 
 	for acl_type in acl_types:
 		for acl_dir in acl_dirs:
-			pbm_run_basic_test(ovs_path, br, logfd,
-					   mirror_id, mirror_dst_ip, vm_name,
-					   acl_type, acl_dir)
+			param = { 'ovs_path' : ovs_path,
+				  'br' : br,
+				  'logfd' : logfd,
+			          'mirror_id': "9900",
+				  'mirror_dst_ip': "10.15.55.254",
+				  'vm_name': "mvdcdev05-1-vm1",
+				  'acl_type' : acl_type,
+				  'acl_dir' : acl_dir,
+				}
+			testcase_desc = acl_type + " " + acl_dir + " ACL Mirror"
+			test = vca_test.TEST(testcase_id, testcase_desc,
+					     pbm_run_basic_test, param)
+			test.run()
+			testcase_id = testcase_id + 1
 
-	mirror_id = "9900"
-	mirror_dst_ip = "10.15.55.254"
-	vm_name = "mvdcdev05-1-vm1"
 	mirror_dirs = [ "ingress", "egress" ]
 
 	for mirror_dir in mirror_dirs:
-		vpm_run_basic_test(ovs_path, br, logfd,
-				   mirror_id, mirror_dst_ip, vm_name,
-				   mirror_dir)
+		param = { 'ovs_path' : ovs_path,
+			  'br' : br,
+			  'logfd' : logfd,
+			  'mirror_id': "9900",
+			  'mirror_dst_ip': "10.15.55.254",
+			  'vm_name': "mvdcdev05-1-vm1",
+			  'mirror_dir' : mirror_dir,
+			}
+		testcase_desc = mirror_dir + " Port Mirror"
+		test = vca_test.TEST(testcase_id, testcase_desc,
+				     vpm_run_basic_test, param)
+		test.run()
+		testcase_id = testcase_id + 1
 
 	exit(0)
 
