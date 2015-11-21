@@ -51,6 +51,7 @@ install__ 0755 pylib/vca/vca_evpn.py
 install__ 0755 pylib/vca/vca_pbm.py
 install__ 0755 pylib/vca/vca_vpm.py
 install__ 0755 pylib/vca/vca_mirror.py
+install__ 0755 pylib/vca/vca_test.py
 
 install__ 0755 pylib/ovs/ovs_flows.py
 install__ 0755 pylib/ovs/ovs_dpdk_vendor_nicira.py
@@ -108,6 +109,7 @@ install__ 0755 tools/regress/run_regress.py
 /usr/local/openvswitch/pylib/vca/vca_pbm.py
 /usr/local/openvswitch/pylib/vca/vca_vpm.py
 /usr/local/openvswitch/pylib/vca/vca_mirror.py
+/usr/local/openvswitch/pylib/vca/vca_test.py
 
 /usr/local/openvswitch/pylib/ovs/ovs_flows.py
 /usr/local/openvswitch/pylib/ovs/ovs_dpdk_vendor_nicira.py
