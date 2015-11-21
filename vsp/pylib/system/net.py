@@ -146,3 +146,9 @@ def route_del(iface, ip, subnet, netmask, logfd):
        		"dev", iface ]
 	shell.run_cmd("Removing route for iface " + iface + " ip " + ip,
 		      cmd, logfd)
+
+def ipaddr2hex(ip):
+	a = ip.split('.')
+	b = hex(int(a[0])) + hex(int(a[1])) + hex(int(a[2])) + hex(int(a[3]))
+	b = b.replace('0x', '')
+	return b
