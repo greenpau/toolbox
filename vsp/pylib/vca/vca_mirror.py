@@ -17,7 +17,7 @@ class Mirror(object):
 		self.mirror_id = mirror_id
 
 	def dump(self):
-		cmd = [ self.appctl_path, "bridge/dump-mirrors" ]
+		cmd = [ self.appctl_path, "bridge/dump-mirrors", self.br ]
 		shell.execute_hdr("Mirror configuration", cmd)
 
 	def show(self):
