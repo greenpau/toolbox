@@ -175,7 +175,7 @@ def vpm_single_mirror(ovs_path, br, logfd, vm_name, mirror_dst_ip,
 			  'vm_name': vm_name,
 			  'mirror_dir' : mirror_dir,
 			}
-		testcase_desc = mirror_dir + " Port Mirror"
+		testcase_desc = "Port Mirror: " + mirror_dir
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     vpm_single_mirror__, param)
 		test.run()
