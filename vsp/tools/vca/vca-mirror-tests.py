@@ -54,6 +54,34 @@ def pbm_single_mirror__(param):
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
 
+def pbm_multiple_mirrors__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	acl_type = param['acl_type']
+
+	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  vm_name)
+	pbm.local_create(acl_type, "ingress")
+	pbm.local_create(acl_type, "egress")
+	pbm.dump()
+	pbm.show()
+	pbm_dst_ip = str(pbm.get_dst_ip())
+	if (mirror_dst_ip != pbm_dst_ip):
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+	else :
+		print "Mirror Destination IP verification passed"
+	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
+	pbm_internal_name = str(pbm.get_internal_name())
+	if (mirror_tunnel != pbm_internal_name):
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+	else :
+		print "Mirror Internal Name verification passed"
+	pbm.local_destroy()
+
 def pbm_single_mirror(ovs_path, br, logfd, vm_name,
 		      mirror_dst_ip, acl_type, testcase_id):
 	acl_dirs = [ "ingress", "egress" ]
@@ -68,11 +96,28 @@ def pbm_single_mirror(ovs_path, br, logfd, vm_name,
 			  'acl_dir' : acl_dir,
 			  'acl_type' : acl_type,
 			}
-		testcase_desc = acl_dir + " " + acl_type + " ACL Mirror"
+		testcase_desc = "Single ACL Mirror: " + acl_dir + " " + acl_type
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     pbm_single_mirror__, param)
 		test.run()
 		testcase_id = testcase_id + 1
+	return testcase_id
+
+def pbm_multiple_mirrors(ovs_path, br, logfd, vm_name,
+		         mirror_dst_ip, acl_type, testcase_id):
+	param = { 'ovs_path' : ovs_path,
+		  'br' : br,
+		  'logfd' : logfd,
+	          'mirror_id': "9900",
+		  'mirror_dst_ip': mirror_dst_ip,
+		  'vm_name': vm_name,
+		  'acl_type' : acl_type,
+		}
+	testcase_desc = "Multiple ACL Mirror: " + acl_type
+	test = vca_test.TEST(testcase_id, testcase_desc,
+			     pbm_multiple_mirrors__, param)
+	test.run()
+	testcase_id = testcase_id + 1
 	return testcase_id
 
 def vpm_single_mirror__(param):
@@ -148,6 +193,9 @@ def main(argc, argv):
 	testcase_id = pbm_single_mirror(ovs_path, br,
 					logfd, vm_name, mirror_dst_ip,
 					"default", testcase_id)
+	testcase_id = pbm_multiple_mirrors(ovs_path, br,
+					   logfd, vm_name, mirror_dst_ip,
+					   "default", testcase_id)
 	testcase_id = vpm_single_mirror(ovs_path, br, logfd,
 					vm_name, mirror_dst_ip, testcase_id)
 
