@@ -44,15 +44,20 @@ def pbm_single_mirror__(param):
 	pbm_dst_ip = str(pbm.get_dst_ip())
 	if (mirror_dst_ip != pbm_dst_ip):
 		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+		pbm.local_destroy()
+		return False
 	else :
 		print "Mirror Destination IP verification passed"
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
 	pbm_internal_name = str(pbm.get_internal_name())
 	if (mirror_tunnel != pbm_internal_name):
 		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+		pbm.local_destroy()
+		return False
 	else :
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
+	return True
 
 def pbm_multiple_mirrors__(param):
 	ovs_path = param['ovs_path']
@@ -72,15 +77,20 @@ def pbm_multiple_mirrors__(param):
 	pbm_dst_ip = str(pbm.get_dst_ip())
 	if (mirror_dst_ip != pbm_dst_ip):
 		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+		pbm.local_destroy()
+		return False
 	else :
 		print "Mirror Destination IP verification passed"
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
 	pbm_internal_name = str(pbm.get_internal_name())
 	if (mirror_tunnel != pbm_internal_name):
 		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+		pbm.local_destroy()
+		return False
 	else :
 		print "Mirror Internal Name verification passed"
 	pbm.local_destroy()
+	return True
 
 def pbm_single_mirror(ovs_path, br, logfd, vm_name,
 		      mirror_dst_ip, acl_type, testcase_id):
@@ -137,15 +147,20 @@ def vpm_single_mirror__(param):
 	vpm_dst_ip = str(vpm.get_dst_ip())
 	if (mirror_dst_ip != vpm_dst_ip):
 		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + vpm_dst_ip + ")"
+		vpm.local_destroy()
+		return False
 	else :
 		print "Mirror Destination IP verification passed"
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
 	vpm_internal_name = str(vpm.get_internal_name())
 	if (mirror_tunnel != vpm_internal_name):
 		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + vpm_internal_name + ")"
+		vpm.local_destroy()
+		return False
 	else :
 		print "Mirror Internal Name verification passed"
 	vpm.local_destroy()
+	return True
 
 def vpm_single_mirror(ovs_path, br, logfd, vm_name, mirror_dst_ip,
 		      testcase_id):
