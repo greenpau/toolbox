@@ -347,6 +347,99 @@ def vpm_single_mirror(ovs_path, br, logfd, vm_name, mirror_dst_ip,
 		testcase_id = testcase_id + 1
 	return testcase_id
 
+def pbm_vpm_single_mirror__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	pbm_dir = param['pbm_dir']
+	vpm_dir = param['vpm_dir']
+	acl_type = param['acl_type']
+
+	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  vm_name)
+	pbm.local_create(acl_type, pbm_dir)
+	pbm.dump(False)
+	pbm.show(False)
+
+	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  vm_name)
+	vpm.local_create(vpm_dir)
+	vpm.dump(False)
+	vpm.show(False)
+
+	mobjs = [ pbm, vpm ]
+	for mobj in mobjs:
+		st_param = {	'mirror_obj' : mobj,
+				'mirror_dst_ip' : mirror_dst_ip,
+			   }
+		passed = mirror_verify_dst_ip__(st_param)
+		if (passed == False):
+			pbm.local_destroy()
+			vpm.local_destroy()
+			return False
+		st_param = {	'mirror_obj' : mobj,
+				'mirror_dst_ip' : mirror_dst_ip,
+			   }
+		passed = mirror_verify_internal_name__(st_param)
+		if (passed == False):
+			pbm.local_destroy()
+			vpm.local_destroy()
+			return False
+		st_param = {	'mirror_obj' : mobj,
+				'ovs_path' : ovs_path,
+				'br' : br,
+				'logfd' : logfd,
+			   }
+		passed = mirror_verify_tunnel_ofp_port__(st_param)
+		if (passed == False):
+			pbm.local_destroy()
+			vpm.local_destroy()
+			return False
+		st_param = {	'mirror_obj' : mobj,
+				'mirror_nrefs' : "1",
+			   }
+		passed = mirror_verify_nrefs__(st_param)
+		if (passed == False):
+			pbm.local_destroy()
+			vpm.local_destroy()
+			return False
+	st_param = {	'mirror_obj' : pbm,
+			'mirror_dir' : pbm_dir,
+			'mirror_id' : mirror_id,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = pbm_verify_flow_attrs__(st_param)
+	pbm.local_destroy()
+	vpm.local_destroy()
+	return passed
+
+def pbm_vpm_single_mirror(ovs_path, br, logfd, vm_name,
+			  mirror_dst_ip, acl_type, testcase_id):
+	acl_dirs = [ "ingress", "egress" ]
+	vpm_dirs = [ "ingress", "egress", "both" ]
+
+	for pbm_dir in acl_dirs:
+		for vpm_dir in vpm_dirs:
+			param = { 'ovs_path' : ovs_path,
+				  'br' : br,
+				  'logfd' : logfd,
+			          'mirror_id': "9900",
+				  'mirror_dst_ip': mirror_dst_ip,
+				  'vm_name': vm_name,
+				  'pbm_dir' : pbm_dir,
+				  'vpm_dir' : vpm_dir,
+				  'acl_type' : acl_type,
+				}
+			testcase_desc = "PBM/VPM Single ACL Mirror: PBM - " + pbm_dir + " " + acl_type + ", VPM - " + vpm_dir
+			test = vca_test.TEST(testcase_id, testcase_desc,
+					     pbm_vpm_single_mirror__, param)
+			test.run()
+			testcase_id = testcase_id + 1
+	return testcase_id
+
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	testcase_id = 1
@@ -378,6 +471,9 @@ def main(argc, argv):
 					       "default", testcase_id)
 	testcase_id = vpm_single_mirror(ovs_path, br, logfd,
 					vm_name, mirror_dst_ip, testcase_id)
+	testcase_id = pbm_vpm_single_mirror(ovs_path, br, logfd,
+					    vm_name, mirror_dst_ip,
+					    "default", testcase_id)
 
 	exit(0)
 
