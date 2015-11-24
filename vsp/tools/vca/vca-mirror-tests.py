@@ -27,9 +27,9 @@ def usage():
 	sys.exit(1)
 
 def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
-	pbm_dst_ip = str(mobj.get_dst_ip())
-	if (mirror_dst_ip != pbm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+	mobj_dst_ip = str(mobj.get_dst_ip())
+	if (mirror_dst_ip != mobj_dst_ip):
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + mobj_dst_ip + ")"
 		return False
 	else :
 		print "Mirror Destination IP verification passed"
@@ -37,12 +37,21 @@ def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
 
 def mirror_verify_tunnel__(mobj, mirror_dst_ip):
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	pbm_internal_name = str(mobj.get_internal_name())
-	if (mirror_tunnel != pbm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+	mobj_internal_name = str(mobj.get_internal_name())
+	if (mirror_tunnel != mobj_internal_name):
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + mobj_internal_name + ")"
 		return False
 	else :
 		print "Mirror Internal Name verification passed"
+	return True
+
+def mirror_verify_nrefs__(mobj, mirror_nrefs):
+	mobj_nrefs = str(mobj.get_nrefs())
+	if (mirror_nrefs != mobj_nrefs):
+		print "Mirror Num Refs verification failed (expected: " + mirror_nrefs + ", got: " + mobj_nrefs + ")"
+		return False
+	else :
+		print "Mirror Num Refs verification passed"
 	return True
 
 def pbm_verify_flow_attrs__(pbm, mirror_dir, mirror_id, mirror_dst_ip):
@@ -102,6 +111,10 @@ def pbm_single_mirror__(param):
 	if (passed == False):
 		pbm.local_destroy()
 		return False
+	passed = mirror_verify_nrefs__(pbm, "1")
+	if (passed == False):
+		pbm.local_destroy()
+		return False
 	passed = pbm_verify_flow_attrs__(pbm, acl_dir, mirror_id, mirror_dst_ip)
 	pbm.local_destroy()
 	return passed
@@ -130,6 +143,10 @@ def pbm_multiple_mirrors__(param):
 		return False
 	passed = pbm_verify_flow_attrs__(pbm, "ingress", mirror_id,
 					 mirror_dst_ip)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
+	passed = mirror_verify_nrefs__(pbm, "2")
 	if (passed == False):
 		pbm.local_destroy()
 		return False
@@ -197,6 +214,10 @@ def vpm_single_mirror__(param):
 	passed = mirror_verify_tunnel__(vpm, mirror_dst_ip)
 	if (passed == False):
 		vpm.local_destroy()
+		return False
+	passed = mirror_verify_nrefs__(vpm, "1")
+	if (passed == False):
+		pbm.local_destroy()
 		return False
 	vpm.local_destroy()
 	return True
