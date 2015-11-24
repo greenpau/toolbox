@@ -20,6 +20,14 @@ class Flows(object):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		shell.execute_hdr("Displaying flows in " + self.br, cmd)
 
+	def get_flows_detail(self):
+		cmd = self.appctl_path + " bridge/dump-flows-detail " + self.br
+		return shell.execute_raw(cmd)
+
+	def get_mirror_flows(self):
+		cmd = self.appctl_path + " bridge/dump-flows-detail " + self.br
+		return shell.grep(cmd, "mirror")
+
 	def reset(self):
 		self.flow.reset(self.br)
 
