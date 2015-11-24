@@ -26,6 +26,40 @@ def usage():
 	print "    -i <ip>: mirror destination IPv4 address"
 	sys.exit(1)
 
+def pbm_verify_flow_attrs__(pbm, mirror_dir, mirror_id, mirror_dst_ip):
+	dir_verified = False
+	mirror_attrs = pbm.get_mirror_flow_attrs()
+	for mirror_attr in mirror_attrs:
+		table_id = mirror_attr['table_id']
+		if (table_id == "9"):
+			flow_mirror_dir = "ingress"
+		elif (table_id == "14"):
+			flow_mirror_dir = "egress"
+		else:
+			print "Flow returned bad table_id: " + table_id
+			return False
+		flow_mirror_id = mirror_attr['mirror_id']
+		flow_mirror_dst_ip = mirror_attr['mirror_dst_ip']
+		if (flow_mirror_dir != mirror_dir):
+			continue
+		else:
+			dir_verified = True
+			print "Flow Mirror Direction verification passed"
+		if (flow_mirror_id != mirror_id):
+			print "Flow Mirror ID verification failed (expected: " + mirror_id + ", got: " + flow_mirror_id + ")"
+			return False
+		else:
+			print "Flow Mirror ID verification passed"
+		if (flow_mirror_dst_ip != mirror_dst_ip):
+			print "Flow Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + flow_mirror_dst_ip + ")"
+			return False
+		else:
+			print "Flow Mirror Destination IP verification passed"
+	if (dir_verified == False):
+		print "Flow Mirror Direction verification failed (expected: " + mirror_dir + ", but not found in dump-detailed-flows" + ")"
+		return False
+	return True
+
 def pbm_single_mirror__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -56,8 +90,9 @@ def pbm_single_mirror__(param):
 		return False
 	else :
 		print "Mirror Internal Name verification passed"
+	passed = pbm_verify_flow_attrs__(pbm, acl_dir, mirror_id, mirror_dst_ip)
 	pbm.local_destroy()
-	return True
+	return passed
 
 def pbm_multiple_mirrors__(param):
 	ovs_path = param['ovs_path']
@@ -89,6 +124,13 @@ def pbm_multiple_mirrors__(param):
 		return False
 	else :
 		print "Mirror Internal Name verification passed"
+	passed = pbm_verify_flow_attrs__(pbm, "ingress", mirror_id,
+					 mirror_dst_ip)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
+	passed = pbm_verify_flow_attrs__(pbm, "egress", mirror_id,
+					 mirror_dst_ip)
 	pbm.local_destroy()
 	return True
 
