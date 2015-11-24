@@ -9,9 +9,10 @@ sys.path.append("/usr/local/openvswitch/pylib/system")
 import logger
 import net
 
-# VCA classes
+# OVS classes
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import ovs_helper
+import ovs_vport_tap
 
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
@@ -35,7 +36,7 @@ def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
 		print "Mirror Destination IP verification passed"
 	return True
 
-def mirror_verify_tunnel__(mobj, mirror_dst_ip):
+def mirror_verify_internal_name__(mobj, mirror_dst_ip):
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
 	mobj_internal_name = str(mobj.get_internal_name())
 	if (mirror_tunnel != mobj_internal_name):
@@ -43,6 +44,19 @@ def mirror_verify_tunnel__(mobj, mirror_dst_ip):
 		return False
 	else :
 		print "Mirror Internal Name verification passed"
+	return True
+
+def mirror_verify_tunnel_ofp_port__(mobj, ovs_path, br, logfd):
+	mobj_iface, mobj_ports = mobj.get_tunnel_port()
+	mobj_tap = ovs_vport_tap.Tap(ovs_path, "gre", br, mobj_iface,
+				     "0.0.0.0", logfd)
+	ovs_ofp_port = str(mobj_tap.get_ofp_port())
+	mobj_ofp_port = mobj_ports.split("/")[0]
+	if (ovs_ofp_port != mobj_ofp_port):
+		print "Mirror Tunnel Port verification failed (expected: " + ovs_ofp_port + ", got: " + mobj_ofp_port + ")"
+		return False
+	else :
+		print "Mirror Tunnel Port verification passed"
 	return True
 
 def mirror_verify_nrefs__(mobj, mirror_nrefs):
@@ -107,7 +121,11 @@ def pbm_single_mirror__(param):
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = mirror_verify_tunnel__(pbm, mirror_dst_ip)
+	passed = mirror_verify_internal_name__(pbm, mirror_dst_ip)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
+	passed = mirror_verify_tunnel_ofp_port__(pbm, ovs_path, br, logfd)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
@@ -137,7 +155,11 @@ def pbm_multiple_mirrors__(param):
 	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
 	if (passed == False):
 		pbm.local_destroy()
-	passed = mirror_verify_tunnel__(pbm, mirror_dst_ip)
+	passed = mirror_verify_internal_name__(pbm, mirror_dst_ip)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
+	passed = mirror_verify_tunnel_ofp_port__(pbm, ovs_path, br, logfd)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
@@ -211,9 +233,13 @@ def vpm_single_mirror__(param):
 	if (passed == False):
 		vpm.local_destroy()
 		return False
-	passed = mirror_verify_tunnel__(vpm, mirror_dst_ip)
+	passed = mirror_verify_internal_name__(vpm, mirror_dst_ip)
 	if (passed == False):
 		vpm.local_destroy()
+		return False
+	passed = mirror_verify_tunnel_ofp_port__(vpm, ovs_path, br, logfd)
+	if (passed == False):
+		pbm.local_destroy()
 		return False
 	passed = mirror_verify_nrefs__(vpm, "1")
 	if (passed == False):
