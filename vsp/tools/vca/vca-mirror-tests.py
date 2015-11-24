@@ -307,6 +307,9 @@ def main(argc, argv):
 	testcase_id = pbm_multiple_mirrors(ovs_path, br,
 					   logfd, vm_name, mirror_dst_ip,
 					   "default", testcase_id)
+	testcase_id = pbm_single_mirror(ovs_path, br,
+					logfd, vm_name, mirror_dst_ip,
+					"static", testcase_id)
 	testcase_id = vpm_single_mirror(ovs_path, br, logfd,
 					vm_name, mirror_dst_ip, testcase_id)
 
