@@ -63,3 +63,6 @@ class Mirror(object):
 
 	def get_internal_name(self):
 		return self.__parse_show_mirror("Mirror Internal Name:", 3)
+
+	def get_tunnel_port(self):
+		return self.__parse_show_mirror("Tunnel Port:", 2), self.__parse_show_mirror("Tunnel Port:", 3).replace(")", "").replace("(", "")

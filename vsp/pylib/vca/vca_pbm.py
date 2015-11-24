@@ -149,3 +149,9 @@ class PBM(object):
 			flow_attr['mirror_n_bytes'] = mirror_tokens[3].split(":")[1]
 			mirror_attrs.append(flow_attr)
 		return mirror_attrs
+
+	def get_tunnel_port(self):
+		tp = None
+		if (self.mirror != None):
+			tp = self.mirror.get_tunnel_port()
+		return tp

@@ -77,3 +77,9 @@ class VPM(object):
 		if (self.mirror != None):
 			nrefs = self.mirror.get_internal_name()
 		return nrefs
+
+	def get_tunnel_port(self):
+		tp = None
+		if (self.mirror != None):
+			tp = self.mirror.get_tunnel_port()
+		return tp
