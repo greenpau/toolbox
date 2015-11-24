@@ -6,6 +6,7 @@ sys.path.append("/usr/local/openvswitch/pylib/system")
 import shell
 
 sys.path.append("/usr/local/openvswitch/pylib/vca")
+import vca_flows
 import vca_mirror
 import vca_vm
 
@@ -127,3 +128,24 @@ class PBM(object):
 		if (self.mirror != None):
 			nrefs = self.mirror.get_internal_name()
 		return nrefs
+
+	def get_mirror_flow_attrs(self):
+		flows = vca_flows.Flows(self.ovs_path, self.br, self.logfd)
+		flows_out = flows.get_mirror_flows().splitlines()
+		mirror_attrs = []
+		for flow in flows_out:
+			tokens = flow.split()
+			if (tokens == None) or (len(tokens) < 19):
+				continue
+       			mirror = tokens[18].split("=")[1].replace("{", "").replace("}", "")
+			if (mirror == None):
+				continue
+			flow_attr = {}
+			flow_attr['table_id'] = tokens[0].split("=")[1].replace(",", "")
+			mirror_tokens = mirror.split(",")
+			flow_attr['mirror_id'] = mirror_tokens[0].split(":")[1]
+			flow_attr['mirror_dst_ip'] = mirror_tokens[1].split(":")[1]
+			flow_attr['mirror_n_packets'] = mirror_tokens[2].split(":")[1]
+			flow_attr['mirror_n_bytes'] = mirror_tokens[3].split(":")[1]
+			mirror_attrs.append(flow_attr)
+		return mirror_attrs
