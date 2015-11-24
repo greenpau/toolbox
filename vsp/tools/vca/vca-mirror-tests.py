@@ -146,35 +146,45 @@ def pbm_multiple_mirrors__(param):
 	vm_name = param['vm_name']
 	acl_type = param['acl_type']
 
-	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
-			  vm_name)
-	pbm.local_create(acl_type, "ingress")
-	pbm.local_create(acl_type, "egress")
-	pbm.dump(False)
-	pbm.show(False)
-	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
+	pbm1 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			   vm_name)
+	pbm1.local_create(acl_type, "ingress")
+	pbm1.dump(False)
+	pbm1.show(False)
+	pbm2 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			   vm_name)
+	pbm2.local_create(acl_type, "egress")
+	pbm2.dump(False)
+	pbm2.show(False)
+	passed = mirror_verify_dst_ip__(pbm1, mirror_dst_ip)
 	if (passed == False):
-		pbm.local_destroy()
-	passed = mirror_verify_internal_name__(pbm, mirror_dst_ip)
+		pbm1.local_destroy()
+		pbm2.local_destroy()
+	passed = mirror_verify_internal_name__(pbm1, mirror_dst_ip)
 	if (passed == False):
-		pbm.local_destroy()
+		pbm1.local_destroy()
+		pbm2.local_destroy()
 		return False
-	passed = mirror_verify_tunnel_ofp_port__(pbm, ovs_path, br, logfd)
+	passed = mirror_verify_tunnel_ofp_port__(pbm1, ovs_path, br, logfd)
 	if (passed == False):
-		pbm.local_destroy()
+		pbm1.local_destroy()
+		pbm2.local_destroy()
 		return False
-	passed = pbm_verify_flow_attrs__(pbm, "ingress", mirror_id,
+	passed = pbm_verify_flow_attrs__(pbm1, "ingress", mirror_id,
 					 mirror_dst_ip)
 	if (passed == False):
-		pbm.local_destroy()
+		pbm1.local_destroy()
+		pbm2.local_destroy()
 		return False
-	passed = mirror_verify_nrefs__(pbm, "2")
+	passed = mirror_verify_nrefs__(pbm1, "2")
 	if (passed == False):
-		pbm.local_destroy()
+		pbm1.local_destroy()
+		pbm2.local_destroy()
 		return False
-	passed = pbm_verify_flow_attrs__(pbm, "egress", mirror_id,
+	passed = pbm_verify_flow_attrs__(pbm1, "egress", mirror_id,
 					 mirror_dst_ip)
-	pbm.local_destroy()
+	pbm1.local_destroy()
+	pbm2.local_destroy()
 	return True
 
 def pbm_single_mirror(ovs_path, br, logfd, vm_name,
