@@ -27,7 +27,9 @@ def usage():
 	print "    -i <ip>: mirror destination IPv4 address"
 	sys.exit(1)
 
-def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
+def mirror_verify_dst_ip__(param):
+	mobj = param['mirror_obj']
+	mirror_dst_ip = param['mirror_dst_ip']
 	mobj_dst_ip = str(mobj.get_dst_ip())
 	if (mirror_dst_ip != mobj_dst_ip):
 		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + mobj_dst_ip + ")"
@@ -36,7 +38,9 @@ def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
 		print "Mirror Destination IP verification passed"
 	return True
 
-def mirror_verify_internal_name__(mobj, mirror_dst_ip):
+def mirror_verify_internal_name__(param):
+	mobj = param['mirror_obj']
+	mirror_dst_ip = param['mirror_dst_ip']
 	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
 	mobj_internal_name = str(mobj.get_internal_name())
 	if (mirror_tunnel != mobj_internal_name):
@@ -46,7 +50,11 @@ def mirror_verify_internal_name__(mobj, mirror_dst_ip):
 		print "Mirror Internal Name verification passed"
 	return True
 
-def mirror_verify_tunnel_ofp_port__(mobj, ovs_path, br, logfd):
+def mirror_verify_tunnel_ofp_port__(param):
+	mobj = param['mirror_obj']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
 	mobj_iface, mobj_ports = mobj.get_tunnel_port()
 	mobj_tap = ovs_vport_tap.Tap(ovs_path, "gre", br, mobj_iface,
 				     "0.0.0.0", logfd)
@@ -59,7 +67,9 @@ def mirror_verify_tunnel_ofp_port__(mobj, ovs_path, br, logfd):
 		print "Mirror Tunnel Port verification passed"
 	return True
 
-def mirror_verify_nrefs__(mobj, mirror_nrefs):
+def mirror_verify_nrefs__(param):
+	mobj = param['mirror_obj']
+	mirror_nrefs = param['mirror_nrefs']
 	mobj_nrefs = str(mobj.get_nrefs())
 	if (mirror_nrefs != mobj_nrefs):
 		print "Mirror Num Refs verification failed (expected: " + mirror_nrefs + ", got: " + mobj_nrefs + ")"
@@ -68,7 +78,11 @@ def mirror_verify_nrefs__(mobj, mirror_nrefs):
 		print "Mirror Num Refs verification passed"
 	return True
 
-def pbm_verify_flow_attrs__(pbm, mirror_dir, mirror_id, mirror_dst_ip):
+def pbm_verify_flow_attrs__(param):
+	pbm = param['mirror_obj']
+	mirror_dir = param['mirror_dir']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
 	dir_verified = False
 	mirror_attrs = pbm.get_mirror_flow_attrs()
 	for mirror_attr in mirror_attrs:
@@ -117,23 +131,42 @@ def pbm_single_mirror__(param):
 	pbm.local_create(acl_type, acl_dir)
 	pbm.dump(False)
 	pbm.show(False)
-	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_dst_ip__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = mirror_verify_internal_name__(pbm, mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_internal_name__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = mirror_verify_tunnel_ofp_port__(pbm, ovs_path, br, logfd)
+	st_param = {	'mirror_obj' : pbm,
+			'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd' : logfd,
+		   }
+	passed = mirror_verify_tunnel_ofp_port__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = mirror_verify_nrefs__(pbm, "1")
+	st_param = {	'mirror_obj' : pbm,
+			'mirror_nrefs' : "1",
+		   }
+	passed = mirror_verify_nrefs__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = pbm_verify_flow_attrs__(pbm, acl_dir, mirror_id, mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm,
+			'mirror_dir' : acl_dir,
+			'mirror_id' : mirror_id,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = pbm_verify_flow_attrs__(st_param)
 	pbm.local_destroy()
 	return passed
 
@@ -156,33 +189,55 @@ def pbm_multiple_mirrors__(param):
 	pbm2.local_create(acl_type, "egress")
 	pbm2.dump(False)
 	pbm2.show(False)
-	passed = mirror_verify_dst_ip__(pbm1, mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm1,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_dst_ip__(st_param)
 	if (passed == False):
 		pbm1.local_destroy()
 		pbm2.local_destroy()
-	passed = mirror_verify_internal_name__(pbm1, mirror_dst_ip)
-	if (passed == False):
-		pbm1.local_destroy()
-		pbm2.local_destroy()
-		return False
-	passed = mirror_verify_tunnel_ofp_port__(pbm1, ovs_path, br, logfd)
-	if (passed == False):
-		pbm1.local_destroy()
-		pbm2.local_destroy()
-		return False
-	passed = pbm_verify_flow_attrs__(pbm1, "ingress", mirror_id,
-					 mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm2,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_internal_name__(st_param)
 	if (passed == False):
 		pbm1.local_destroy()
 		pbm2.local_destroy()
 		return False
-	passed = mirror_verify_nrefs__(pbm1, "2")
+	st_param = {	'mirror_obj' : pbm1,
+			'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd' : logfd,
+		   }
+	passed = mirror_verify_tunnel_ofp_port__(st_param)
 	if (passed == False):
 		pbm1.local_destroy()
 		pbm2.local_destroy()
 		return False
-	passed = pbm_verify_flow_attrs__(pbm1, "egress", mirror_id,
-					 mirror_dst_ip)
+	st_param = {	'mirror_obj' : pbm1,
+			'mirror_dir' : "ingress",
+			'mirror_id' : mirror_id,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = pbm_verify_flow_attrs__(st_param)
+	if (passed == False):
+		pbm1.local_destroy()
+		pbm2.local_destroy()
+		return False
+	st_param = {	'mirror_obj' : pbm2,
+			'mirror_nrefs' : "2",
+		   }
+	passed = mirror_verify_nrefs__(st_param)
+	if (passed == False):
+		pbm1.local_destroy()
+		pbm2.local_destroy()
+		return False
+	st_param = {	'mirror_obj' : pbm2,
+			'mirror_dir' : "egress",
+			'mirror_id' : mirror_id,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = pbm_verify_flow_attrs__(st_param)
 	pbm1.local_destroy()
 	pbm2.local_destroy()
 	return True
@@ -239,19 +294,33 @@ def vpm_single_mirror__(param):
 	vpm.local_create(mirror_dir)
 	vpm.dump(False)
 	vpm.show(False)
-	passed = mirror_verify_dst_ip__(vpm, mirror_dst_ip)
+	st_param = {	'mirror_obj' : vpm,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_dst_ip__(st_param)
 	if (passed == False):
 		vpm.local_destroy()
 		return False
-	passed = mirror_verify_internal_name__(vpm, mirror_dst_ip)
+	st_param = {	'mirror_obj' : vpm,
+			'mirror_dst_ip' : mirror_dst_ip,
+		   }
+	passed = mirror_verify_internal_name__(st_param)
 	if (passed == False):
 		vpm.local_destroy()
 		return False
-	passed = mirror_verify_tunnel_ofp_port__(vpm, ovs_path, br, logfd)
+	st_param = {	'mirror_obj' : vpm,
+			'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd' : logfd,
+		   }
+	passed = mirror_verify_tunnel_ofp_port__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
-	passed = mirror_verify_nrefs__(vpm, "1")
+	st_param = {	'mirror_obj' : vpm,
+			'mirror_nrefs' : "1",
+		   }
+	passed = mirror_verify_nrefs__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
 		return False
