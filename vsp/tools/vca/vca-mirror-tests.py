@@ -92,8 +92,8 @@ def pbm_single_mirror__(param):
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
 	pbm.local_create(acl_type, acl_dir)
-	pbm.dump()
-	pbm.show()
+	pbm.dump(False)
+	pbm.show(False)
 	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
 	if (passed == False):
 		pbm.local_destroy()
@@ -119,8 +119,8 @@ def pbm_multiple_mirrors__(param):
 			  vm_name)
 	pbm.local_create(acl_type, "ingress")
 	pbm.local_create(acl_type, "egress")
-	pbm.dump()
-	pbm.show()
+	pbm.dump(False)
+	pbm.show(False)
 	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
 	if (passed == False):
 		pbm.local_destroy()
@@ -188,8 +188,8 @@ def vpm_single_mirror__(param):
 	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
 	vpm.local_create(mirror_dir)
-	vpm.dump()
-	vpm.show()
+	vpm.dump(False)
+	vpm.show(False)
 	passed = mirror_verify_dst_ip__(vpm, mirror_dst_ip)
 	if (passed == False):
 		vpm.local_destroy()

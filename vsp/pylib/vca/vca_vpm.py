@@ -52,13 +52,13 @@ class VPM(object):
 		if (self.mirror_dir != None):
 			self.__setup_vport_mirror("Unset")
 
-	def dump(self):
+	def dump(self, to_stdout):
 		if (self.mirror != None):
-			self.mirror.dump()
+			self.mirror.dump(to_stdout)
 
-	def show(self):
+	def show(self, to_stdout):
 		if (self.mirror != None):
-			self.mirror.show()
+			self.mirror.show(to_stdout)
 
 	def get_dst_ip(self):
 		dst_ip = None

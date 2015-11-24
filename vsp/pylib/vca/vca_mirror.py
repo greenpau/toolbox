@@ -16,15 +16,21 @@ class Mirror(object):
 		self.mirror_type = mirror_type
 		self.mirror_id = mirror_id
 
-	def dump(self):
+	def dump(self, to_stdout):
 		cmd = [ self.appctl_path, "bridge/dump-mirrors", self.br ]
-		shell.execute_hdr("Mirror configuration", cmd)
+		if (to_stdout == True):
+			shell.execute_hdr("Mirror configuration", cmd)
+		else:
+			shell.execute_log(self.logfd, cmd)
 
-	def show(self):
+	def show(self, to_stdout):
 		cmd = [ self.appctl_path, "bridge/show-mirror", self.br,
 			self.mirror_id ]
-		shell.execute_hdr("Mirror information for " + self.mirror_id,
-				  cmd)
+		if (to_stdout == True):
+			shell.execute_hdr("Mirror info for " + self.mirror_id,
+					  cmd)
+		else:
+			shell.execute_log(self.logfd, cmd)
 
 	def __parse_show_mirror(self, match_pattern, field):
 		cmd = [ self.appctl_path, "bridge/show-mirror", self.br,
