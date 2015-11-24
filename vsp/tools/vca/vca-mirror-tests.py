@@ -26,6 +26,25 @@ def usage():
 	print "    -i <ip>: mirror destination IPv4 address"
 	sys.exit(1)
 
+def mirror_verify_dst_ip__(mobj, mirror_dst_ip):
+	pbm_dst_ip = str(mobj.get_dst_ip())
+	if (mirror_dst_ip != pbm_dst_ip):
+		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+		return False
+	else :
+		print "Mirror Destination IP verification passed"
+	return True
+
+def mirror_verify_tunnel__(mobj, mirror_dst_ip):
+	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
+	pbm_internal_name = str(mobj.get_internal_name())
+	if (mirror_tunnel != pbm_internal_name):
+		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+		return False
+	else :
+		print "Mirror Internal Name verification passed"
+	return True
+
 def pbm_verify_flow_attrs__(pbm, mirror_dir, mirror_id, mirror_dst_ip):
 	dir_verified = False
 	mirror_attrs = pbm.get_mirror_flow_attrs()
@@ -75,21 +94,14 @@ def pbm_single_mirror__(param):
 	pbm.local_create(acl_type, acl_dir)
 	pbm.dump()
 	pbm.show()
-	pbm_dst_ip = str(pbm.get_dst_ip())
-	if (mirror_dst_ip != pbm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
+	if (passed == False):
 		pbm.local_destroy()
 		return False
-	else :
-		print "Mirror Destination IP verification passed"
-	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	pbm_internal_name = str(pbm.get_internal_name())
-	if (mirror_tunnel != pbm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
+	passed = mirror_verify_tunnel__(pbm, mirror_dst_ip)
+	if (passed == False):
 		pbm.local_destroy()
 		return False
-	else :
-		print "Mirror Internal Name verification passed"
 	passed = pbm_verify_flow_attrs__(pbm, acl_dir, mirror_id, mirror_dst_ip)
 	pbm.local_destroy()
 	return passed
@@ -109,21 +121,13 @@ def pbm_multiple_mirrors__(param):
 	pbm.local_create(acl_type, "egress")
 	pbm.dump()
 	pbm.show()
-	pbm_dst_ip = str(pbm.get_dst_ip())
-	if (mirror_dst_ip != pbm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + pbm_dst_ip + ")"
+	passed = mirror_verify_dst_ip__(pbm, mirror_dst_ip)
+	if (passed == False):
+		pbm.local_destroy()
+	passed = mirror_verify_tunnel__(pbm, mirror_dst_ip)
+	if (passed == False):
 		pbm.local_destroy()
 		return False
-	else :
-		print "Mirror Destination IP verification passed"
-	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	pbm_internal_name = str(pbm.get_internal_name())
-	if (mirror_tunnel != pbm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + pbm_internal_name + ")"
-		pbm.local_destroy()
-		return False
-	else :
-		print "Mirror Internal Name verification passed"
 	passed = pbm_verify_flow_attrs__(pbm, "ingress", mirror_id,
 					 mirror_dst_ip)
 	if (passed == False):
@@ -186,21 +190,14 @@ def vpm_single_mirror__(param):
 	vpm.local_create(mirror_dir)
 	vpm.dump()
 	vpm.show()
-	vpm_dst_ip = str(vpm.get_dst_ip())
-	if (mirror_dst_ip != vpm_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + vpm_dst_ip + ")"
+	passed = mirror_verify_dst_ip__(vpm, mirror_dst_ip)
+	if (passed == False):
 		vpm.local_destroy()
 		return False
-	else :
-		print "Mirror Destination IP verification passed"
-	mirror_tunnel = "mirror-t" + net.ipaddr2hex(mirror_dst_ip)
-	vpm_internal_name = str(vpm.get_internal_name())
-	if (mirror_tunnel != vpm_internal_name):
-		print "Mirror Internal Name verification failed (expected: " + mirror_tunnel + ", got: " + vpm_internal_name + ")"
+	passed = mirror_verify_tunnel__(vpm, mirror_dst_ip)
+	if (passed == False):
 		vpm.local_destroy()
 		return False
-	else :
-		print "Mirror Internal Name verification passed"
 	vpm.local_destroy()
 	return True
 
