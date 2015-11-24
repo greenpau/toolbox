@@ -120,6 +120,15 @@ def mirror_verify_all__(mobjs, param):
 			break
 	return passed
 
+def mirror_verify_cleanup__(mobj):
+	mobj_dst_ip = mobj.get_dst_ip()
+	if (mobj_dst_ip != None):
+		print "mirror cleanup check failed"
+		return False
+	else:
+		print "mirror cleanup check passed"
+		return True
+
 def pbm_verify_flow_attrs__(param):
 	pbm = param['mirror_obj']
 	mirror_dir = param['mirror_dir']
@@ -186,6 +195,7 @@ def pbm_single_mirror__(param):
 		   }
 	passed = pbm_verify_flow_attrs__(st_param)
 	pbm.local_destroy()
+	passed = mirror_verify_cleanup__(pbm)
 	return passed
 
 def pbm_multiple_acl_mirrors__(param):
@@ -228,7 +238,9 @@ def pbm_multiple_acl_mirrors__(param):
 	passed = pbm_verify_flow_attrs__(st_param)
 	pbm1.local_destroy()
 	pbm2.local_destroy()
-	return True
+	passed = mirror_verify_cleanup__(pbm1)
+	passed = mirror_verify_cleanup__(pbm2)
+	return passed
 
 def pbm_single_mirror(ovs_path, br, logfd, vm_name,
 		      mirror_dst_ip, acl_type, testcase_id):
@@ -289,6 +301,7 @@ def vpm_single_mirror__(param):
 	param['nrefs'] = "1"
 	passed = mirror_verify_all__(mobjs, param)
 	vpm.local_destroy()
+	passed = mirror_verify_cleanup__(vpm)
 	return passed
 
 def vpm_single_mirror(ovs_path, br, logfd, vm_name, mirror_dst_ip,
@@ -351,6 +364,8 @@ def pbm_vpm_single_mirror__(param):
 	passed = pbm_verify_flow_attrs__(st_param)
 	pbm.local_destroy()
 	vpm.local_destroy()
+	passed = mirror_verify_cleanup__(pbm)
+	passed = mirror_verify_cleanup__(vpm)
 	return passed
 
 def pbm_vpm_single_mirror(ovs_path, br, logfd, vm_name,
