@@ -269,8 +269,9 @@ def pbm_multiple_acl_mirrors__(param):
 	return passed
 
 def pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-		      mirror_dst_ip, acl_type, testcase_id):
+		      mirror_dst_ip, acl_type):
 	acl_dirs = [ "ingress", "egress" ]
+	global testcase_id
 
 	for acl_dir in acl_dirs:
 		param = { 'ovs_path' : ovs_path,
@@ -289,10 +290,11 @@ def pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
 		test.run()
 		suite.register_test(test)
 		testcase_id = testcase_id + 1
-	return testcase_id
+	return
 
 def pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
-			     mirror_dst_ip, acl_type, testcase_id):
+			     mirror_dst_ip, acl_type):
+	global testcase_id
 	param = { 'ovs_path' : ovs_path,
 		  'br' : br,
 		  'logfd' : logfd,
@@ -309,7 +311,7 @@ def pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
 	test.run()
 	suite.register_test(test)
 	testcase_id = testcase_id + 1
-	return testcase_id
+	return
 
 def vpm_single_mirror__(param):
 	ovs_path = param['ovs_path']
@@ -336,8 +338,8 @@ def vpm_single_mirror__(param):
 	passed = mirror_verify_cleanup__(st_param)
 	return passed
 
-def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
-		      testcase_id):
+def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip):
+	global testcase_id
 	mirror_dirs = [ "ingress", "egress" ]
 
 	for mirror_dir in mirror_dirs:
@@ -357,7 +359,7 @@ def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
 		test.run()
 		suite.register_test(test)
 		testcase_id = testcase_id + 1
-	return testcase_id
+	return
 
 def pbm_vpm_single_mirror__(param):
 	ovs_path = param['ovs_path']
@@ -410,7 +412,8 @@ def pbm_vpm_single_mirror__(param):
 	return passed
 
 def pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			  mirror_dst_ip, acl_type, testcase_id):
+			  mirror_dst_ip, acl_type):
+	global testcase_id
 	acl_dirs = [ "ingress", "egress" ]
 	vpm_dirs = [ "ingress", "egress", "both" ]
 
@@ -432,11 +435,11 @@ def pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
 			test.run()
 			suite.register_test(test)
 			testcase_id = testcase_id + 1
-	return testcase_id
+	return
 
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
-	testcase_id = 1
+	global testcase_id
 	vm_name = None
 	mirror_dst_ip = None
 	try:
@@ -458,17 +461,14 @@ def main(argc, argv):
 		usage()
 
 	suite = vca_test.SUITE("Mirror")
-	testcase_id = pbm_single_mirror(suite, ovs_path, br,
-					logfd, vm_name, mirror_dst_ip,
-					"default", testcase_id)
-	testcase_id = pbm_multiple_acl_mirrors(suite, ovs_path, br,
-					       logfd, vm_name, mirror_dst_ip,
-					       "default", testcase_id)
-	testcase_id = vpm_single_mirror(suite, ovs_path, br, logfd,
-					vm_name, mirror_dst_ip, testcase_id)
-	testcase_id = pbm_vpm_single_mirror(suite, ovs_path, br, logfd,
-					    vm_name, mirror_dst_ip,
-					    "default", testcase_id)
+	pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
+			  mirror_dst_ip, "default")
+	pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
+				 mirror_dst_ip, "default")
+	vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
+			  mirror_dst_ip)
+	pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
+			      mirror_dst_ip, "default")
 	suite.print_summary()
 
 	exit(0)
@@ -477,5 +477,6 @@ if __name__ == "__main__":
 	argc = len(sys.argv)
 	progfile = os.path.basename(sys.argv[0])
 	progname = progfile.split(".")[0]
+	testcase_id = 1
 	home = os.environ['HOME']
 	main(argc, sys.argv[1:])
