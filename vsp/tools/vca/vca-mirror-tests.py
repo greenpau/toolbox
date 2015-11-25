@@ -461,15 +461,17 @@ def main(argc, argv):
 	if (vm_name == None or mirror_dst_ip == None):
 		usage()
 
+	type = "default"
+	test_handlers = [
+		pbm_single_mirror,
+		pbm_multiple_acl_mirrors,
+		vpm_single_mirror,
+		pbm_vpm_single_mirror,
+	]
 	suite = vca_test.SUITE("Mirror")
-	pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			  mirror_dst_ip, "default")
-	pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
-				 mirror_dst_ip, "default")
-	vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			  mirror_dst_ip, "default")
-	pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			      mirror_dst_ip, "default")
+	for handler in test_handlers:
+		handler(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
+			type)
 	suite.print_summary()
 
 	exit(0)
