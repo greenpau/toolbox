@@ -338,7 +338,8 @@ def vpm_single_mirror__(param):
 	passed = mirror_verify_cleanup__(st_param)
 	return passed
 
-def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip):
+def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
+		      type_unused):
 	global testcase_id
 	mirror_dirs = [ "ingress", "egress" ]
 
@@ -466,7 +467,7 @@ def main(argc, argv):
 	pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
 				 mirror_dst_ip, "default")
 	vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			  mirror_dst_ip)
+			  mirror_dst_ip, "default")
 	pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
 			      mirror_dst_ip, "default")
 	suite.print_summary()
