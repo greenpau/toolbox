@@ -14,6 +14,10 @@ class SUITE(object):
 	def register_test(self, TEST):
 		self.tests.append(TEST)
 
+	def run(self, test_handlers, test_args):
+		for handler in test_handlers:
+			handler(test_args)
+
 	def print_summary(self):
 		n_passed = 0
 		n_failed = 0
