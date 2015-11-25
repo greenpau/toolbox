@@ -268,8 +268,14 @@ def pbm_multiple_acl_mirrors__(param):
 	passed = mirror_verify_cleanup__(st_param)
 	return passed
 
-def pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-		      mirror_dst_ip, acl_type):
+def pbm_single_mirror(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
 	acl_dirs = [ "ingress", "egress" ]
 	global testcase_id
 
@@ -292,8 +298,14 @@ def pbm_single_mirror(suite, ovs_path, br, logfd, vm_name,
 		testcase_id = testcase_id + 1
 	return
 
-def pbm_multiple_acl_mirrors(suite, ovs_path, br, logfd, vm_name,
-			     mirror_dst_ip, acl_type):
+def pbm_multiple_acl_mirrors(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
 	global testcase_id
 	param = { 'ovs_path' : ovs_path,
 		  'br' : br,
@@ -338,8 +350,14 @@ def vpm_single_mirror__(param):
 	passed = mirror_verify_cleanup__(st_param)
 	return passed
 
-def vpm_single_mirror(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
-		      type_unused):
+def vpm_single_mirror(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
 	global testcase_id
 	mirror_dirs = [ "ingress", "egress" ]
 
@@ -412,8 +430,14 @@ def pbm_vpm_single_mirror__(param):
 	passed = mirror_verify_cleanup__(st_param)
 	return passed
 
-def pbm_vpm_single_mirror(suite, ovs_path, br, logfd, vm_name,
-			  mirror_dst_ip, acl_type):
+def pbm_vpm_single_mirror(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
 	global testcase_id
 	acl_dirs = [ "ingress", "egress" ]
 	vpm_dirs = [ "ingress", "egress", "both" ]
@@ -461,17 +485,24 @@ def main(argc, argv):
 	if (vm_name == None or mirror_dst_ip == None):
 		usage()
 
-	type = "default"
+	suite = vca_test.SUITE("Mirror")
 	test_handlers = [
 		pbm_single_mirror,
 		pbm_multiple_acl_mirrors,
 		vpm_single_mirror,
 		pbm_vpm_single_mirror,
 	]
-	suite = vca_test.SUITE("Mirror")
-	for handler in test_handlers:
-		handler(suite, ovs_path, br, logfd, vm_name, mirror_dst_ip,
-			type)
+	type = "default"
+	test_args = {
+		"suite" : suite,
+		"ovs_path" : ovs_path,
+		"br" : br,
+		"logfd" : logfd,
+		"vm_name": vm_name,
+		"mirror_dst_ip" : mirror_dst_ip,
+		"type" : type,
+	}
+	suite.run(test_handlers, test_args)
 	suite.print_summary()
 
 	exit(0)
