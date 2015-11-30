@@ -90,8 +90,6 @@ class PBM(object):
 		cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
 		hdrstr = action + " " + acl_type + " " + acl_dir + " ACL mirror"
 		shell.run_cmd(hdrstr, cmd, self.logfd)
-		if (acl_type == "static"):
-			shell.run_cmd(hdrstr, cmd, self.logfd)
 
 	def local_create(self, acl_type, acl_dir):
 		self.acl_type = acl_type
