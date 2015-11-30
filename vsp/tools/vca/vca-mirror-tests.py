@@ -492,17 +492,18 @@ def main(argc, argv):
 		vpm_single_mirror,
 		pbm_vpm_single_mirror,
 	]
-	type = "default"
-	test_args = {
-		"suite" : suite,
-		"ovs_path" : ovs_path,
-		"br" : br,
-		"logfd" : logfd,
-		"vm_name": vm_name,
-		"mirror_dst_ip" : mirror_dst_ip,
-		"type" : type,
-	}
-	suite.run(test_handlers, test_args)
+	types = [ "default" ]
+	for type in types:
+		test_args = {
+			"suite" : suite,
+			"ovs_path" : ovs_path,
+			"br" : br,
+			"logfd" : logfd,
+			"vm_name": vm_name,
+			"mirror_dst_ip" : mirror_dst_ip,
+			"type" : type,
+		}
+		suite.run(test_handlers, test_args)
 	suite.print_summary()
 
 	exit(0)
