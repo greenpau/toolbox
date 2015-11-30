@@ -26,6 +26,7 @@ def usage():
 	print "options:"
 	print "    -v <vm_name>: name of VM whose ACLs/ports are to be mirrored"
 	print "    -i <ip>: mirror destination IPv4 address"
+	print "    -e: exitOnFailure=true"
 	sys.exit(1)
 
 def mirror_verify_dst_ip__(param):
@@ -293,8 +294,9 @@ def pbm_single_mirror(test_args):
 		testcase_desc = "Single ACL Mirror: " + acl_dir + " " + acl_type
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     pbm_single_mirror__, param)
-		test.run()
 		suite.register_test(test)
+		test.run()
+		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
 	return
 
@@ -320,8 +322,9 @@ def pbm_multiple_acl_mirrors(test_args):
 	testcase_desc = "Multiple ACL Mirror: " + acl_type
 	test = vca_test.TEST(testcase_id, testcase_desc,
 			     pbm_multiple_acl_mirrors__, param)
-	test.run()
 	suite.register_test(test)
+	test.run()
+	suite.assert_test_result(test)
 	testcase_id = testcase_id + 1
 	return
 
@@ -375,8 +378,9 @@ def vpm_single_mirror(test_args):
 		testcase_desc = "Port Mirror: " + mirror_dir
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     vpm_single_mirror__, param)
-		test.run()
 		suite.register_test(test)
+		test.run()
+		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
 	return
 
@@ -457,8 +461,9 @@ def pbm_vpm_single_mirror(test_args):
 			testcase_desc = "PBM/VPM Single ACL Mirror: PBM - " + pbm_dir + " " + acl_type + ", VPM - " + vpm_dir
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     pbm_vpm_single_mirror__, param)
-			test.run()
 			suite.register_test(test)
+			test.run()
+			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
 	return
 
@@ -467,8 +472,9 @@ def main(argc, argv):
 	global testcase_id
 	vm_name = None
 	mirror_dst_ip = None
+	exit_on_failure = False
 	try:
-		opts, args = getopt.getopt(argv, "hv:i:")
+		opts, args = getopt.getopt(argv, "hv:i:e")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -479,6 +485,8 @@ def main(argc, argv):
 			vm_name = arg
 		elif opt == "-i":
 			mirror_dst_ip = arg
+		elif opt == "-e":
+			exit_on_failure = True
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
@@ -486,6 +494,7 @@ def main(argc, argv):
 		usage()
 
 	suite = vca_test.SUITE("Mirror")
+	suite.set_exit_on_failure(exit_on_failure)
 	test_handlers = [
 		pbm_single_mirror,
 		pbm_multiple_acl_mirrors,
