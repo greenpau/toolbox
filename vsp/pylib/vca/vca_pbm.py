@@ -35,6 +35,7 @@ class PBM(object):
 		self.vm_ofp_port = self.vm.vm_port()
 		self.default_flowstr = "priority=0,actions=allow"
 		self.static_flowstr = "priority=0,tcp,in_port=" + self.vm_ofp_port + ",tp_src=100,tp_dst=200,actions=allow"
+		self.reflexive_flowstr = "stateful=1"
 		self.mirror_flowstr = "mirror_id=" + self.mirror_id + ",mirror_dst_ip=" + self.mirror_dst_ip
 
 	def __base_acl_flowstr(self, acl_dir):
@@ -61,6 +62,14 @@ class PBM(object):
 		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.static_flowstr
 		return flowstr
 
+	def __setup_reflexive_acl_mirror_flowstr(self, acl_dir):
+		flowstr = self.__acl_mirror_flowstr(acl_dir) + "," + self.reflexive_flowstr + "," + self.static_flowstr
+		return flowstr
+
+	def __cleanup_reflexive_acl_mirror_flowstr(self, acl_dir):
+		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.reflexive_flowstr + "," + self.static_flowstr
+		return flowstr
+
 	def __setup_acl_mirror(self, action, acl_type, acl_dir):
 		flowstr = None
 		table_type = None
@@ -83,6 +92,11 @@ class PBM(object):
 				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
 			else:
 				flowstr = self.__cleanup_static_acl_mirror_flowstr(table_type)
+		elif (acl_type == "reflexive"):
+			if (action == "Set"):
+				flowstr = self.__setup_reflexive_acl_mirror_flowstr(table_type)
+			else:
+				flowstr = self.__cleanup_reflexive_acl_mirror_flowstr(table_type)
 		if (flowstr == None):
 			print "Mirrors for ACL type " + acl_type + " not supported yet"
 			return

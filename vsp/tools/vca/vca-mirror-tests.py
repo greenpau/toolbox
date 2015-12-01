@@ -501,7 +501,7 @@ def main(argc, argv):
 		vpm_single_mirror,
 		pbm_vpm_single_mirror,
 	]
-	types = [ "default", "static" ]
+	types = [ "default", "static", "reflexive" ]
 	for type in types:
 		test_args = {
 			"suite" : suite,
