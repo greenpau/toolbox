@@ -11,6 +11,7 @@ class SUITE(object):
 		self.suite_name = suite_name
 		self.tests = []
 		self.exit_on_failure = False
+		self.n_sub_tests = 0
 	
 	def set_exit_on_failure(self, exit_on_failure):
 		self.exit_on_failure = exit_on_failure
@@ -26,11 +27,15 @@ class SUITE(object):
 		n_passed = 0
 		n_failed = 0
 		for test in self.tests:
+			self.n_sub_tests = self.n_sub_tests + test.n_sub_tests
 			if (test.passed == True):
 				n_passed = n_passed + 1
 			else:
 				n_failed = n_failed + 1
+		print "Suite Summary:"
+		print "Suite name: " + self.suite_name
 		print "Num tests: " + str(n_passed + n_failed) + " (Passed: " + str(n_passed) + ", Failed: " + str(n_failed) + ")"
+		print "Num sub-tests: " + str(self.n_sub_tests)
 
 	def assert_test_result(self, test):
 		if (test.passed != True) and (self.exit_on_failure == True):
@@ -44,10 +49,11 @@ class TEST(object):
 		self.handler = handler
 		self.param = param
 		self.passed = True
+		self.n_sub_tests = 0
 
 	def run(self):
 		print "Testcase ID #" + str(self.test_id) + ": " + self.test_desc
-		self.passed = self.handler(self.param)
+		self.passed, self.n_sub_tests = self.handler(self.param)
 		if (self.passed) :
 			print "######################### Testcase ID #" + self.test_id + ": PASSED ############################"
 		else:
