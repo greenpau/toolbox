@@ -93,17 +93,20 @@ def mirror_verify_all__(mobjs, param):
 	acl_type = param['acl_type']
 	nrefs = param['nrefs']
 	passed = True
+	n_sub_tests = 0
 
 	for mobj in mobjs:
 		st_param = {	'mirror_obj' : mobj,
 				'mirror_dst_ip' : mirror_dst_ip,
 			   }
+		n_sub_tests = n_sub_tests + 1
 		passed = mirror_verify_dst_ip__(st_param)
 		if (passed == False):
 			break
 		st_param = {	'mirror_obj' : mobj,
 				'mirror_dst_ip' : mirror_dst_ip,
 			   }
+		n_sub_tests = n_sub_tests + 1
 		passed = mirror_verify_internal_name__(st_param)
 		if (passed == False):
 			break
@@ -112,23 +115,27 @@ def mirror_verify_all__(mobjs, param):
 				'br' : br,
 				'logfd' : logfd,
 			   }
+		n_sub_tests = n_sub_tests + 1
 		passed = mirror_verify_tunnel_ofp_port__(st_param)
 		if (passed == False):
 			break
 		st_param = {	'mirror_obj' : mobj,
 				'mirror_nrefs' : nrefs,
 			   }
+		n_sub_tests = n_sub_tests + 1
 		passed = mirror_verify_nrefs__(st_param)
 		if (passed == False):
 			break
-	return passed
+	return passed, n_sub_tests
 
 def mirror_verify_cleanup__(param):
 	mobj = param['mirror_obj']
 	ovs_path = param['ovs_path']
 	mirror_dst_ip = param['mirror_dst_ip']
+	n_sub_tests = 0
 
 	mobj_dst_ip = mobj.get_dst_ip()
+	n_sub_tests = n_sub_tests + 1
 	if (mobj_dst_ip != None):
 		print "mirror cleanup check failed"
 		return False
@@ -138,12 +145,13 @@ def mirror_verify_cleanup__(param):
 	mirror_tunnel = "t" + net.ipaddr2hex(mirror_dst_ip)
 	cmd = [ ovs_path + "/ovs-appctl", "dpif/show" ]
 	dpif_show_out = shell.execute(cmd).splitlines()
+	n_sub_tests = n_sub_tests + 1
 	for line in dpif_show_out:
 		if (line.find(mirror_tunnel) >= 0):
 			print "mirror tunnel not cleaned up"
 			return False
 	print "mirror tunnel cleanup check passed"
-	return True
+	return True, n_sub_tests
 
 def pbm_verify_flow_attrs__(param):
 	pbm = param['mirror_obj']
@@ -213,6 +221,7 @@ def pbm_single_mirror__(param):
 	vm_name = param['vm_name']
 	acl_dir = param['pbm_dir']
 	acl_type = param['acl_type']
+	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
@@ -221,19 +230,21 @@ def pbm_single_mirror__(param):
 	pbm.show(False)
 	mobjs = [ pbm ]
 	param['nrefs'] = "1"
-	passed = mirror_verify_all__(mobjs, param)
+	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		pbm.local_destroy()
-		return False
+		return False, n_sub_tests
 	st_param = {	'mirror_obj' : pbm,
 			'mirror_dir' : acl_dir,
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
+	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
-		return False
+		return False, n_sub_tests
 	st_param = {	'ovs_path' : ovs_path,
 			'br' : br,
 			'logfd': logfd,
@@ -242,17 +253,20 @@ def pbm_single_mirror__(param):
 			'mirror_obj' : pbm,
 			'mirror_dir' : acl_dir,
 	}
+	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_mirror_vport__(st_param)
 	if (passed == False):
 		pbm.local_destroy()
-		return False
+		return False, n_sub_tests
 	pbm.local_destroy()
 	st_param = {	'mirror_obj' : pbm,
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
-	return passed
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
 
 def pbm_multiple_acl_mirrors__(param):
 	ovs_path = param['ovs_path']
@@ -262,6 +276,7 @@ def pbm_multiple_acl_mirrors__(param):
 	mirror_dst_ip = param['mirror_dst_ip']
 	vm_name = param['vm_name']
 	acl_type = param['acl_type']
+	n_sub_tests = 0
 
 	pbm1 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			   vm_name)
@@ -275,22 +290,25 @@ def pbm_multiple_acl_mirrors__(param):
 	pbm2.show(False)
 	mobjs = [ pbm1, pbm2 ]
 	param['nrefs'] = "2"
-	passed = mirror_verify_all__(mobjs, param)
+	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		pbm1.local_destroy()
 		pbm2.local_destroy()
-		return False
+		return False, n_sub_tests
 	st_param = {	'mirror_obj' : pbm1,
 			'mirror_dir' : "ingress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
+	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
 	st_param = {	'mirror_obj' : pbm2,
 			'mirror_dir' : "egress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
+	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
 	pbm1.local_destroy()
 	pbm2.local_destroy()
@@ -298,13 +316,17 @@ def pbm_multiple_acl_mirrors__(param):
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	st_param = {	'mirror_obj' : pbm2,
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
-	return passed
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
 
 def pbm_single_mirror(test_args):
 	suite = test_args["suite"]
@@ -373,6 +395,7 @@ def vpm_single_mirror__(param):
 	mirror_dst_ip = param['mirror_dst_ip']
 	vm_name = param['vm_name']
 	mirror_dir = param['vpm_dir']
+	n_sub_tests = 0
 
 	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
@@ -381,14 +404,17 @@ def vpm_single_mirror__(param):
 	vpm.show(False)
 	mobjs = [ vpm ]
 	param['nrefs'] = "1"
-	passed = mirror_verify_all__(mobjs, param)
+	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	vpm.local_destroy()
 	st_param = {	'mirror_obj' : vpm,
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
-	return passed
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
 
 def vpm_single_mirror(test_args):
 	suite = test_args["suite"]
@@ -431,6 +457,7 @@ def pbm_vpm_single_mirror__(param):
 	pbm_dir = param['pbm_dir']
 	vpm_dir = param['vpm_dir']
 	acl_type = param['acl_type']
+	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
@@ -446,16 +473,18 @@ def pbm_vpm_single_mirror__(param):
 
 	mobjs = [ pbm, vpm ]
 	param['nrefs'] = "1"
-	passed = mirror_verify_all__(mobjs, param)
+	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		vpm.local_destroy()
 		pbm.local_destroy()
-		return False
+		return False, n_sub_tests
 	st_param = {	'mirror_obj' : pbm,
 			'mirror_dir' : pbm_dir,
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
+	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
 	pbm.local_destroy()
 	vpm.local_destroy()
@@ -463,13 +492,17 @@ def pbm_vpm_single_mirror__(param):
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	st_param = {	'mirror_obj' : vpm,
 			'ovs_path' : ovs_path,
 			'mirror_dst_ip' : mirror_dst_ip,
 	}
-	passed = mirror_verify_cleanup__(st_param)
-	return passed
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
 
 def pbm_vpm_single_mirror(test_args):
 	suite = test_args["suite"]
