@@ -34,6 +34,7 @@ class SUITE(object):
 
 	def assert_test_result(self, test):
 		if (test.passed != True) and (self.exit_on_failure == True):
+			self.print_summary()
 			sys.exit()
 
 class TEST(object):
