@@ -20,6 +20,7 @@ sys.path.append("/usr/local/openvswitch/pylib/vca")
 import vca_test
 import vca_pbm
 import vca_vpm
+import vca_vm
 
 def usage():
 	print "usage: " + progname + " [options]"
@@ -182,6 +183,27 @@ def pbm_verify_flow_attrs__(param):
 		return False
 	return True
 
+def pbm_verify_mirror_vport__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	vm_name = param['vm_name']
+	pbm = param['mirror_obj']
+	mirror_dir = param['mirror_dir']
+
+	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(mirror_dir)
+	vm = vca_vm.VM(ovs_path, br, None, None, None, None, None, None,
+		       None, None, None, logfd)
+	vm.set_vm_name(vm_name)
+	vport = vm.vport()
+	if (vport == mirror_vport):
+		print "Mirror VPORT name verification passed"
+	else:
+		print "Mirror vport: " + mirror_vport + ", mirror_ofp_port: " + mirror_vport_ofp_port + ", vport: " + vport
+		print "mirror VPORT name verification failed"
+		return False
+	return True
+
 def pbm_single_mirror__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -209,6 +231,21 @@ def pbm_single_mirror__(param):
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
 	passed = pbm_verify_flow_attrs__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
+	st_param = {	'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd': logfd,
+			'vm_name': vm_name,
+			'mirror_obj' : pbm,
+			'mirror_obj' : pbm,
+			'mirror_dir' : acl_dir,
+	}
+	passed = pbm_verify_mirror_vport__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		return False
 	pbm.local_destroy()
 	st_param = {	'mirror_obj' : pbm,
 			'ovs_path' : ovs_path,
