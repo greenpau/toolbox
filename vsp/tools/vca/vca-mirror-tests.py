@@ -486,6 +486,23 @@ def pbm_vpm_single_mirror__(param):
 		   }
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		vpm.local_destroy()
+		return False, n_sub_tests
+	st_param = {	'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd': logfd,
+			'vm_name': vm_name,
+			'mirror_obj' : pbm,
+			'mirror_dir' : pbm_dir,
+	}
+	n_sub_tests = n_sub_tests + 1
+	passed = pbm_verify_mirror_vport__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		vpm.local_destroy()
+		return False, n_sub_tests
 	pbm.local_destroy()
 	vpm.local_destroy()
 	st_param = {	'mirror_obj' : pbm,
