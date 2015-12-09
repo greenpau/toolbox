@@ -95,27 +95,36 @@ class VM(object):
 	def set_vm_name(self, vm_name):
 		self.vm_name = vm_name
 
-	def vm_uuid(self):
-		cmd = [ self.appctl_path, "vm/port-show" ]
+	def __parse_show_vm(self, vm_uuid, match_pattern, field):
+		if (vm_uuid == None):
+			cmd = [ self.appctl_path, "vm/port-show" ]
+		else:
+			cmd = [ self.appctl_path, "vm/port-show", vm_uuid ]
 		vm_port_show = shell.execute(cmd).splitlines()
-		vm_uuid = None
+		content = None
 		for line in vm_port_show:
-			if (line.find(self.vm_name) < 0):
+			if (line.find(match_pattern) < 0):
 				continue
 			line_tok = line.split()
-			vm_uuid = line_tok[3]
+			content = line_tok[field]
 			break
-		return vm_uuid
+		return content
+
+	def vm_uuid(self):
+		return self.__parse_show_vm(None, self.vm_name, 3)
 
 	def vport(self):
 		vm_uuid = self.vm_uuid()
-		cmd = [ self.appctl_path, "vm/port-show", vm_uuid ]
-		vm_port_show = shell.execute(cmd).splitlines()
-		vport = None
-		for line in vm_port_show:
-			if (line.find("port-UUID") < 0):
-				continue
-			line_tok = line.split()
-			vport = line_tok[3]
-			break
-		return vport
+		return self.__parse_show_vm(vm_uuid, "port-UUID", 3)
+
+	def port_mac(self):
+		vm_uuid = self.vm_uuid()
+		return self.__parse_show_vm(vm_uuid, "MAC:", 5)
+
+	def port_ip(self):
+		vm_uuid = self.vm_uuid()
+		return self.__parse_show_vm(vm_uuid, "IP:", 1)
+
+	def port_ofp_port(self):
+		vm_uuid = self.vm_uuid()
+		return self.__parse_show_vm(vm_uuid, "port:", 3)
