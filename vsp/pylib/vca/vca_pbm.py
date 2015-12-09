@@ -34,7 +34,8 @@ class PBM(object):
 		self.port_name = self.vm.port_name()
 		self.vm_ofp_port = self.vm.vm_port()
 		self.default_flowstr = "priority=0,actions=allow"
-		self.static_flowstr = "priority=0,tcp,in_port=" + self.vm_ofp_port + ",tp_src=100,tp_dst=200,actions=allow"
+		#self.static_flowstr = "priority=0,tcp,in_port=" + self.vm_ofp_port + ",tp_src=100,tp_dst=200,actions=allow"
+		self.static_flowstr = "priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=allow"
 		self.reflexive_flowstr = "stateful=1"
 		self.mirror_flowstr = "mirror_id=" + self.mirror_id + ",mirror_dst_ip=" + self.mirror_dst_ip
 
