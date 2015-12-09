@@ -30,6 +30,16 @@ def usage():
 	print "    -e: exitOnFailure=true"
 	sys.exit(1)
 
+def get_vm_attr__(ovs_path, br, logfd, vm_name):
+	vm = vca_vm.VM(ovs_path, br, None, None, None, None, None, None,
+		       None, None, None, logfd)
+	vm.set_vm_name(vm_name)
+	port_name = vm.port_name()
+	mac = vm.port_mac()
+	ip = vm.port_ip()
+	ofp_port = vm.port_ofp_port()
+	return port_name, mac, ip, ofp_port
+
 def mirror_verify_dst_ip__(param):
 	mobj = param['mirror_obj']
 	mirror_dst_ip = param['mirror_dst_ip']
@@ -200,11 +210,9 @@ def pbm_verify_mirror_vport__(param):
 	mirror_dir = param['mirror_dir']
 
 	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(mirror_dir)
-	vm = vca_vm.VM(ovs_path, br, None, None, None, None, None, None,
-		       None, None, None, logfd)
-	vm.set_vm_name(vm_name)
-	vport = vm.port_name()
-	if (vport == mirror_vport):
+	port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, vm_name)
+	if (port_name == mirror_vport):
 		print "Mirror VPORT name verification passed"
 	else:
 		print "Mirror vport: " + mirror_vport + ", mirror_ofp_port: " + mirror_vport_ofp_port + ", vport: " + vport
