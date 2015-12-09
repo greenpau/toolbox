@@ -138,7 +138,7 @@ def mirror_verify_cleanup__(param):
 	n_sub_tests = n_sub_tests + 1
 	if (mobj_dst_ip != None):
 		print "mirror cleanup check failed"
-		return False
+		return False, n_sub_tests
 	else:
 		print "mirror cleanup check passed"
 
@@ -149,7 +149,7 @@ def mirror_verify_cleanup__(param):
 	for line in dpif_show_out:
 		if (line.find(mirror_tunnel) >= 0):
 			print "mirror tunnel not cleaned up"
-			return False
+			return False, n_sub_tests
 	print "mirror tunnel cleanup check passed"
 	return True, n_sub_tests
 
