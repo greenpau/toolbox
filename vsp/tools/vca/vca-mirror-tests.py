@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+import random
 
 # generic utility classes
 sys.path.append("/usr/local/openvswitch/pylib/system")
@@ -562,6 +563,124 @@ def pbm_vpm_single_mirror(test_args):
 			testcase_id = testcase_id + 1
 	return
 
+def pbm_traffic_ofproto_trace__(param):
+	passed = True
+	pbm = param['pbm']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	acl_type = param['acl_type']
+
+	pkt = "in_port=" + dst_ofp_port + ",dl_src=" + src_mac + ",dl_dst=" + dst_mac + ",dl_type=0x0800,nw_src=" + src_ip + ",nw_dst=" + dst_ip + ",nw_proto=17,nw_tos=0xff,nw_ttl=128"
+	cmd = [ ovs_path + "/ovs-appctl", "ofproto/trace", br, pkt ]
+	out = shell.execute(cmd).splitlines()
+	for l in out:
+		if (l.find("Datapath actions:") < 0):
+			continue
+		if (l.find("tunnel") < 0):
+			outstr = "Datapath actions donot contain mirror tunnel info"
+			if (acl_type == "reflexive"):
+				outstr = outstr + ", passed"
+			else:
+				outstr = outstr + ", failed"
+				passed = False
+			print outstr
+			return passed
+		tep_odp_port = l.split(",")[6]
+		mobj_iface, mobj_ports = pbm.get_tunnel_port()
+		mobj_odp_port = mobj_ports.split("/")[1]
+		if (tep_odp_port != mobj_odp_port):
+			passed = False
+			print "TEP odp port (ofproto/trace): " + tep_odp_port + ", mirror object odp port: " + mobj_odp_port + ", failed"
+			return passed
+		print "ofproto/trace of packet detected packet sent to mirror tunnel, passed"
+		return passed
+	return passed
+
+def pbm_traffic_single__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	dst_vm_name = param['vm_name']
+	pbm_dir = param['pbm_dir']
+	acl_type = param["acl_type"]
+	src_vm_name = "ovs-1-vm1"
+	n_sub_tests = 0
+
+	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  dst_vm_name)
+	pbm.local_create(acl_type, pbm_dir)
+	pbm.dump(False)
+	pbm.show(False)
+
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, src_vm_name)
+
+	n_sub_tests = n_sub_tests + 1
+	st_param = {
+		'pbm' : pbm,
+		'ovs_path' : ovs_path,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': src_mac,
+		'src_ip': src_ip,
+		'dst_mac': dst_mac,
+		'dst_ip': dst_ip,
+		'dst_ofp_port': dst_ofp_port,
+		'acl_type': acl_type,
+	}
+	passed = pbm_traffic_ofproto_trace__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		return False, n_sub_tests
+
+	pbm.local_destroy()
+	return passed, n_sub_tests
+
+def pbm_traffic(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
+	acl_dirs = [ "ingress", "egress" ]
+	global testcase_id
+
+	traffic_test_handlers = [
+		pbm_traffic_single__,
+	]
+	for pbm_dir in acl_dirs:
+		param = {
+			'ovs_path' : ovs_path,
+			'br' : br,
+			'logfd' : logfd,
+			'mirror_id': "9900",
+			'mirror_dst_ip': mirror_dst_ip,
+			'vm_name': vm_name,
+			'pbm_dir' : pbm_dir,
+			'acl_type' : acl_type,
+		}
+		testcase_desc = "PBM Traffic - " + acl_type + ", Dir: " + pbm_dir
+		for traffic_test_handler in traffic_test_handlers:
+			test = vca_test.TEST(testcase_id, testcase_desc,
+					     traffic_test_handler, param)
+			suite.register_test(test)
+			test.run()
+			suite.assert_test_result(test)
+			testcase_id = testcase_id + 1
+	return
+
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	global testcase_id
@@ -595,6 +714,7 @@ def main(argc, argv):
 		pbm_multiple_acl_mirrors,
 		vpm_single_mirror,
 		pbm_vpm_single_mirror,
+		pbm_traffic,
 	]
 	types = [ "default", "static", "reflexive" ]
 	for type in types:
