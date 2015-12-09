@@ -31,7 +31,7 @@ class PBM(object):
 				    None, None, None, self.logfd)
 		self.vm.set_vm_name(self.vm_name)
 		self.vm_uuid = self.vm.vm_uuid()
-		self.vport = self.vm.vport()
+		self.port_name = self.vm.port_name()
 		self.vm_ofp_port = self.vm.vm_port()
 		self.default_flowstr = "priority=0,actions=allow"
 		self.static_flowstr = "priority=0,tcp,in_port=" + self.vm_ofp_port + ",tp_src=100,tp_dst=200,actions=allow"
@@ -39,7 +39,7 @@ class PBM(object):
 		self.mirror_flowstr = "mirror_id=" + self.mirror_id + ",mirror_dst_ip=" + self.mirror_dst_ip
 
 	def __base_acl_flowstr(self, acl_dir):
-		flowstr = "flow_type=acl,flags=" + acl_dir + ",interface=" + self.vport + ",vm_uuid=" + self.vm_uuid + ",type=vm"
+		flowstr = "flow_type=acl,flags=" + acl_dir + ",interface=" + self.port_name + ",vm_uuid=" + self.vm_uuid + ",type=vm"
 		return flowstr
 
 	def __acl_mirror_flowstr(self, acl_dir):

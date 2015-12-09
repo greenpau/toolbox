@@ -113,7 +113,7 @@ class VM(object):
 	def vm_uuid(self):
 		return self.__parse_show_vm(None, self.vm_name, 3)
 
-	def vport(self):
+	def port_name(self):
 		vm_uuid = self.vm_uuid()
 		return self.__parse_show_vm(vm_uuid, "port-UUID", 3)
 

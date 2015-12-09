@@ -28,8 +28,8 @@ class VPM(object):
 				    None, None, None, self.logfd)
 		self.vm.set_vm_name(self.vm_name)
 		self.vm_uuid = self.vm.vm_uuid()
-		self.vport = self.vm.vport()
-		self.mirror_flowstr = "flow_type=mirror, interface=" + self.vport + ", vm_uuid=" + self.vm_uuid + "," + "mirror-id=" + self.mirror_id + ", remote_ip=" + self.mirror_dst_ip
+		self.port_name = self.vm.port_name()
+		self.mirror_flowstr = "flow_type=mirror, interface=" + self.port_name + ", vm_uuid=" + self.vm_uuid + "," + "mirror-id=" + self.mirror_id + ", remote_ip=" + self.mirror_dst_ip
 
 	def __setup_vport_mirror(self, action):
 		flowstr = self.mirror_flowstr + ", mirror_direction=" + self.mirror_dir

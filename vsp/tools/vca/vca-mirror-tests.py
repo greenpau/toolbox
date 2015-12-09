@@ -203,7 +203,7 @@ def pbm_verify_mirror_vport__(param):
 	vm = vca_vm.VM(ovs_path, br, None, None, None, None, None, None,
 		       None, None, None, logfd)
 	vm.set_vm_name(vm_name)
-	vport = vm.vport()
+	vport = vm.port_name()
 	if (vport == mirror_vport):
 		print "Mirror VPORT name verification passed"
 	else:
