@@ -87,6 +87,7 @@ install__ 0755 tools/vca/vca-switch-status.py
 install__ 0755 tools/vca/vca-mirror-tests.py
 install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
 install__ 0755 tools/regress/run_regress.py
+install__ 0755 tools/system/reinstall-packages
 
 
 %clean
@@ -145,6 +146,7 @@ install__ 0755 tools/regress/run_regress.py
 /usr/local/openvswitch/tools/vca/vca-vport-tap-vrf-tnl-create.py
 /usr/local/openvswitch/tools/vca/vca-mirror-tests.py
 /usr/local/openvswitch/tools/regress/run_regress.py
+/usr/local/openvswitch/tools/system/reinstall-packages
 
 %pre
 

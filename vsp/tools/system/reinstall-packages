@@ -1,0 +1,41 @@
+#!/bin/bash
+
+reinstall_rpms() {
+	local branch=$1
+	local dkms=$2
+
+	rpm -e nuage-openvswitch-debuginfo-${branch}.0-99.x86_64
+	rpm -e nuage-openvswitch-${branch}.0-99.x86_64
+	if [ ${dkms} = yes ]; then
+		rpm -e nuage-openvswitch-dkms-${branch}.0-99.x86_64
+		rpm -ivh /var/tmp/nuage-openvswitch-dkms-${branch}.0-99.x86_64.rpm
+	fi
+	rpm -ivh /var/tmp/nuage-openvswitch-debuginfo-${branch}.0-99.x86_64.rpm
+	rpm -ivh /var/tmp/nuage-openvswitch-${branch}.0-99.x86_64.rpm
+}
+
+progname=`basename $0`
+dkms=no
+is_ubuntu=`uname -v | grep -i ubuntu`
+while [ -n "$1" ]; do
+	case "$1" in
+	-k)	dkms=yes
+		shift
+		;;
+	*)	branch=$1
+		shift
+	esac
+done
+if [ -z "${branch}" ]; then
+	echo "usage: ${progname} [-k] <branch>"
+	exit 1
+fi
+
+if [ -n "${is_ubuntu}" ]; then
+	echo "${progname}: not supported on this platform"
+	exit 1
+else
+	reinstall_rpms ${branch} ${dkms}
+	service openvswitch restart
+fi
+
