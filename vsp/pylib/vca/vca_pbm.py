@@ -201,11 +201,11 @@ class PBM(object):
 			if (this_table_id != str(table_id)):
 				continue
 			toks = l.split()
+			if (l.find("mirror=") < 0):
+				n_packets = -1
+				n_bytes = -1
+				break
 			if (is_mirror == True):
-				if (l.find("mirror=") < 0):
-					n_packets = -1
-					n_bytes = -1
-					break
 				mirror_tok = toks[18]
 				n_packets = mirror_tok.split(",")[2].split(":")[1]
 				n_bytes = mirror_tok.split(",")[3].split(":")[1].replace("}", "")
