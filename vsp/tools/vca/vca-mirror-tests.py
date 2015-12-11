@@ -25,7 +25,7 @@ import vca_vm
 def usage():
 	print "usage: " + progname + " [options]"
 	print "options:"
-	print "    -v <vm_name>: name of VM whose ACLs/ports are to be mirrored"
+	print "    -v vm_name(s): comma separated VM names for ACL/port mirroring"
 	print "    -i <ip>: mirror destination IPv4 address"
 	print "    -e: exitOnFailure=true"
 	sys.exit(1)
@@ -682,7 +682,7 @@ def pbm_traffic_single__(param):
 	dst_vm_name = param['vm_name']
 	pbm_dir = param['pbm_dir']
 	acl_type = param["acl_type"]
-	src_vm_name = "ovs-1-vm1"
+	src_vm_name = param["aux_vm_name"]
 	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
@@ -743,11 +743,15 @@ def pbm_traffic(test_args):
 	br = test_args["br"]
 	logfd = test_args["logfd"]
 	vm_name = test_args["vm_name"]
+	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	acl_dirs = [ "ingress", "egress" ]
 	global testcase_id
 
+	if (aux_vm_name == None):
+		print "Traffic tests need comma separated VM names (for source and destination)"
+		return
 	traffic_test_handlers = [
 		pbm_traffic_single__,
 	]
@@ -759,6 +763,7 @@ def pbm_traffic(test_args):
 			'mirror_id': "9900",
 			'mirror_dst_ip': mirror_dst_ip,
 			'vm_name': vm_name,
+			'aux_vm_name': aux_vm_name,
 			'pbm_dir' : pbm_dir,
 			'acl_type' : acl_type,
 		}
@@ -776,6 +781,7 @@ def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	global testcase_id
 	vm_name = None
+	aux_vm_name = None
 	mirror_dst_ip = None
 	exit_on_failure = False
 	try:
@@ -787,7 +793,11 @@ def main(argc, argv):
 		if opt == "-h":
 			usage()
 		elif opt == "-v":
-			vm_name = arg
+			if (arg.find(",") > 0):
+				vm_name = arg.split(",")[0]
+				aux_vm_name = arg.split(",")[1]
+			else:
+				vm_name = arg
 		elif opt == "-i":
 			mirror_dst_ip = arg
 		elif opt == "-e":
@@ -815,6 +825,7 @@ def main(argc, argv):
 			"br" : br,
 			"logfd" : logfd,
 			"vm_name": vm_name,
+			"aux_vm_name" : aux_vm_name,
 			"mirror_dst_ip" : mirror_dst_ip,
 			"type" : type,
 		}
