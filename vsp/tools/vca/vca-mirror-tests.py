@@ -639,7 +639,7 @@ def pbm_traffic_pkt_out__(param):
 		print "bridge/dump-flows-detail: mirror_n_packets: " + mirror_n_packets +  ", rule_n_packets: " + rule_n_packets + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_packets matched with rule_n_packets, passed"
+	print "bridge/dump-flows-detail: mirror_n_packets (" + mirror_n_packets + ") = rule_n_packets (" + rule_n_packets + "), passed"
 
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_bytes != rule_n_bytes):
@@ -647,7 +647,7 @@ def pbm_traffic_pkt_out__(param):
 		print "bridge/dump-flows-detail: mirror_n_bytes: " + mirror_n_bytes +  ", rule_n_bytes: " + rule_n_bytes + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_bytes matched with rule_n_bytes, passed"
+	print "bridge/dump-flows-detail: mirror_n_bytes (" + mirror_n_bytes + ") = rule_n_bytes (" + rule_n_bytes + "), passed"
 
 	return passed, n_sub_tests
 
