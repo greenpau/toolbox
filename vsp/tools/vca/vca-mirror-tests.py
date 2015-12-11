@@ -615,6 +615,7 @@ def pbm_traffic_pkt_out__(param):
 	dst_ofp_port = param['dst_ofp_port']
 	acl_type = param['acl_type']
 	pbm_dir = param['pbm_dir']
+	mirror_id = param['mirror_id']
 
 	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
 	shell.execute(cmd)
@@ -648,6 +649,27 @@ def pbm_traffic_pkt_out__(param):
 		print flow
 		return passed, n_sub_tests
 	print "bridge/dump-flows-detail: mirror_n_bytes (" + mirror_n_bytes + ") = rule_n_bytes (" + rule_n_bytes + "), passed"
+
+	mirror_attrs = pbm.get_mirror_flow_attrs()
+	for mirror_attr in mirror_attrs:
+		flow_mirror_id = mirror_attr['mirror_id']
+		if (flow_mirror_id != mirror_id):
+			continue
+		mirror_attr_n_packets = mirror_attr['mirror_n_packets']
+		n_sub_tests = n_sub_tests + 1
+		if (mirror_n_packets != mirror_attr_n_packets):
+			passed = False
+			print "bridge/show-mirror: mirror_n_packets: " + mirror_n_packets +  ", mirror_attr_n_packets: " + mirror_attr_n_packets + ", mismatch, failed"
+			return passed, n_sub_tests
+		print "bridge/show-mirror: mirror_n_packets (" + mirror_n_packets + ") = mirror_attr_n_packets (" + mirror_attr_n_packets + "), passed"
+
+		mirror_attr_n_bytes = mirror_attr['mirror_n_bytes']
+		n_sub_tests = n_sub_tests + 1
+		if (mirror_n_bytes != mirror_attr_n_bytes):
+			passed = False
+			print "bridge/show-mirror: mirror_n_packets: " + mirror_n_packets +  ", mirror_attr_n_bytes: " + mirror_attr_n_bytes + ", mismatch, failed"
+			return passed, n_sub_tests
+		print "bridge/show-mirror: mirror_n_bytes (" + mirror_n_bytes + ") = mirror_attr_n_bytes (" + mirror_attr_n_bytes + "), passed"
 
 	return passed, n_sub_tests
 
@@ -704,6 +726,7 @@ def pbm_traffic_single__(param):
 		'dst_ofp_port': dst_ofp_port,
 		'acl_type': acl_type,
 		'pbm_dir' : pbm_dir,
+		'mirror_id' : mirror_id,
 	}
 	passed, this_n_sub_tests = pbm_traffic_pkt_out__(st_param)
 	n_sub_tests = n_sub_tests + this_n_sub_tests
