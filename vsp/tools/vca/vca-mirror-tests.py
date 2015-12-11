@@ -3,7 +3,6 @@
 import sys
 import os
 import getopt
-import random
 
 # generic utility classes
 sys.path.append("/usr/local/openvswitch/pylib/system")
@@ -602,6 +601,56 @@ def pbm_traffic_ofproto_trace__(param):
 		return passed
 	return passed
 
+def pbm_traffic_pkt_out__(param):
+	passed = True
+	n_sub_tests = 0
+	pbm = param['pbm']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	acl_type = param['acl_type']
+	pbm_dir = param['pbm_dir']
+
+	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
+	shell.execute(cmd)
+
+	for i in range(10):
+		net.send_packet(ovs_path, br, i, src_mac, src_ip, dst_mac,
+			        dst_ip, dst_ofp_port, "vca-mirror-tests")
+
+	rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
+	mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
+
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_n_packets == -1) or (mirror_n_bytes == -1):
+		passed = False
+		print "Mirror attribute NOT found in rule: " + flow
+		return passed, n_sub_tests
+	print "Mirror attribute found for rule in " + pbm_dir + " ACL, passed" 
+
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_n_packets != rule_n_packets):
+		passed = False
+		print "bridge/dump-flows-detail: mirror_n_packets: " + mirror_n_packets +  ", rule_n_packets: " + rule_n_packets + ", mismatch, failed"
+		print flow
+		return passed, n_sub_tests
+	print "bridge/dump-flows-detail: mirror_n_packets matched with rule_n_packets, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_n_bytes != rule_n_bytes):
+		passed = False
+		print "bridge/dump-flows-detail: mirror_n_bytes: " + mirror_n_bytes +  ", rule_n_bytes: " + rule_n_bytes + ", mismatch, failed"
+		print flow
+		return passed, n_sub_tests
+	print "bridge/dump-flows-detail: mirror_n_bytes matched with rule_n_bytes, passed"
+
+	return passed, n_sub_tests
+
 def pbm_traffic_single__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -639,6 +688,25 @@ def pbm_traffic_single__(param):
 		'acl_type': acl_type,
 	}
 	passed = pbm_traffic_ofproto_trace__(st_param)
+	if (passed == False):
+		pbm.local_destroy()
+		return False, n_sub_tests
+
+	st_param = {
+		'pbm' : pbm,
+		'ovs_path' : ovs_path,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': src_mac,
+		'src_ip': src_ip,
+		'dst_mac': dst_mac,
+		'dst_ip': dst_ip,
+		'dst_ofp_port': dst_ofp_port,
+		'acl_type': acl_type,
+		'pbm_dir' : pbm_dir,
+	}
+	passed, this_n_sub_tests = pbm_traffic_pkt_out__(st_param)
+	n_sub_tests = n_sub_tests + this_n_sub_tests
 	if (passed == False):
 		pbm.local_destroy()
 		return False, n_sub_tests
