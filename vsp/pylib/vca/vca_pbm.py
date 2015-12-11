@@ -18,6 +18,7 @@ class PBM(object):
 		     vm_name):
 		self.ovs_path = ovs_path
 		self.ofctl_path = self.ovs_path + "/ovs-ofctl"
+		self.appctl_path = self.ovs_path + "/ovs-appctl"
 		self.br = br
 		self.logfd = logfd
 		self.mirror_id = mirror_id
@@ -180,3 +181,42 @@ class PBM(object):
 			mirror_ofp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[0]
 			mirror_odp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[1]
 		return mirror_vport, mirror_ofp_port, mirror_odp_port
+
+	def __parse_dump_flows_detail(self, acl_dir, is_mirror):
+		cmd = [ self.appctl_path, "bridge/dump-flows-detail", self.br ]
+		out = shell.execute(cmd).splitlines()
+		n_packets = 0
+		n_bytes = 0
+		table_id = -1
+		if (acl_dir == "ingress"):
+			table_id = 9
+		elif (acl_dir == "egress"):
+			table_id = 14
+		if (table_id == -1):
+			return n_packets, n_bytes, None
+		for l in out:
+			if (l.find("n_packets=0") >= 0):
+				continue
+			this_table_id = str(l.split(",")[0]).split("=")[1]
+			if (this_table_id != str(table_id)):
+				continue
+			toks = l.split()
+			if (is_mirror == True):
+				if (l.find("mirror=") < 0):
+					n_packets = -1
+					n_bytes = -1
+					break
+				mirror_tok = toks[18]
+				n_packets = mirror_tok.split(",")[2].split(":")[1]
+				n_bytes = mirror_tok.split(",")[3].split(":")[1].replace("}", "")
+			else :
+				n_packets = toks[2].split("=")[1].replace(",", "")
+				n_bytes = toks[19].split("=")[1].replace(",", "")
+			break
+		return n_packets, n_bytes, l
+
+	def get_flow_pkt_counters(self, acl_dir):
+		return self.__parse_dump_flows_detail(acl_dir, False)
+
+	def get_flow_pkt_counters_mirror(self, acl_dir):
+		return self.__parse_dump_flows_detail(acl_dir, True)
