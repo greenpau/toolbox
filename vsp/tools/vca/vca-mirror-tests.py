@@ -655,6 +655,18 @@ def pbm_traffic_pkt_out__(param):
 		flow_mirror_id = mirror_attr['mirror_id']
 		if (flow_mirror_id != mirror_id):
 			continue
+
+		mirror_attr_table_id = mirror_attr['table_id']
+		n_sub_tests = n_sub_tests + 1
+		if (pbm_dir == "ingress") and (mirror_attr_table_id == "9"):
+			print "bridge/dump-flows-detail: ingress mirror table_id check passed"
+		elif (pbm_dir == "egress") and (mirror_attr_table_id == "14"):
+			print "bridge/dump-flows-detail: egress mirror table_id check passed"
+		else:
+			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", pbm_dir: " + pbm_dir + ", failed"
+			passed = False
+			return passed, n_sub_tests
+
 		mirror_attr_n_packets = mirror_attr['mirror_n_packets']
 		n_sub_tests = n_sub_tests + 1
 		if (mirror_n_packets != mirror_attr_n_packets):
