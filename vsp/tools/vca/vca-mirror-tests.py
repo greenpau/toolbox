@@ -626,6 +626,18 @@ def pbm_traffic_pkt_out__(param):
 
 	rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
 	mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
+	n_sub_tests = n_sub_tests + 1
+	if (rule_n_packets == 0):
+		passed = False
+		print "Packet count is 0 in rule: " + flow
+		return passed, n_sub_tests
+	print "Rule packet count is non-zero in " + pbm_dir + " ACL, passed" 
+
+	if (mirror_n_packets == 0):
+		passed = False
+		print "Mirror Packet count is 0 in rule: " + flow
+		return passed, n_sub_tests
+	print "Rule mirror packet count is non-zero in " + pbm_dir + " ACL, passed" 
 
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_packets == -1) or (mirror_n_bytes == -1):
