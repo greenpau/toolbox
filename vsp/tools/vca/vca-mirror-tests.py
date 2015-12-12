@@ -637,18 +637,18 @@ def pbm_traffic_pkt_out__(param):
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_packets != rule_n_packets):
 		passed = False
-		print "bridge/dump-flows-detail: mirror_n_packets: " + mirror_n_packets +  ", rule_n_packets: " + rule_n_packets + ", mismatch, failed"
+		print "bridge/dump-flows-detail: mirror_n_packets: " + str(mirror_n_packets) +  ", rule_n_packets: " + str(rule_n_packets) + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_packets (" + mirror_n_packets + ") = rule_n_packets (" + rule_n_packets + "), passed"
+	print "bridge/dump-flows-detail: mirror_n_packets (" + str(mirror_n_packets) + ") = rule_n_packets (" + str(rule_n_packets) + "), passed"
 
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_bytes != rule_n_bytes):
 		passed = False
-		print "bridge/dump-flows-detail: mirror_n_bytes: " + mirror_n_bytes +  ", rule_n_bytes: " + rule_n_bytes + ", mismatch, failed"
+		print "bridge/dump-flows-detail: mirror_n_bytes: " + str(mirror_n_bytes) +  ", rule_n_bytes: " + str(rule_n_bytes) + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_bytes (" + mirror_n_bytes + ") = rule_n_bytes (" + rule_n_bytes + "), passed"
+	print "bridge/dump-flows-detail: mirror_n_bytes (" + str(mirror_n_bytes) + ") = rule_n_bytes (" + str(rule_n_bytes) + "), passed"
 
 	mirror_attrs = pbm.get_mirror_flow_attrs()
 	for mirror_attr in mirror_attrs:
@@ -671,17 +671,17 @@ def pbm_traffic_pkt_out__(param):
 		n_sub_tests = n_sub_tests + 1
 		if (mirror_n_packets != mirror_attr_n_packets):
 			passed = False
-			print "bridge/show-mirror: mirror_n_packets: " + mirror_n_packets +  ", mirror_attr_n_packets: " + mirror_attr_n_packets + ", mismatch, failed"
+			print "bridge/show-mirror: mirror_n_packets: " + str(mirror_n_packets) +  ", mirror_attr_n_packets: " + str(mirror_attr_n_packets) + ", mismatch, failed"
 			return passed, n_sub_tests
-		print "bridge/show-mirror: mirror_n_packets (" + mirror_n_packets + ") = mirror_attr_n_packets (" + mirror_attr_n_packets + "), passed"
+		print "bridge/show-mirror: mirror_n_packets (" + str(mirror_n_packets) + ") = mirror_attr_n_packets (" + str(mirror_attr_n_packets) + "), passed"
 
 		mirror_attr_n_bytes = mirror_attr['mirror_n_bytes']
 		n_sub_tests = n_sub_tests + 1
 		if (mirror_n_bytes != mirror_attr_n_bytes):
 			passed = False
-			print "bridge/show-mirror: mirror_n_packets: " + mirror_n_packets +  ", mirror_attr_n_bytes: " + mirror_attr_n_bytes + ", mismatch, failed"
+			print "bridge/show-mirror: mirror_n_packets: " + str(mirror_n_packets) +  ", mirror_attr_n_bytes: " + str(mirror_attr_n_bytes) + ", mismatch, failed"
 			return passed, n_sub_tests
-		print "bridge/show-mirror: mirror_n_bytes (" + mirror_n_bytes + ") = mirror_attr_n_bytes (" + mirror_attr_n_bytes + "), passed"
+		print "bridge/show-mirror: mirror_n_bytes (" + str(mirror_n_bytes) + ") = mirror_attr_n_bytes (" + str(mirror_attr_n_bytes) + "), passed"
 
 	return passed, n_sub_tests
 
