@@ -252,13 +252,14 @@ def packet_create (cookie, eth_src, ip_src, eth_dst, ip_dst, ip_payload) :
 	return packet
 
 def send_packet(ovs_path, br, seq_no, src_mac, src_ip, dst_mac, dst_ip,
-		dst_ofp_port, payload):
+		out_ofp_port, payload):
+	print "PKT (" + out_ofp_port + "): {" + src_mac + "," + src_ip + "} -> {" + dst_mac + "," + dst_ip + "}"
 	random.seed(os.getpid())
 	pkt_cookie = random.randint(1, 65535)
 	ip_payload = payload + "-" + str(seq_no)
 	pktstr = packet_create(pkt_cookie, src_mac, src_ip, dst_mac,
 			       dst_ip, ip_payload)
 	pkthex = pktstr.encode('hex')
-	cmd = [ ovs_path + "/ovs-ofctl", "packet-out", br, dst_ofp_port,
+	cmd = [ ovs_path + "/ovs-ofctl", "packet-out", br, out_ofp_port,
 		"resubmit(,4)", pkthex ]
 	shell.execute(cmd)
