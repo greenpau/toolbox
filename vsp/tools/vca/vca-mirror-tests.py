@@ -624,23 +624,26 @@ def pbm_traffic_pkt_out__(param):
 	for i in range(10):
 		if (acl_type == "reflexive"):
 			if (pbm_dir == "egress"):
-				net.send_packet(ovs_path, br, i,
-						src_mac, src_ip,
-						dst_mac, dst_ip,
-						src_ofp_port,
-				       		"vca-mirror-tests")
+				mac_1 = src_mac
+				ip_1 = src_ip
+				mac_2 = dst_mac
+				ip_2 = dst_ip
+				ofp_port = src_ofp_port
 			else:
-				net.send_packet(ovs_path, br, i,
-						dst_mac, dst_ip,
-						src_mac, src_ip,
-						dst_ofp_port,
-				       		"vca-mirror-tests")
+				mac_1 = dst_mac
+				ip_1 = dst_ip
+				mac_2 = src_mac
+				ip_2 = src_ip
+				ofp_port = dst_ofp_port
 		else:
-			net.send_packet(ovs_path, br, i,
-					src_mac, src_ip,
-					dst_mac, dst_ip,
-					dst_ofp_port,
-			       		"vca-mirror-tests")
+			mac_1 = src_mac
+			ip_1 = src_ip
+			mac_2 = dst_mac
+			ip_2 = dst_ip
+			ofp_port = dst_ofp_port
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	print "PKT: src: " + mac_1 + "," + ip_1 + ", dst: " + mac_2 + "," ip_2 + ", port: " + ofp_port
 
 	rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
 	mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
