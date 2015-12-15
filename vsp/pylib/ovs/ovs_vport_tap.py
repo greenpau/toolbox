@@ -12,6 +12,7 @@ class Tap(object):
 		self.ovs_path = ovs_path
 		self.port_type = port_type
 		self.vsctl_path = ovs_path + "/ovs-vsctl"
+		self.ofctl_path = ovs_path + "/ovs-ofctl"
 		self.br = br
 		self.iface = iface
 		self.logfd = logfd
@@ -67,3 +68,40 @@ class Tap(object):
 
 	def get_mac(self):
 		return self.mac
+
+	def __parse_dump_ports(self, match_pattern, field):
+		cmd = [ self.ofctl_path, "dump-ports", self.br ]
+		dump_ports = shell.execute(cmd).splitlines()
+		out = None
+		process_this_block = False
+		ofp_port = self.get_ofp_port()
+		if (ofp_port < 10):
+			portstr = "port  " + ofp_port + ":"
+		else:
+			portstr = "port " + ofp_port + ":"
+		for line in dump_ports:
+			line_tok = line.split()
+			if (line_tok == None) or (line_tok == []):
+				continue
+			if (line.find("port") >= 0):
+				this_portnum = line_tok[1].replace(":", "")
+				if (this_portnum < 10):
+					this_portstr = "port  " + line_tok[1]
+				else:
+					this_portstr = "port " + line_tok[1]
+				if (portstr == this_portstr):
+					process_this_block = True
+				else:
+					process_this_block = False
+			if (process_this_block == False):
+				continue
+			if (line.find(match_pattern) < 0):
+				continue
+			out = line_tok[field]
+			break
+		return out
+
+	def get_pkt_stats(self):
+		tx_n_packets = int(self.__parse_dump_ports("tx", 1).split("=")[1].replace(",", ""))
+		tx_n_bytes = int(self.__parse_dump_ports("tx", 2).split("=")[1].replace(",", ""))
+		return tx_n_packets, tx_n_bytes

@@ -642,6 +642,11 @@ def pbm_traffic_pkt_out__(param):
 		ip_2 = dst_ip
 		ofp_port = dst_ofp_port
 
+	mirror_iface, mirror_ports = pbm.get_tunnel_port()
+	tap = ovs_vport_tap.Tap(ovs_path, None, br, mirror_iface,
+				"0.0.0.0", logfd)
+	curr_n_pkts, curr_n_bytes = tap.get_pkt_stats()
+
 	for i in range(n_pkts_sent):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
@@ -716,6 +721,17 @@ def pbm_traffic_pkt_out__(param):
 			print "bridge/show-mirror: mirror_n_packets: " + str(mirror_n_packets) +  ", mirror_attr_n_bytes: " + str(mirror_attr_n_bytes) + ", mismatch, failed"
 			return passed, n_sub_tests
 		print "bridge/show-mirror: mirror_n_bytes (" + str(mirror_n_bytes) + ") = mirror_attr_n_bytes (" + str(mirror_attr_n_bytes) + "), passed"
+
+	tap = ovs_vport_tap.Tap(ovs_path, None, br, mirror_iface,
+				"0.0.0.0", logfd)
+	new_n_pkts, new_n_bytes = tap.get_pkt_stats()
+
+	n_sub_tests = n_sub_tests + 1
+	if (curr_n_pkts + n_pkts_sent != new_n_pkts):
+		passed = False
+		print "curr_n_pkts: " + str(curr_n_pkts) + ", n_pkts_sent: " + str(n_pkts_sent) + " != new_n_pkts: " + str(new_n_pkts) + ", failed"
+		return passed, n_sub_tests
+	print "ovs-ofctl dump-ports check for n_pkts (" + str(new_n_pkts) + ") on mirror port, passed"
 
 	return passed, n_sub_tests
 
