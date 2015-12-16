@@ -75,7 +75,9 @@ class PBM(object):
 	def __setup_acl_mirror(self, action, acl_type, acl_dir):
 		flowstr = None
 		table_type = None
-		if (acl_dir == "ingress"):
+		if (acl_type == "redirect") :
+			table_type = "redirect"
+		elif (acl_dir == "ingress"):
 			table_type = "pre"
 		elif (acl_dir == "egress"):
 			table_type = "post"
@@ -89,7 +91,7 @@ class PBM(object):
 				flowstr = self.__setup_default_acl_mirror_flowstr(table_type)
 			else :
 				flowstr = self.__cleanup_default_acl_mirror_flowstr(table_type)
-		elif (acl_type == "static"):
+		elif (acl_type == "static") or (acl_type == "redirect"):
 			if (action == "Set"):
 				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
 			else:
