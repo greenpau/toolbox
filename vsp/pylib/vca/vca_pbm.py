@@ -37,6 +37,7 @@ class PBM(object):
 		self.default_flowstr = "priority=0,actions=allow"
 		#self.static_flowstr = "priority=0,tcp,in_port=" + self.vm_ofp_port + ",tp_src=100,tp_dst=200,actions=allow"
 		self.static_flowstr = "priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=allow"
+		self.redirect_flowstr = "priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=9999"
 		self.reflexive_flowstr = "stateful=1"
 		self.mirror_flowstr = "mirror_id=" + self.mirror_id + ",mirror_dst_ip=" + self.mirror_dst_ip
 
@@ -65,6 +66,14 @@ class PBM(object):
 		return flowstr
 
 	def __cleanup_static_acl_mirror_flowstr(self, acl_dir):
+		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.static_flowstr
+		return flowstr
+
+	def __setup_redirect_acl_mirror_flowstr(self, acl_dir):
+		flowstr = self.__acl_mirror_flowstr(acl_dir) + "," + self.redirect_flowstr
+		return flowstr
+
+	def __cleanup_redirect_acl_mirror_flowstr(self, acl_dir):
 		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.static_flowstr
 		return flowstr
 
@@ -106,9 +115,9 @@ class PBM(object):
 				cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
 				hdrstr = action + " " + acl_type + " " + acl_dir + " Enable ingress ACL"
 				shell.run_cmd(hdrstr, cmd, self.logfd)
-				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
+				flowstr = self.__setup_redirect_acl_mirror_flowstr(table_type)
 			else:
-				flowstr = self.__cleanup_static_acl_mirror_flowstr(table_type)
+				flowstr = self.__cleanup_redirect_acl_mirror_flowstr(table_type)
 		elif (acl_type == "reflexive"):
 			if (action == "Set"):
 				flowstr = self.__setup_reflexive_acl_mirror_flowstr(table_type)
