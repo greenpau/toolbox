@@ -669,8 +669,12 @@ def pbm_traffic_pkt_out__(param):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
 
-	rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
-	mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
+	if (acl_type == "redirect") :
+		rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(acl_type)
+		mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(acl_type)
+	else:
+		rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
+		mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
 	n_sub_tests = n_sub_tests + 1
 	if (rule_n_packets == 0):
 		passed = False
@@ -719,6 +723,8 @@ def pbm_traffic_pkt_out__(param):
 			print "bridge/dump-flows-detail: ingress mirror table_id check passed"
 		elif (pbm_dir == "egress") and (mirror_attr_table_id == "14"):
 			print "bridge/dump-flows-detail: egress mirror table_id check passed"
+		elif (acl_type == "redirect") and (mirror_attr_table_id == "10"):
+			print "bridge/dump-flows-detail: redirect mirror table_id check passed"
 		else:
 			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", pbm_dir: " + pbm_dir + ", failed"
 			passed = False
