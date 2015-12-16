@@ -56,6 +56,10 @@ class PBM(object):
 		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.default_flowstr
 		return flowstr
 
+	def __setup_static_acl_flowstr(self, acl_dir):
+		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.static_flowstr
+		return flowstr
+
 	def __setup_static_acl_mirror_flowstr(self, acl_dir):
 		flowstr = self.__acl_mirror_flowstr(acl_dir) + "," + self.static_flowstr
 		return flowstr
@@ -91,8 +95,17 @@ class PBM(object):
 				flowstr = self.__setup_default_acl_mirror_flowstr(table_type)
 			else :
 				flowstr = self.__cleanup_default_acl_mirror_flowstr(table_type)
-		elif (acl_type == "static") or (acl_type == "redirect"):
+		elif (acl_type == "static"):
 			if (action == "Set"):
+				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
+			else:
+				flowstr = self.__cleanup_static_acl_mirror_flowstr(table_type)
+		elif (acl_type == "redirect"):
+			if (action == "Set"):
+				flowstr = self.__setup_static_acl_flowstr("pre")
+				cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
+				hdrstr = action + " " + acl_type + " " + acl_dir + " Enable ingress ACL"
+				shell.run_cmd(hdrstr, cmd, self.logfd)
 				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
 			else:
 				flowstr = self.__cleanup_static_acl_mirror_flowstr(table_type)
@@ -184,16 +197,18 @@ class PBM(object):
 			mirror_odp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[1]
 		return mirror_vport, mirror_ofp_port, mirror_odp_port
 
-	def __parse_dump_flows_detail(self, acl_dir, is_mirror):
+	def __parse_dump_flows_detail(self, acl_type, is_mirror):
 		cmd = [ self.appctl_path, "bridge/dump-flows-detail", self.br ]
 		out = shell.execute(cmd).splitlines()
 		n_packets = 0
 		n_bytes = 0
 		table_id = -1
-		if (acl_dir == "ingress"):
+		if (acl_type == "ingress"):
 			table_id = 9
-		elif (acl_dir == "egress"):
+		elif (acl_type == "egress"):
 			table_id = 14
+		elif (acl_type == "redirect"):
+			table_id = 10
 		if (table_id == -1):
 			return n_packets, n_bytes, None
 		for l in out:
@@ -217,8 +232,8 @@ class PBM(object):
 			break
 		return n_packets, n_bytes, l
 
-	def get_flow_pkt_counters(self, acl_dir):
-		return self.__parse_dump_flows_detail(acl_dir, False)
+	def get_flow_pkt_counters(self, acl_type):
+		return self.__parse_dump_flows_detail(acl_type, False)
 
-	def get_flow_pkt_counters_mirror(self, acl_dir):
-		return self.__parse_dump_flows_detail(acl_dir, True)
+	def get_flow_pkt_counters_mirror(self, acl_type):
+		return self.__parse_dump_flows_detail(acl_type, True)
