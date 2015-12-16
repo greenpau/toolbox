@@ -168,24 +168,31 @@ def pbm_verify_flow_attrs__(param):
 	mirror_dir = param['mirror_dir']
 	mirror_id = param['mirror_id']
 	mirror_dst_ip = param['mirror_dst_ip']
-	dir_verified = False
+	acl_type = param['acl_type']
+	acl_type_verified = False
 	mirror_attrs = pbm.get_mirror_flow_attrs()
 	for mirror_attr in mirror_attrs:
 		table_id = mirror_attr['table_id']
 		if (table_id == "9"):
-			flow_mirror_dir = "ingress"
+			flow_acl_type = "ingress"
 		elif (table_id == "14"):
-			flow_mirror_dir = "egress"
+			flow_acl_type = "egress"
+		elif (table_id == "10"):
+			flow_acl_type = "redirect"
 		else:
 			print "Flow returned bad table_id: " + table_id
 			return False
 		flow_mirror_id = mirror_attr['mirror_id']
 		flow_mirror_dst_ip = mirror_attr['mirror_dst_ip']
-		if (flow_mirror_dir != mirror_dir):
-			continue
+		if (table_id == "10") and (flow_acl_type == acl_type):
+			acl_type_verified = True
+			print "Flow Mirror ACL Type verification passed"
 		else:
-			dir_verified = True
-			print "Flow Mirror Direction verification passed"
+			if (flow_acl_type != mirror_dir):
+				continue
+			else:
+				acl_type_verified = True
+				print "Flow Mirror ACL Type verification passed"
 		if (flow_mirror_id != mirror_id):
 			print "Flow Mirror ID verification failed (expected: " + mirror_id + ", got: " + flow_mirror_id + ")"
 			return False
@@ -196,8 +203,8 @@ def pbm_verify_flow_attrs__(param):
 			return False
 		else:
 			print "Flow Mirror Destination IP verification passed"
-	if (dir_verified == False):
-		print "Flow Mirror Direction verification failed (expected: " + mirror_dir + ", but not found in dump-detailed-flows" + ")"
+	if (acl_type_verified == False):
+		print "Flow Mirror ACL type verification failed (expected: " + mirror_dir + ", but not found in dump-detailed-flows, " + flow_acl_type + ")"
 		return False
 	return True
 
@@ -208,8 +215,11 @@ def pbm_verify_mirror_vport__(param):
 	vm_name = param['vm_name']
 	pbm = param['mirror_obj']
 	mirror_dir = param['mirror_dir']
+	acl_type = param['acl_type']
 
-	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(mirror_dir)
+	if (acl_type != "redirect"):
+		acl_type = mirror_dir
+	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(acl_type)
 	port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
 			br, logfd, vm_name)
 	if (port_name == mirror_vport):
@@ -245,6 +255,7 @@ def pbm_single_mirror__(param):
 		return False, n_sub_tests
 	st_param = {	'mirror_obj' : pbm,
 			'mirror_dir' : acl_dir,
+			'acl_type' : acl_type,
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 		   }
@@ -258,7 +269,7 @@ def pbm_single_mirror__(param):
 			'logfd': logfd,
 			'vm_name': vm_name,
 			'mirror_obj' : pbm,
-			'mirror_obj' : pbm,
+			'acl_type' : acl_type,
 			'mirror_dir' : acl_dir,
 	}
 	n_sub_tests = n_sub_tests + 1
@@ -286,6 +297,9 @@ def pbm_multiple_acl_mirrors__(param):
 	acl_type = param['acl_type']
 	n_sub_tests = 0
 
+	if (acl_type == "redirect"):
+		print "Multiple ACL mirror tests skipped for redirect ACL"
+		return True, n_sub_tests
 	pbm1 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			   vm_name)
 	pbm1.local_create(acl_type, "ingress")
@@ -308,6 +322,7 @@ def pbm_multiple_acl_mirrors__(param):
 			'mirror_dir' : "ingress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
+			'acl_type' : acl_type,
 		   }
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
@@ -315,6 +330,7 @@ def pbm_multiple_acl_mirrors__(param):
 			'mirror_dir' : "egress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
+			'acl_type' : acl_type,
 		   }
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
@@ -491,6 +507,7 @@ def pbm_vpm_single_mirror__(param):
 			'mirror_dir' : pbm_dir,
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
+			'acl_type' : acl_type,
 		   }
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
@@ -504,6 +521,7 @@ def pbm_vpm_single_mirror__(param):
 			'vm_name': vm_name,
 			'mirror_obj' : pbm,
 			'mirror_dir' : pbm_dir,
+			'acl_type' : acl_type,
 	}
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_mirror_vport__(st_param)
@@ -880,7 +898,7 @@ def main(argc, argv):
 		pbm_vpm_single_mirror,
 		pbm_traffic,
 	]
-	types = [ "default", "static", "reflexive" ]
+	types = [ "default", "static", "reflexive", "redirect" ]
 	for type in types:
 		test_args = {
 			"suite" : suite,
