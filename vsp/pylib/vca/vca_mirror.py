@@ -67,5 +67,5 @@ class Mirror(object):
 	def get_tunnel_port(self):
 		return self.__parse_show_mirror("Tunnel Port:", 2), self.__parse_show_mirror("Tunnel Port:", 3).replace(")", "").replace("(", "")
 
-	def get_mirror_vport(self, dir):
-		return self.__parse_show_mirror(dir, 1), self.__parse_show_mirror(dir, 2)
+	def get_mirror_vport(self, type):
+		return self.__parse_show_mirror(type, 1), self.__parse_show_mirror(type, 2)
