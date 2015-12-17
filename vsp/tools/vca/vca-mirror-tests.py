@@ -864,6 +864,65 @@ def pbm_traffic(test_args):
 			testcase_id = testcase_id + 1
 	return
 
+def pbm_redirect_target__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	acl_type = param["acl_type"]
+	n_sub_tests = 0
+	passed = True
+
+	passed, this_n_sub_tests = pbm_single_mirror__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	aux_vm_name = test_args["aux_vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
+	global testcase_id
+
+	if (aux_vm_name == None):
+		print "Traffic tests need comma separated VM names (for source and destination)"
+		return
+	redirect_test_handlers = [
+		pbm_redirect_target__,
+	]
+	redirect_test_descs = [
+		"redirect target",
+	]
+	param = {
+		'ovs_path' : ovs_path,
+		'br' : br,
+		'logfd' : logfd,
+		'mirror_id': "9900",
+		'mirror_dst_ip': mirror_dst_ip,
+		'vm_name': vm_name,
+		'aux_vm_name': aux_vm_name,
+		'pbm_dir' : None,
+		'vpm_dir' : None,
+		'acl_type' : acl_type,
+	}
+	i = 0
+	for redirect_test_handler in redirect_test_handlers:
+		testcase_desc = "PBM Redirect ACL - " + redirect_test_descs[i]
+		test = vca_test.TEST(testcase_id, testcase_desc,
+				     redirect_test_handler, param)
+		suite.register_test(test)
+		test.run()
+		suite.assert_test_result(test)
+		testcase_id = testcase_id + 1
+		i = i + 1
+	return
+
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	global testcase_id
@@ -904,7 +963,7 @@ def main(argc, argv):
 		pbm_vpm_single_mirror,
 		pbm_traffic,
 	]
-	types = [ "default", "static", "reflexive", "redirect" ]
+	types = [ "default", "static", "reflexive", ]
 	for type in types:
 		test_args = {
 			"suite" : suite,
@@ -917,6 +976,20 @@ def main(argc, argv):
 			"type" : type,
 		}
 		suite.run(test_handlers, test_args)
+	test_handlers = [
+		pbm_redirect,
+	]
+	test_args = {
+		"suite" : suite,
+		"ovs_path" : ovs_path,
+		"br" : br,
+		"logfd" : logfd,
+		"vm_name": vm_name,
+		"aux_vm_name" : aux_vm_name,
+		"mirror_dst_ip" : mirror_dst_ip,
+		"type" : "redirect",
+	}
+	suite.run(test_handlers, test_args)
 	suite.print_summary()
 
 	exit(0)
