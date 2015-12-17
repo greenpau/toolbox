@@ -958,21 +958,31 @@ def pbm_redirect(test_args):
 	if (aux_vm_name == None):
 		print "Traffic tests need comma separated VM names (for source and destination)"
 		return
-	redirect_test_handlers = [
-		pbm_redirect_target__,
-		pbm_redirect_allow__,
-		pbm_redirect_fc_override__,
-		pbm_redirect_target_traffic__,
-		pbm_redirect_allow_traffic__,
-		pbm_redirect_fc_override_traffic__,
-	]
-	redirect_test_descs = [
-		"action: target output",
-		"action: allow",
-		"action: fc_override",
-		"traffic: target output",
-		"traffic: allow",
-		"traffic: fc_override"
+	redirect_tests = [
+		{
+			'desc' : "action: target output",
+			'handler': pbm_redirect_target__,
+		},
+		{
+			'desc' : "action: allow",
+			'handler': pbm_redirect_allow__,
+		},
+		{
+			'desc' : "action: fc_override",
+			'handler': pbm_redirect_fc_override__,
+		},
+		{
+			'desc' : "traffic: target output",
+			'handler': pbm_redirect_target_traffic__,
+		},
+		{
+			'desc': "traffic: allow",
+			'handler': pbm_redirect_allow_traffic__,
+		},
+		{
+			'desc' : "traffic: fc_override",
+			'handler': pbm_redirect_fc_override_traffic__,
+		},
 	]
 	param = {
 		'ovs_path' : ovs_path,
@@ -986,16 +996,16 @@ def pbm_redirect(test_args):
 		'vpm_dir' : None,
 		'acl_type' : acl_type,
 	}
-	i = 0
-	for redirect_test_handler in redirect_test_handlers:
-		testcase_desc = "PBM Redirect ACL - " + redirect_test_descs[i]
+	for redirect_test in redirect_tests:
+		this_test_desc = redirect_test['desc']
+		this_test_handler = redirect_test['handler']
+		testcase_desc = "PBM Redirect ACL - " + this_test_desc
 		test = vca_test.TEST(testcase_id, testcase_desc,
-				     redirect_test_handler, param)
+				     this_test_handler, param)
 		suite.register_test(test)
 		test.run()
 		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
-		i = i + 1
 	return
 
 def main(argc, argv):
