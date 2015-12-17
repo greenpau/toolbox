@@ -74,7 +74,7 @@ class PBM(object):
 		return flowstr
 
 	def __cleanup_redirect_acl_mirror_flowstr(self, acl_dir):
-		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.static_flowstr
+		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.redirect_flowstr
 		return flowstr
 
 	def __setup_reflexive_acl_mirror_flowstr(self, acl_dir):
@@ -143,7 +143,7 @@ class PBM(object):
 						self.mirror_id)
 
 	def local_destroy(self):
-		if (self.acl_type != None and self.acl_dir != None):
+		if (self.acl_type != None and self.acl_dir != None) or (self.acl_type == "redirect"):
 			self.__setup_acl_mirror("Unset", self.acl_type, self.acl_dir)
 
 	def dump(self, to_stdout):
