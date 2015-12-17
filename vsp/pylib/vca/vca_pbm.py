@@ -113,7 +113,7 @@ class PBM(object):
 			if (action == "Set"):
 				flowstr = self.__setup_static_acl_flowstr("pre")
 				cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
-				hdrstr = action + " " + acl_type + " " + acl_dir + " Enable ingress ACL"
+				hdrstr = action + " " + acl_type + " - " + " Enable ingress ACL"
 				shell.run_cmd(hdrstr, cmd, self.logfd)
 				flowstr = self.__setup_redirect_acl_mirror_flowstr(table_type)
 			else:
@@ -128,7 +128,10 @@ class PBM(object):
 			return
 
 		cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
-		hdrstr = action + " " + acl_type + " " + acl_dir + " ACL mirror"
+		if (acl_dir != None):
+			hdrstr = action + " " + acl_type + " " + acl_dir + " ACL mirror"
+		else:
+			hdrstr = action + " " + acl_type + " " + " ACL mirror"
 		shell.run_cmd(hdrstr, cmd, self.logfd)
 
 	def local_create(self, acl_type, acl_dir):
