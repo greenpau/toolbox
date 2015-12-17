@@ -239,10 +239,13 @@ def pbm_single_mirror__(param):
 	vm_name = param['vm_name']
 	acl_dir = param['pbm_dir']
 	acl_type = param['acl_type']
+	custom_action = param['custom_action']
 	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  vm_name)
+	if (custom_action != None):
+		pbm.set_custom_action(custom_action)
 	pbm.local_create(acl_type, acl_dir)
 	pbm.dump(False)
 	pbm.show(False)
@@ -373,6 +376,7 @@ def pbm_single_mirror(test_args):
 			  'pbm_dir' : acl_dir,
 			  'vpm_dir' : None,
 			  'acl_type' : acl_type,
+			  'custom_action': None,
 			}
 		testcase_desc = "Single ACL Mirror: " + acl_dir + " " + acl_type
 		test = vca_test.TEST(testcase_id, testcase_desc,
@@ -680,20 +684,29 @@ def pbm_traffic_pkt_out__(param):
 		passed = False
 		print "Packet count is 0 in rule: " + flow
 		return passed, n_sub_tests
-	print "Rule packet count is non-zero in " + pbm_dir + " ACL, passed" 
+	if (acl_type == "redirect"):
+		print "Rule packet count is non-zero in " + acl_type + " ACL, passed" 
+	else:
+		print "Rule packet count is non-zero in " + pbm_dir + " ACL, passed" 
 
 	if (mirror_n_packets == 0):
 		passed = False
 		print "Mirror Packet count is 0 in rule: " + flow
 		return passed, n_sub_tests
-	print "Rule mirror packet count is non-zero in " + pbm_dir + " ACL, passed" 
+	if (acl_type == "redirect"):
+		print "Rule mirror packet count is non-zero in " + acl_type + " ACL, passed" 
+	else:
+		print "Rule mirror packet count is non-zero in " + pbm_dir + " ACL, passed" 
 
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_packets == -1) or (mirror_n_bytes == -1):
 		passed = False
 		print "Mirror attribute NOT found in rule: " + flow
 		return passed, n_sub_tests
-	print "Mirror attribute found for rule in " + pbm_dir + " ACL, passed" 
+	if (acl_type == "redirect"):
+		print "Mirror attribute found for rule in " + acl_type + " ACL, passed" 
+	else:
+		print "Mirror attribute found for rule in " + pbm_dir + " ACL, passed" 
 
 	n_sub_tests = n_sub_tests + 1
 	if (mirror_n_packets != rule_n_packets):
@@ -719,12 +732,14 @@ def pbm_traffic_pkt_out__(param):
 
 		mirror_attr_table_id = mirror_attr['table_id']
 		n_sub_tests = n_sub_tests + 1
-		if (pbm_dir == "ingress") and (mirror_attr_table_id == "9"):
+		if (acl_type == "redirect") and (mirror_attr_table_id == "10"):
+			print "bridge/dump-flows-detail: redirect mirror table_id check passed"
+		elif (pbm_dir == "ingress") and (mirror_attr_table_id == "9"):
 			print "bridge/dump-flows-detail: ingress mirror table_id check passed"
 		elif (pbm_dir == "egress") and (mirror_attr_table_id == "14"):
 			print "bridge/dump-flows-detail: egress mirror table_id check passed"
-		elif (acl_type == "redirect") and (mirror_attr_table_id == "10"):
-			print "bridge/dump-flows-detail: redirect mirror table_id check passed"
+		elif (acl_type == "redirect"):
+			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", acl_type: " + acl_type + ", failed"
 		else:
 			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", pbm_dir: " + pbm_dir + ", failed"
 			passed = False
@@ -769,10 +784,13 @@ def pbm_traffic_single__(param):
 	pbm_dir = param['pbm_dir']
 	acl_type = param["acl_type"]
 	src_vm_name = param["aux_vm_name"]
+	custom_action = param["custom_action"]
 	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			  dst_vm_name)
+	if (custom_action != None):
+		pbm.set_custom_action(custom_action)
 	pbm.local_create(acl_type, pbm_dir)
 	pbm.dump(False)
 	pbm.show(False)
@@ -853,6 +871,7 @@ def pbm_traffic(test_args):
 			'aux_vm_name': aux_vm_name,
 			'pbm_dir' : pbm_dir,
 			'acl_type' : acl_type,
+			'custom_action': None,
 		}
 		testcase_desc = "PBM Traffic - " + acl_type + ", Dir: " + pbm_dir
 		for traffic_test_handler in traffic_test_handlers:
@@ -865,17 +884,47 @@ def pbm_traffic(test_args):
 	return
 
 def pbm_redirect_target__(param):
-	ovs_path = param['ovs_path']
-	br = param['br']
-	logfd = param['logfd']
-	mirror_id = param['mirror_id']
-	mirror_dst_ip = param['mirror_dst_ip']
-	vm_name = param['vm_name']
-	acl_type = param["acl_type"]
 	n_sub_tests = 0
 	passed = True
+	param["custom_action"] = "9999"
 
 	passed, this_n_sub_tests = pbm_single_mirror__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect_allow__(param):
+	n_sub_tests = 0
+	passed = True
+	param["custom_action"] = "allow"
+
+	passed, this_n_sub_tests = pbm_single_mirror__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect_fc_override__(param):
+	n_sub_tests = 0
+	passed = True
+	param["custom_action"] = "fc_override"
+
+	passed, this_n_sub_tests = pbm_single_mirror__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect_target_traffic__(param):
+	n_sub_tests = 0
+	passed = True
+	param["custom_action"] = "9999"
+
+	passed, this_n_sub_tests = pbm_traffic_single__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect_allow_traffic__(param):
+	n_sub_tests = 0
+	passed = True
+	param["custom_action"] = "allow"
+
+	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
 	return passed, n_sub_tests
 
@@ -895,9 +944,17 @@ def pbm_redirect(test_args):
 		return
 	redirect_test_handlers = [
 		pbm_redirect_target__,
+		pbm_redirect_allow__,
+		pbm_redirect_fc_override__,
+		pbm_redirect_target_traffic__,
+		pbm_redirect_allow_traffic__,
 	]
 	redirect_test_descs = [
-		"redirect target",
+		"action: target output",
+		"action: allow",
+		"action: fc_override",
+		"traffic: target output",
+		"traffic: allow",
 	]
 	param = {
 		'ovs_path' : ovs_path,
