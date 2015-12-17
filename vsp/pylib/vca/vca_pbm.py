@@ -70,10 +70,17 @@ class PBM(object):
 		return flowstr
 
 	def __setup_redirect_acl_mirror_flowstr(self, acl_dir):
+		if (self.custom_action != None):
+			if (self.custom_action == "fc_override"):
+				self.redirect_flowstr = "rewrite_dscp_val=100,priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=" + self.custom_action
+			else:
+				self.redirect_flowstr = "priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=" + self.custom_action
 		flowstr = self.__acl_mirror_flowstr(acl_dir) + "," + self.redirect_flowstr
 		return flowstr
 
 	def __cleanup_redirect_acl_mirror_flowstr(self, acl_dir):
+		if (self.custom_action != None):
+			self.redirect_flowstr = "priority=0,ip,in_port=" + self.vm_ofp_port + ",actions=" + self.custom_action
 		flowstr = self.__base_acl_flowstr(acl_dir) + "," + self.redirect_flowstr
 		return flowstr
 
@@ -243,6 +250,9 @@ class PBM(object):
 				n_bytes = toks[19].split("=")[1].replace(",", "")
 			break
 		return n_packets, n_bytes, l
+
+	def set_custom_action(self, custom_action):
+		self.custom_action = custom_action
 
 	def get_flow_pkt_counters(self, acl_type):
 		return self.__parse_dump_flows_detail(acl_type, False)
