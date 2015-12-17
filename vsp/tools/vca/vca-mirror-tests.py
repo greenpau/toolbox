@@ -596,6 +596,7 @@ def pbm_traffic_ofproto_trace__(param):
 	dst_ip = param['dst_ip']
 	dst_ofp_port = param['dst_ofp_port']
 	acl_type = param['acl_type']
+	otdtf = param['ofproto_trace_datapath_tnl_field']
 
 	pkt = "in_port=" + dst_ofp_port + ",dl_src=" + src_mac + ",dl_dst=" + dst_mac + ",dl_type=0x0800,nw_src=" + src_ip + ",nw_dst=" + dst_ip + ",nw_proto=17,nw_tos=0xff,nw_ttl=128"
 	cmd = [ ovs_path + "/ovs-appctl", "ofproto/trace", br, pkt ]
@@ -612,7 +613,7 @@ def pbm_traffic_ofproto_trace__(param):
 				passed = False
 			print outstr
 			return passed
-		tep_odp_port = l.split(",")[6]
+		tep_odp_port = l.split(",")[otdtf]
 		mobj_iface, mobj_ports = pbm.get_tunnel_port()
 		mobj_odp_port = mobj_ports.split("/")[1]
 		if (tep_odp_port != mobj_odp_port):
@@ -785,6 +786,7 @@ def pbm_traffic_single__(param):
 	acl_type = param["acl_type"]
 	src_vm_name = param["aux_vm_name"]
 	custom_action = param["custom_action"]
+	otdtf = param["ofproto_trace_datapath_tnl_field"]
 	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
@@ -812,6 +814,7 @@ def pbm_traffic_single__(param):
 		'dst_ip': dst_ip,
 		'dst_ofp_port': dst_ofp_port,
 		'acl_type': acl_type,
+		'ofproto_trace_datapath_tnl_field': otdtf,
 	}
 	passed = pbm_traffic_ofproto_trace__(st_param)
 	if (passed == False):
@@ -872,6 +875,7 @@ def pbm_traffic(test_args):
 			'pbm_dir' : pbm_dir,
 			'acl_type' : acl_type,
 			'custom_action': None,
+			'ofproto_trace_datapath_tnl_field' : 6,
 		}
 		testcase_desc = "PBM Traffic - " + acl_type + ", Dir: " + pbm_dir
 		for traffic_test_handler in traffic_test_handlers:
@@ -914,6 +918,7 @@ def pbm_redirect_target_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "9999"
+	param["ofproto_trace_datapath_tnl_field"] = 6
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -923,6 +928,17 @@ def pbm_redirect_allow_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "allow"
+	param["ofproto_trace_datapath_tnl_field"] = 6
+
+	passed, this_n_sub_tests = pbm_traffic_single__(param);
+	n_sub_tests = this_n_sub_tests + 1
+	return passed, n_sub_tests
+
+def pbm_redirect_fc_override_traffic__(param):
+	n_sub_tests = 0
+	passed = True
+	param["custom_action"] = "fc_override"
+	param["ofproto_trace_datapath_tnl_field"] = 7
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -948,6 +964,7 @@ def pbm_redirect(test_args):
 		pbm_redirect_fc_override__,
 		pbm_redirect_target_traffic__,
 		pbm_redirect_allow_traffic__,
+		pbm_redirect_fc_override_traffic__,
 	]
 	redirect_test_descs = [
 		"action: target output",
@@ -955,6 +972,7 @@ def pbm_redirect(test_args):
 		"action: fc_override",
 		"traffic: target output",
 		"traffic: allow",
+		"traffic: fc_override"
 	]
 	param = {
 		'ovs_path' : ovs_path,
