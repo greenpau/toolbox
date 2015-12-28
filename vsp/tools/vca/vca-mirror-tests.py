@@ -613,10 +613,20 @@ def pbm_traffic_ofproto_trace__(param):
 				passed = False
 			print outstr
 			return passed
-		tep_odp_port = l.split(",")[otdtf]
+		if (otdtf < len(l.split(","))):
+			tep_odp_port = l.split(",")[otdtf]
+		else:
+			tep_odp_port = None
 		mobj_iface, mobj_ports = pbm.get_tunnel_port()
-		mobj_odp_port = mobj_ports.split("/")[1]
-		if (tep_odp_port != mobj_odp_port):
+		if (mobj_ports != None):
+			mobj_odp_port = mobj_ports.split("/")[1]
+		else:
+			mobj_odp_port = None
+		if (tep_odp_port == None or mobj_odp_port == None):
+			passed = False
+			print "failed to parse TEP odp port or mirror object odp port: " + l
+			return passed
+		elif (tep_odp_port != mobj_odp_port):
 			passed = False
 			print "TEP odp port (ofproto/trace): " + tep_odp_port + ", mirror object odp port: " + mobj_odp_port + ", failed"
 			return passed
@@ -666,6 +676,10 @@ def pbm_traffic_pkt_out__(param):
 		ofp_port = dst_ofp_port
 
 	mirror_iface, mirror_ports = pbm.get_tunnel_port()
+	if (mirror_iface == None):
+		passed = False
+		print "Failed to parse mirror interface"
+		return passed, n_sub_tests
 	tap = ovs_vport_tap.Tap(ovs_path, None, br, mirror_iface,
 				"0.0.0.0", logfd)
 	curr_n_pkts, curr_n_bytes = tap.get_pkt_stats()
