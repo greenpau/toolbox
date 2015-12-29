@@ -868,9 +868,14 @@ def pbm_traffic(test_args):
 	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
-	otdtf = test_args["otdtf"]
+	ovs_vers = test_args["ovs_vers"]
 	acl_dirs = [ "ingress", "egress" ]
 	global testcase_id
+
+	if (ovs_vers == 0x230):
+		otdtf = 6
+	else:
+		otdtf = 3
 
 	if (aux_vm_name == None):
 		print "Traffic tests need comma separated VM names (for source and destination)"
@@ -933,7 +938,12 @@ def pbm_redirect_target_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "9999"
-	param["otdtf"] = 6
+	ovs_vers = param["ovs_vers"]
+
+	if (ovs_vers == 0x230):
+		param["otdtf"] = 6
+	else:
+		param["otdtf"] = 3
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -943,7 +953,12 @@ def pbm_redirect_allow_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "allow"
-	param["otdtf"] = 6
+	ovs_vers = param["ovs_vers"]
+
+	if (ovs_vers == 0x230):
+		param["otdtf"] = 6
+	else:
+		param["otdtf"] = 3
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -953,7 +968,12 @@ def pbm_redirect_fc_override_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "fc_override"
-	param["otdtf"] = 7
+	ovs_vers = param["ovs_vers"]
+
+	if (ovs_vers == 0x230):
+		param["otdtf"] = 7
+	else:
+		param["otdtf"] = 3
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -968,6 +988,7 @@ def pbm_redirect(test_args):
 	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
+	ovs_vers = test_args["ovs_vers"]
 	global testcase_id
 
 	if (aux_vm_name == None):
@@ -1010,6 +1031,7 @@ def pbm_redirect(test_args):
 		'pbm_dir' : None,
 		'vpm_dir' : None,
 		'acl_type' : acl_type,
+		'ovs_vers' : ovs_vers,
 	}
 	for redirect_test in redirect_tests:
 		this_test_desc = redirect_test['desc']
@@ -1030,7 +1052,7 @@ def main(argc, argv):
 	aux_vm_name = None
 	mirror_dst_ip = None
 	exit_on_failure = False
-	otdtf = 6
+	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
 	try:
 		opts, args = getopt.getopt(argv, "hv:i:e")
 	except getopt.GetoptError as err:
@@ -1075,7 +1097,7 @@ def main(argc, argv):
 			"aux_vm_name" : aux_vm_name,
 			"mirror_dst_ip" : mirror_dst_ip,
 			"type" : type,
-			"otdtf" : otdtf,
+			"ovs_vers" : ovs_vers,
 		}
 		suite.run(test_handlers, test_args)
 	test_handlers = [
@@ -1090,6 +1112,7 @@ def main(argc, argv):
 		"aux_vm_name" : aux_vm_name,
 		"mirror_dst_ip" : mirror_dst_ip,
 		"type" : "redirect",
+		"ovs_vers" : ovs_vers,
 	}
 	suite.run(test_handlers, test_args)
 	suite.print_summary()
