@@ -596,7 +596,7 @@ def pbm_traffic_ofproto_trace__(param):
 	dst_ip = param['dst_ip']
 	dst_ofp_port = param['dst_ofp_port']
 	acl_type = param['acl_type']
-	otdtf = param['ofproto_trace_datapath_tnl_field']
+	otdtf = param['otdtf']
 
 	pkt = "in_port=" + dst_ofp_port + ",dl_src=" + src_mac + ",dl_dst=" + dst_mac + ",dl_type=0x0800,nw_src=" + src_ip + ",nw_dst=" + dst_ip + ",nw_proto=17,nw_tos=0xff,nw_ttl=128"
 	cmd = [ ovs_path + "/ovs-appctl", "ofproto/trace", br, pkt ]
@@ -800,7 +800,7 @@ def pbm_traffic_single__(param):
 	acl_type = param["acl_type"]
 	src_vm_name = param["aux_vm_name"]
 	custom_action = param["custom_action"]
-	otdtf = param["ofproto_trace_datapath_tnl_field"]
+	otdtf = param["otdtf"]
 	n_sub_tests = 0
 
 	pbm = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
@@ -828,7 +828,7 @@ def pbm_traffic_single__(param):
 		'dst_ip': dst_ip,
 		'dst_ofp_port': dst_ofp_port,
 		'acl_type': acl_type,
-		'ofproto_trace_datapath_tnl_field': otdtf,
+		'otdtf': otdtf,
 	}
 	passed = pbm_traffic_ofproto_trace__(st_param)
 	if (passed == False):
@@ -868,6 +868,7 @@ def pbm_traffic(test_args):
 	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
+	otdtf = test_args["otdtf"]
 	acl_dirs = [ "ingress", "egress" ]
 	global testcase_id
 
@@ -889,7 +890,7 @@ def pbm_traffic(test_args):
 			'pbm_dir' : pbm_dir,
 			'acl_type' : acl_type,
 			'custom_action': None,
-			'ofproto_trace_datapath_tnl_field' : 6,
+			'otdtf' : otdtf,
 		}
 		testcase_desc = "PBM Traffic - " + acl_type + ", Dir: " + pbm_dir
 		for traffic_test_handler in traffic_test_handlers:
@@ -932,7 +933,7 @@ def pbm_redirect_target_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "9999"
-	param["ofproto_trace_datapath_tnl_field"] = 6
+	param["otdtf"] = 6
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -942,7 +943,7 @@ def pbm_redirect_allow_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "allow"
-	param["ofproto_trace_datapath_tnl_field"] = 6
+	param["otdtf"] = 6
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -952,7 +953,7 @@ def pbm_redirect_fc_override_traffic__(param):
 	n_sub_tests = 0
 	passed = True
 	param["custom_action"] = "fc_override"
-	param["ofproto_trace_datapath_tnl_field"] = 7
+	param["otdtf"] = 7
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
@@ -1029,6 +1030,7 @@ def main(argc, argv):
 	aux_vm_name = None
 	mirror_dst_ip = None
 	exit_on_failure = False
+	otdtf = 6
 	try:
 		opts, args = getopt.getopt(argv, "hv:i:e")
 	except getopt.GetoptError as err:
@@ -1073,6 +1075,7 @@ def main(argc, argv):
 			"aux_vm_name" : aux_vm_name,
 			"mirror_dst_ip" : mirror_dst_ip,
 			"type" : type,
+			"otdtf" : otdtf,
 		}
 		suite.run(test_handlers, test_args)
 	test_handlers = [
