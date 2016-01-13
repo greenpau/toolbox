@@ -14,6 +14,9 @@ class PBM(object):
 	mirror = None
 	acl_type = None
 	acl_dir = None
+	dump_flows_detail_mirror_tok_index = 19
+	dump_flows_detail_mirror_tok_count = dump_flows_detail_mirror_tok_index + 1
+	dump_flows_detail_n_bytes_tok_index = 20
 	def __init__(self, ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 		     vm_name):
 		self.ovs_path = ovs_path
@@ -185,9 +188,9 @@ class PBM(object):
 		mirror_attrs = []
 		for flow in flows_out:
 			tokens = flow.split()
-			if (tokens == None) or (len(tokens) < 19):
+			if (tokens == None) or (len(tokens) < self.dump_flows_detail_mirror_tok_count):
 				continue
-       			mirror = tokens[18].split("=")[1].replace("{", "").replace("}", "")
+       			mirror = tokens[self.dump_flows_detail_mirror_tok_index].split("=")[1].replace("{", "").replace("}", "")
 			if (mirror == None):
 				continue
 			flow_attr = {}
@@ -249,12 +252,12 @@ class PBM(object):
 				n_bytes = -1
 				break
 			if (is_mirror == True):
-				mirror_tok = toks[18]
+				mirror_tok = toks[self.dump_flows_detail_mirror_tok_index]
 				n_packets = mirror_tok.split(",")[2].split(":")[1]
 				n_bytes = mirror_tok.split(",")[3].split(":")[1].replace("}", "")
 			else :
 				n_packets = toks[2].split("=")[1].replace(",", "")
-				n_bytes = toks[19].split("=")[1].replace(",", "")
+				n_bytes = toks[self.dump_flows_detail_n_bytes_tok_index].split("=")[1].replace(",", "")
 			break
 		return n_packets, n_bytes, l
 
