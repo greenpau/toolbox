@@ -216,6 +216,13 @@ class PBM(object):
 			mirror_odp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[1]
 		return mirror_vport, mirror_ofp_port, mirror_odp_port
 
+	def get_mirror_traffic_stats(self):
+		n_packets = None
+		n_bytes = None
+		if (self.mirror != None):
+			n_packets, n_bytes = self.mirror.get_mirror_traffic_stats()
+		return n_packets, n_bytes
+
 	def __parse_dump_flows_detail(self, acl_type, is_mirror):
 		cmd = [ self.appctl_path, "bridge/dump-flows-detail", self.br ]
 		out = shell.execute(cmd).splitlines()

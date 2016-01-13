@@ -739,6 +739,22 @@ def pbm_traffic_pkt_out__(param):
 		return passed, n_sub_tests
 	print "bridge/dump-flows-detail: flow_n_bytes (" + str(flow_n_bytes) + ") = rule_n_bytes (" + str(rule_n_bytes) + "), passed"
 
+	mirror_n_packets, mirror_n_bytes = pbm.get_mirror_traffic_stats()
+
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_n_packets != flow_n_packets):
+		passed = False
+		print "mirror-show/n_packets: " + mirror_n_packets + ", flow_n_packets: " + flow_n_packets + ", mismatch, failed"
+		return passed, n_sub_tests
+	print "mirror-show/n_packets (" + mirror_n_packets + ") = bridge/dump-flows-detail (" + flow_n_packets + "), passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_n_bytes != flow_n_bytes):
+		passed = False
+		print "mirror-show/n_bytes: " + mirror_n_bytes + ", flow_n_bytes: " + flow_n_bytes + ", mismatch, failed"
+		return passed, n_sub_tests
+	print "mirror-show/n_bytes (" + mirror_n_bytes + ") = bridge/dump-flows-detail (" + flow_n_bytes + "), passed"
+
 	mirror_attrs = pbm.get_mirror_flow_attrs()
 	for mirror_attr in mirror_attrs:
 		flow_mirror_id = mirror_attr['mirror_id']

@@ -75,3 +75,8 @@ class Mirror(object):
 
 	def get_mirror_vport(self, type):
 		return self.__parse_show_mirror(type, 1), self.__parse_show_mirror(type, 2)
+
+	def get_mirror_traffic_stats(self):
+		n_packets = self.__parse_show_mirror("Traffic Statistics:", 3).replace(",", "")
+		n_bytes = self.__parse_show_mirror("Traffic Statistics:", 5)
+		return n_packets, n_bytes
