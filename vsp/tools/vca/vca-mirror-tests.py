@@ -628,7 +628,7 @@ def pbm_traffic_ofproto_trace__(param):
 			return passed
 		elif (tep_odp_port != mobj_odp_port):
 			passed = False
-			print "TEP odp port (ofproto/trace): " + tep_odp_port + ", mirror object odp port: " + mobj_odp_port + ", failed"
+			print "TEP odp port (ofproto/trace): " + tep_odp_port + ", mirror object odp port: " + mobj_odp_port + ", failed, " + l
 			return passed
 		print "ofproto/trace of packet detected packet sent to mirror tunnel, passed"
 		return passed
@@ -690,10 +690,10 @@ def pbm_traffic_pkt_out__(param):
 
 	if (acl_type == "redirect") :
 		rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(acl_type)
-		mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(acl_type)
+		flow_n_packets, flow_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(acl_type)
 	else:
 		rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(pbm_dir)
-		mirror_n_packets, mirror_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
+		flow_n_packets, flow_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(pbm_dir)
 	n_sub_tests = n_sub_tests + 1
 	if (rule_n_packets == 0):
 		passed = False
@@ -704,7 +704,7 @@ def pbm_traffic_pkt_out__(param):
 	else:
 		print "Rule packet count is non-zero in " + pbm_dir + " ACL, passed" 
 
-	if (mirror_n_packets == 0):
+	if (flow_n_packets == 0):
 		passed = False
 		print "Mirror Packet count is 0 in rule: " + flow
 		return passed, n_sub_tests
@@ -714,7 +714,7 @@ def pbm_traffic_pkt_out__(param):
 		print "Rule mirror packet count is non-zero in " + pbm_dir + " ACL, passed" 
 
 	n_sub_tests = n_sub_tests + 1
-	if (mirror_n_packets == -1) or (mirror_n_bytes == -1):
+	if (flow_n_packets == -1) or (flow_n_bytes == -1):
 		passed = False
 		print "Mirror attribute NOT found in rule: " + flow
 		return passed, n_sub_tests
@@ -724,20 +724,20 @@ def pbm_traffic_pkt_out__(param):
 		print "Mirror attribute found for rule in " + pbm_dir + " ACL, passed" 
 
 	n_sub_tests = n_sub_tests + 1
-	if (mirror_n_packets != rule_n_packets):
+	if (flow_n_packets != rule_n_packets):
 		passed = False
-		print "bridge/dump-flows-detail: mirror_n_packets: " + str(mirror_n_packets) +  ", rule_n_packets: " + str(rule_n_packets) + ", mismatch, failed"
+		print "bridge/dump-flows-detail: flow_n_packets: " + str(flow_n_packets) +  ", rule_n_packets: " + str(rule_n_packets) + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_packets (" + str(mirror_n_packets) + ") = rule_n_packets (" + str(rule_n_packets) + "), passed"
+	print "bridge/dump-flows-detail: flow_n_packets (" + str(flow_n_packets) + ") = rule_n_packets (" + str(rule_n_packets) + "), passed"
 
 	n_sub_tests = n_sub_tests + 1
-	if (mirror_n_bytes != rule_n_bytes):
+	if (flow_n_bytes != rule_n_bytes):
 		passed = False
-		print "bridge/dump-flows-detail: mirror_n_bytes: " + str(mirror_n_bytes) +  ", rule_n_bytes: " + str(rule_n_bytes) + ", mismatch, failed"
+		print "bridge/dump-flows-detail: flow_n_bytes: " + str(flow_n_bytes) +  ", rule_n_bytes: " + str(rule_n_bytes) + ", mismatch, failed"
 		print flow
 		return passed, n_sub_tests
-	print "bridge/dump-flows-detail: mirror_n_bytes (" + str(mirror_n_bytes) + ") = rule_n_bytes (" + str(rule_n_bytes) + "), passed"
+	print "bridge/dump-flows-detail: flow_n_bytes (" + str(flow_n_bytes) + ") = rule_n_bytes (" + str(rule_n_bytes) + "), passed"
 
 	mirror_attrs = pbm.get_mirror_flow_attrs()
 	for mirror_attr in mirror_attrs:
@@ -762,19 +762,19 @@ def pbm_traffic_pkt_out__(param):
 
 		mirror_attr_n_packets = mirror_attr['mirror_n_packets']
 		n_sub_tests = n_sub_tests + 1
-		if (mirror_n_packets != mirror_attr_n_packets):
+		if (flow_n_packets != mirror_attr_n_packets):
 			passed = False
-			print "bridge/show-mirror: mirror_n_packets: " + str(mirror_n_packets) +  ", mirror_attr_n_packets: " + str(mirror_attr_n_packets) + ", mismatch, failed"
+			print "bridge/show-mirror: flow_n_packets: " + str(flow_n_packets) +  ", mirror_attr_n_packets: " + str(mirror_attr_n_packets) + ", mismatch, failed"
 			return passed, n_sub_tests
-		print "bridge/show-mirror: mirror_n_packets (" + str(mirror_n_packets) + ") = mirror_attr_n_packets (" + str(mirror_attr_n_packets) + "), passed"
+		print "bridge/show-mirror: flow_n_packets (" + str(flow_n_packets) + ") = mirror_attr_n_packets (" + str(mirror_attr_n_packets) + "), passed"
 
 		mirror_attr_n_bytes = mirror_attr['mirror_n_bytes']
 		n_sub_tests = n_sub_tests + 1
-		if (mirror_n_bytes != mirror_attr_n_bytes):
+		if (flow_n_bytes != mirror_attr_n_bytes):
 			passed = False
-			print "bridge/show-mirror: mirror_n_packets: " + str(mirror_n_packets) +  ", mirror_attr_n_bytes: " + str(mirror_attr_n_bytes) + ", mismatch, failed"
+			print "bridge/show-mirror: flow_n_packets: " + str(flow_n_packets) +  ", mirror_attr_n_bytes: " + str(mirror_attr_n_bytes) + ", mismatch, failed"
 			return passed, n_sub_tests
-		print "bridge/show-mirror: mirror_n_bytes (" + str(mirror_n_bytes) + ") = mirror_attr_n_bytes (" + str(mirror_attr_n_bytes) + "), passed"
+		print "bridge/show-mirror: flow_n_bytes (" + str(flow_n_bytes) + ") = mirror_attr_n_bytes (" + str(mirror_attr_n_bytes) + "), passed"
 
 	tap = ovs_vport_tap.Tap(ovs_path, None, br, mirror_iface,
 				"0.0.0.0", logfd)
@@ -973,7 +973,7 @@ def pbm_redirect_fc_override_traffic__(param):
 	if (ovs_vers == 0x230):
 		param["otdtf"] = 7
 	else:
-		param["otdtf"] = 3
+		param["otdtf"] = 4
 
 	passed, this_n_sub_tests = pbm_traffic_single__(param);
 	n_sub_tests = this_n_sub_tests + 1
