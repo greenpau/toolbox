@@ -10,7 +10,7 @@ import shell
 
 class Regress(object):
 	def __init__(self, phys_topo, sub_topo, platform, is_iso, eof,
-		     pkg_path, rel, suite_name, test_name, repeat):
+		     pkg_path, rel, suite_name, test_name, repeat, custom_gash):
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.platform = platform
@@ -21,6 +21,7 @@ class Regress(object):
 		self.suite_name = suite_name
 		self.test_name = test_name
 		self.repeat = repeat
+		self.custom_gash = custom_gash
 
 	def __get_topoStr(self):
 		if (self.sub_topo == "rh7Vxlan") or (self.sub_topo == "ubuntu1404Vxlan") or (self.sub_topo == "ubuntu1404"):
@@ -77,6 +78,13 @@ class Regress(object):
 			repeatStr = ""
 		return repeatStr
 
+	def __get_customGashStr(self):
+		if (self.custom_gash != ""):
+			custom_gash_str = " -customRepo " + self.custom_gash
+		else:
+			custom_gash_str = ""
+		return custom_gash_str
+
 	def getParams(self):
 		topoStr = self.__get_topoStr()
 		platformStr = self.__get_platformStr()
@@ -85,7 +93,8 @@ class Regress(object):
 		suiteStr = self.__get_suiteStr()
 		testStr = self.__get_testStr()
 		repeatStr = self.__get_repeatStr()
-		return topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr
+		custom_gash_str = self.__get_customGashStr()
+		return topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gash_str
 
 	def exec__(self, cmdstr):
 		cmd = cmdstr.split();

@@ -19,6 +19,7 @@ class Regular(object):
 	platform = ""
 	test_name = ""
 	repeat = ""
+	custom_gash = ""
 
 	def __init__(self, testbed, pkg_path, phys_topo, sub_topo, rel,
 		     platform, is_iso, eof):
@@ -41,12 +42,19 @@ class Regular(object):
 	def set_repeat(self, repeat):
 		self.repeat = repeat;
 
+	def set_custom_gash(self, repeat):
+		self.custom_gash = custom_gash;
+
 	def run_private(self):
+		if (self.suite_name == "Sanity"):
+			priorityStr = " -priority P1"
+		else:
+			priorityStr = " -priority P0"
 		r = regress.Regress(self.phys_topo, self.sub_topo,
 				    self.platform, self.is_iso,
 				    self.eof, self.pkg_path, self.rel,
 				    self.suite_name, self.test_name,
-				    self.repeat)
-		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr = r.getParams()
-		cmdstr = self.regress_path + " -testbed " + self.testbed + topoStr + platformStr + " -priority P1 -runLevel " + self.run_level + " -forcePause " + self.forcePause + eofStr + pkgStr + suiteStr + testStr + repeatStr
+				    self.repeat, self.custom_gash)
+		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gashStr = r.getParams()
+		cmdstr = self.regress_path + " -testbed " + self.testbed + topoStr + platformStr + priorityStr + " -runLevel " + self.run_level + " -forcePause " + self.forcePause + eofStr + pkgStr + suiteStr + testStr + repeatStr + custom_gashStr
 		r.exec__(cmdstr)

@@ -9,6 +9,7 @@ home = os.environ['HOME']
 sys.path.append("/usr/local/openvswitch/pylib/system")
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 sys.path.append("/usr/local/openvswitch/pylib/vca")
+sys.path.append("/usr/local/openvswitch/pylib/regress")
 
 import regular
 import express
@@ -27,6 +28,7 @@ def usage():
 	print
 	print "optional parameters:"
 	print "    -s <suite>: name of suite (NsgResiliency, etc)"
+	print "    -c <custom gash>: custom gash repo (xzhao025/gash:noPg)"
 	print "    -T <test>: name of testcase (NsgRgDbSyncMultipleSubnetsSameMac etc)"
 	print "    -R <repeat-num>: number of times to repeat the test/suite"
 	print "    -p <path>: absolute path of private image"
@@ -47,8 +49,9 @@ def main(argc, argv):
 	is_iso = False
 	testcase = ""
 	repeat = ""
+	custom_gash = ""
 	try:
-		opts, args = getopt.getopt(argv, "ht:b:s:p:r:S:P:CT:R:")
+		opts, args = getopt.getopt(argv, "ht:b:s:p:r:S:P:CT:R:c:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -73,6 +76,8 @@ def main(argc, argv):
 			phystopo = arg
 		elif opt == "-C":
 			cnaSim = True
+		elif opt == "-c":
+			custom_gash = arg
 		else:
 			usage()
 	if (testbed == ""):
@@ -110,6 +115,7 @@ def main(argc, argv):
 	regression.set_suite(suite)
 	regression.set_test(testcase)
 	regression.set_repeat(repeat)
+	regression.set_custom_gash(custom_gash)
 	regression.run_private()
 
 
