@@ -26,6 +26,9 @@ class Regress(object):
 	def __get_topoStr(self):
 		if (self.sub_topo == "rh7Vxlan") or (self.sub_topo == "ubuntu1404Vxlan") or (self.sub_topo == "ubuntu1404"):
 			topoStr = " -physTopology " + self.phys_topo + " -subTopology " + self.sub_topo
+		elif (self.sub_topo == None):
+			# NSG express
+			topoStr = " -platform dctor"
 		elif (self.sub_topo != "") :
 			topoStr = " -subTopology " + self.sub_topo
 		else :

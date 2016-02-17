@@ -98,7 +98,10 @@ def main(argc, argv):
 		platform = "dctor"
 	if (type == "express") :
 		if (subtopo == ""):
-			subtopo = "dcExpress"
+			if (phystopo == "nsg"):
+				subtopo = None
+			else:
+				subtopo = "dcExpress"
 		regression = express.Express(testbed, pkg_path, phystopo,
 			       		     subtopo, rel,
 					     platform, is_iso, False)
