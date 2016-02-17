@@ -17,7 +17,7 @@ class Regress(object):
 		self.is_iso = is_iso
 		self.eof = eof
 		self.pkg_path = pkg_path
-		self.useimageStr = "dctor/" + rel + "/latest"
+		self.useimageStr = "dctor/" + rel + "/current"
 		self.suite_name = suite_name
 		self.test_name = test_name
 		self.repeat = repeat

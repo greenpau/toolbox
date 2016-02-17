@@ -42,7 +42,7 @@ class Regular(object):
 	def set_repeat(self, repeat):
 		self.repeat = repeat;
 
-	def set_custom_gash(self, repeat):
+	def set_custom_gash(self, custom_gash):
 		self.custom_gash = custom_gash;
 
 	def run_private(self):

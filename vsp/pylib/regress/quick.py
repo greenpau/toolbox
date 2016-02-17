@@ -46,7 +46,7 @@ class Quick(object):
 	def set_cnaSim(self, cnaSim):
 		self.cnaSim = cnaSim
 
-	def set_custom_gash(self, repeat):
+	def set_custom_gash(self, custom_gash):
 		self.custom_gash = custom_gash;
 
 	def run_private(self):
