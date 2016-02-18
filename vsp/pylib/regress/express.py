@@ -19,10 +19,11 @@ class Express(object):
 	repeat = ""
 	custom_gash = ""
 
-	def __init__(self, testbed, pkg_path, phys_topo, sub_topo, rel,
-		     platform, is_iso, eof):
+	def __init__(self, testbed, pkg_path, vrs_image_path,
+		     phys_topo, sub_topo, rel, platform, is_iso, eof):
 		self.testbed = testbed
 		self.pkg_path = pkg_path
+		self.vrs_image_path = vrs_image_path
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.rel = rel
@@ -49,9 +50,9 @@ class Express(object):
 		else:
 			priorityStr = " -priority P0"
 		r = regress.Regress(self.phys_topo, self.sub_topo,
-				    self.platform, self.is_iso,
-				    self.eof, self.pkg_path, self.rel,
-				    self.suite_name, self.test_name,
+				    self.platform, self.is_iso, self.eof,
+				    self.pkg_path, self.vrs_image_path,
+				    self.rel, self.suite_name, self.test_name,
 				    self.repeat, self.custom_gash)
 		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gashStr = r.getParams()
 		cmdstr = self.regress_path + " -testbed " + self.testbed + topoStr + platformStr + priorityStr + " -runLevel " + self.run_level + " -forcePause " + self.forcePause + eofStr + pkgStr + suiteStr + testStr + repeatStr + custom_gashStr

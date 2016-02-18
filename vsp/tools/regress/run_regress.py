@@ -20,7 +20,7 @@ import logger
 import net
 
 def usage():
-	print "usage: " + progname + " -t -b -r [-s|-p|-P|-S|-T|-R]"
+	print "usage: " + progname + " -t -b -r [-s|-p|-P|-S|-T|-R|-d]"
 	print "required parameters:"
 	print "    -t <runtype>: type of run (express, regular, quick)"
 	print "    -b <bed>: name of bed (mvcdcdev18, mvdcdev20)"
@@ -31,7 +31,8 @@ def usage():
 	print "    -c <custom gash>: custom gash repo (xzhao025/gash:noPg)"
 	print "    -T <test>: name of testcase (NsgRgDbSyncMultipleSubnetsSameMac etc)"
 	print "    -R <repeat-num>: number of times to repeat the test/suite"
-	print "    -p <path>: absolute path of private image"
+	print "    -p <path>: absolute path of VRS private image"
+	print "    -d <path>: relative path of VRS global image"
 	print "    -C: cnaSim will be set to true (only for quick)"
 	print "    -P <phystopo>: dctorOvs, nsg"
 	print "    -S <subtopo>: default, dcExpress, dctorOvs, dctorOvsVxlan, rh7Vxlan, ubuntu1404, ubuntu1404Vxlan"
@@ -40,6 +41,7 @@ def usage():
 def main(argc, argv):
 	testbed = ""
 	pkg_path = ""
+	vrs_image_path = ""
 	suite = ""
 	type = ""
 	subtopo = ""
@@ -51,7 +53,7 @@ def main(argc, argv):
 	repeat = ""
 	custom_gash = ""
 	try:
-		opts, args = getopt.getopt(argv, "ht:b:s:p:r:S:P:CT:R:c:")
+		opts, args = getopt.getopt(argv, "ht:b:s:p:r:S:P:CT:R:c:d:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -62,6 +64,8 @@ def main(argc, argv):
 			testbed = arg
 		elif opt == "-p":
 			pkg_path = arg
+		elif opt == "-d":
+			vrs_image_path = arg
 		elif opt == "-s":
 			suite = arg
 		elif opt == "-T":
@@ -86,7 +90,9 @@ def main(argc, argv):
 	if (rel == ""):
 		print "missing release parameter"
 		usage
-	if (pkg_path == ""):
+	if (vrs_image_path != ""):
+		pkg_path = ""
+	elif (pkg_path == ""):
 		print "missing package path"
 		usage
 	if (phystopo == ""):
@@ -102,17 +108,18 @@ def main(argc, argv):
 				subtopo = None
 			else:
 				subtopo = "dcExpress"
-		regression = express.Express(testbed, pkg_path, phystopo,
-			       		     subtopo, rel,
+		regression = express.Express(testbed, pkg_path, vrs_image_path,
+					     phystopo, subtopo, rel,
 					     platform, is_iso, False)
 	elif (type == "quick"):
-		regression = quick.Quick(testbed, pkg_path, phystopo,
-					 subtopo, rel, platform, is_iso, False)
+		regression = quick.Quick(testbed, pkg_path, vrs_image_path,
+					 phystopo, subtopo, rel, platform,
+					 is_iso, False)
 		regression.set_cnaSim(cnaSim)
 	elif (type == "regular"):
-		regression = regular.Regular(testbed, pkg_path, phystopo,
-					     subtopo, rel, platform, is_iso,
-					     False)
+		regression = regular.Regular(testbed, pkg_path, vrs_image_path,
+					     phystopo, subtopo, rel, platform,
+					     is_iso, False)
 	else:
 		usage()
 	regression.set_suite(suite)

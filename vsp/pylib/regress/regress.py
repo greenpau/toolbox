@@ -10,13 +10,16 @@ import shell
 
 class Regress(object):
 	def __init__(self, phys_topo, sub_topo, platform, is_iso, eof,
-		     pkg_path, rel, suite_name, test_name, repeat, custom_gash):
+		     pkg_path, vrs_image_path, rel, suite_name, test_name,
+		     repeat, custom_gash):
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.platform = platform
 		self.is_iso = is_iso
 		self.eof = eof
 		self.pkg_path = pkg_path
+		self.vrs_image_path = vrs_image_path
+		self.rel = rel
 		self.useimageStr = "dctor/" + rel + "/current"
 		self.suite_name = suite_name
 		self.test_name = test_name
@@ -43,7 +46,9 @@ class Regress(object):
 		return platformStr
 
 	def __get_pkgStr(self):
-		if (self.is_iso == True):
+		if (self.vrs_image_path != ""):
+			pkgStr = " -useimages " + self.useimageStr + " -vrs " + self.vrs_image_path
+		elif (self.is_iso == True):
 			pkgStr = " -useimages " + self.useimageStr + " -vrs " + self.pkg_path + " -checkKernel false"
 		else :
 			pkgStr = " -useimages " + self.useimageStr + " -altpackages ovs=" + self.pkg_path
