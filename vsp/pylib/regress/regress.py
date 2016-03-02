@@ -18,9 +18,10 @@ class Regress(object):
 		self.is_iso = is_iso
 		self.eof = eof
 		self.pkg_path = pkg_path
-		self.vrs_image_path = vrs_image_path
 		self.rel = rel
-		self.useimageStr = "dctor/" + rel + "/current"
+		self.vrs_image_path = vrs_image_path
+		self.vsc_image_path = " -useimages dctor/" + rel + "/current"
+		self.vsd_image_path = " -vsd " + rel + "/current"
 		self.suite_name = suite_name
 		self.test_name = test_name
 		self.repeat = repeat
@@ -47,11 +48,11 @@ class Regress(object):
 
 	def __get_pkgStr(self):
 		if (self.vrs_image_path != ""):
-			pkgStr = " -useimages " + self.useimageStr + " -vrs " + self.vrs_image_path
+			pkgStr = self.vsc_image_path + self.vsd_image_path + " -vrs " + self.vrs_image_path
 		elif (self.is_iso == True):
-			pkgStr = " -useimages " + self.useimageStr + " -vrs " + self.pkg_path + " -checkKernel false"
+			pkgStr = self.vsc_image_path + self.vsd_image_path + " -vrs " + self.pkg_path + " -checkKernel false"
 		else :
-			pkgStr = " -useimages " + self.useimageStr + " -altpackages ovs=" + self.pkg_path
+			pkgStr = self.vsc_image_path + self.vsd_image_path + " -altpackages ovs=" + self.pkg_path
 		return pkgStr
 
 	def __get_eofStr(self):
