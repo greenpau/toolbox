@@ -20,13 +20,14 @@ import logger
 import net
 
 def usage():
-	print "usage: " + progname + " -t -b -r [-s|-p|-P|-S|-T|-R|-d]"
+	print "usage: " + progname + " -t -b -r [-e|-s|-p|-P|-S|-T|-R|-d]"
 	print "required parameters:"
 	print "    -t <runtype>: type of run (express, regular, quick)"
 	print "    -b <bed>: name of bed (mvcdcdev18, mvdcdev20)"
 	print "    -r <release>: 0.0, 3.2 etc"
 	print
 	print "optional parameters:"
+	print "    -e: set exitOnFailure true in the regression run"
 	print "    -s <suite>: name of suite (NsgResiliency, etc)"
 	print "    -c <custom gash>: custom gash repo (xzhao025/gash:noPg)"
 	print "    -T <test>: name of testcase (NsgRgDbSyncMultipleSubnetsSameMac etc)"
@@ -49,11 +50,12 @@ def main(argc, argv):
 	phystopo = ""
 	cnaSim = False
 	is_iso = False
+	eof = False
 	testcase = ""
 	repeat = ""
 	custom_gash = ""
 	try:
-		opts, args = getopt.getopt(argv, "ht:b:s:p:r:S:P:CT:R:c:d:")
+		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -72,6 +74,8 @@ def main(argc, argv):
 			testcase = arg
 		elif opt == "-R":
 			repeat = arg
+		elif opt == "-e":
+			eof = True
 		elif opt == "-r":
 			rel = arg
 		elif opt == "-S":
@@ -110,16 +114,16 @@ def main(argc, argv):
 				subtopo = "dcExpress"
 		regression = express.Express(testbed, pkg_path, vrs_image_path,
 					     phystopo, subtopo, rel,
-					     platform, is_iso, False)
+					     platform, is_iso, eof)
 	elif (type == "quick"):
 		regression = quick.Quick(testbed, pkg_path, vrs_image_path,
 					 phystopo, subtopo, rel, platform,
-					 is_iso, False)
+					 is_iso, eof)
 		regression.set_cnaSim(cnaSim)
 	elif (type == "regular"):
 		regression = regular.Regular(testbed, pkg_path, vrs_image_path,
 					     phystopo, subtopo, rel, platform,
-					     is_iso, False)
+					     is_iso, eof)
 	else:
 		usage()
 	regression.set_suite(suite)
