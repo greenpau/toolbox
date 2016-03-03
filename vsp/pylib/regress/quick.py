@@ -32,7 +32,7 @@ class Quick(object):
 		self.rel = rel
 		if (platform != None):
 			self.platform = platform
-		self.is_iso = False
+		self.is_iso = is_iso
 		self.eof = eof
 
 	def set_suite(self, suite_name):
