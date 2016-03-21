@@ -36,14 +36,14 @@ class Regress(object):
 		elif (self.sub_topo != "") :
 			topoStr = " -subTopology " + self.sub_topo
 		else :
-			topoStr = " -subTopology dctorOvs"
+			topoStr = " -subTopology dctorOvsVxlan"
 		return topoStr
 
 	def __get_platformStr(self):
 		if (self.platform == "nsg"):
 			platformStr = " -physTopology " + self.platform
 		else:
-			platformStr = " -platform " + self.platform
+			platformStr = " -physTopology stdSixDut -platform " + self.platform
 		return platformStr
 
 	def __get_pkgStr(self):
