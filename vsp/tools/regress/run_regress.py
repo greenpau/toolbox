@@ -20,7 +20,7 @@ import logger
 import net
 
 def usage():
-	print "usage: " + progname + " -t -b -r [-e|-s|-p|-P|-S|-T|-R|-d]"
+	print "usage: " + progname + " -t -b -r [-e|-s|-p|-P|-S|-T|-R|-d|-A]"
 	print "required parameters:"
 	print "    -t <runtype>: type of run (express, regular, quick)"
 	print "    -b <bed>: name of bed (mvcdcdev18, mvdcdev20)"
@@ -37,6 +37,7 @@ def usage():
 	print "    -C: cnaSim will be set to true (only for quick)"
 	print "    -P <phystopo>: dctorOvs, nsg"
 	print "    -S <subtopo>: default, dcExpress, dctorOvs, dctorOvsVxlan, rh7Vxlan, ubuntu1404, ubuntu1404Vxlan"
+	print "    -A <addl-params>: additional non-std regression params if any"
 	sys.exit(1)
 
 def main(argc, argv):
@@ -54,8 +55,9 @@ def main(argc, argv):
 	testcase = ""
 	repeat = ""
 	custom_gash = ""
+	addl_params = ""
 	try:
-		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:")
+		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:A:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -86,6 +88,8 @@ def main(argc, argv):
 			cnaSim = True
 		elif opt == "-c":
 			custom_gash = arg
+		elif opt == "-A":
+			addl_params = ' ' + arg
 		else:
 			usage()
 	if (testbed == ""):
@@ -130,6 +134,7 @@ def main(argc, argv):
 	regression.set_test(testcase)
 	regression.set_repeat(repeat)
 	regression.set_custom_gash(custom_gash)
+	regression.set_addl_params(addl_params)
 	regression.run_private()
 
 

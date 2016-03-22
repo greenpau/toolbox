@@ -18,6 +18,7 @@ class Express(object):
 	test_name = ""
 	repeat = ""
 	custom_gash = ""
+	addl_params = ""
 
 	def __init__(self, testbed, pkg_path, vrs_image_path,
 		     phys_topo, sub_topo, rel, platform, is_iso, eof):
@@ -44,6 +45,9 @@ class Express(object):
 	def set_custom_gash(self, custom_gash):
 		self.custom_gash = custom_gash;
 
+	def set_addl_params(self, addl_params):
+		self.addl_params = addl_params
+
 	def run_private(self):
 		if (self.suite_name == "Sanity"):
 			priorityStr = " -priority P1"
@@ -55,5 +59,5 @@ class Express(object):
 				    self.rel, self.suite_name, self.test_name,
 				    self.repeat, self.custom_gash)
 		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gashStr = r.getParams()
-		cmdstr = self.regress_path + " -testbed " + self.testbed + topoStr + platformStr + priorityStr + " -runLevel " + self.run_level + " -forcePause " + self.forcePause + eofStr + pkgStr + suiteStr + testStr + repeatStr + custom_gashStr
+		cmdstr = self.regress_path + " -testbed " + self.testbed + topoStr + platformStr + priorityStr + " -runLevel " + self.run_level + " -forcePause " + self.forcePause + eofStr + pkgStr + suiteStr + testStr + repeatStr + custom_gashStr + self.addl_params
 		r.exec__(cmdstr)
