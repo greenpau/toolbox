@@ -1,0 +1,11 @@
+#!/bin/bash
+
+progname=`basename $0`
+ovs=$1
+if [ -z "${ovs}" ]; then
+	echo "usage: ${progname} <machine>"
+	exit 1
+fi
+ssh root@${ovs} "service openvswitch stop"
+scp /var/tmp/ovs-vswitchd root@${ovs}:/usr/sbin
+ssh root@${ovs} "service openvswitch start"
