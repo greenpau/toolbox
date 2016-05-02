@@ -23,6 +23,16 @@ class SUITE(object):
 		for handler in test_handlers:
 			handler(test_args)
 
+	def print_header(self):
+		print ""
+		for i in range(1,79):
+			sys.stdout.write("#")
+		print ""
+		print "Suite Name: " + self.suite_name
+		for i in range(1,79):
+			sys.stdout.write("#")
+		print ""
+
 	def print_summary(self):
 		n_passed = 0
 		n_failed = 0
