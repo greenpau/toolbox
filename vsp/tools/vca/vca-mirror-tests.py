@@ -25,11 +25,13 @@ import vca_vm
 def usage():
 	print "usage: " + progname + " [options]"
 	print "options:"
-	print "    -v vm_name(s): comma separated VM names for ACL/port mirroring"
+	print "    -v vm_name(s): comma separated VM names for mirroring"
 	print "    -i <ip>: mirror destination IPv4 address"
 	print "    -e: exitOnFailure=true"
+	print "    -s <suite>: suite name to run ('PBM', 'VPM')"
 	sys.exit(1)
 
+############################### HELPERS #####################################
 def get_vm_attr__(ovs_path, br, logfd, vm_name):
 	vm = vca_vm.VM(ovs_path, br, None, None, None, None, None, None,
 		       None, None, None, logfd)
@@ -163,6 +165,8 @@ def mirror_verify_cleanup__(param):
 	print "mirror tunnel cleanup check passed"
 	return True, n_sub_tests
 
+
+################################# PBM ########################################
 def pbm_verify_flow_attrs__(param):
 	pbm = param['mirror_obj']
 	mirror_dir = param['mirror_dir']
@@ -413,66 +417,6 @@ def pbm_multiple_acl_mirrors(test_args):
 	test.run()
 	suite.assert_test_result(test)
 	testcase_id = testcase_id + 1
-	return
-
-def vpm_single_mirror__(param):
-	ovs_path = param['ovs_path']
-	br = param['br']
-	logfd = param['logfd']
-	mirror_id = param['mirror_id']
-	mirror_dst_ip = param['mirror_dst_ip']
-	vm_name = param['vm_name']
-	mirror_dir = param['vpm_dir']
-	n_sub_tests = 0
-
-	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
-			  vm_name)
-	vpm.local_create(mirror_dir)
-	vpm.dump(False)
-	vpm.show(False)
-	mobjs = [ vpm ]
-	param['nrefs'] = "1"
-	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
-	n_sub_tests = n_sub_tests + n_this_sub_tests
-	vpm.local_destroy()
-	st_param = {	'mirror_obj' : vpm,
-			'ovs_path' : ovs_path,
-			'mirror_dst_ip' : mirror_dst_ip,
-	}
-	n_sub_tests = n_sub_tests + 1
-	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
-	n_sub_tests = n_sub_tests + n_this_sub_tests
-	return passed, n_sub_tests
-
-def vpm_single_mirror(test_args):
-	suite = test_args["suite"]
-	ovs_path = test_args["ovs_path"]
-	br = test_args["br"]
-	logfd = test_args["logfd"]
-	vm_name = test_args["vm_name"]
-	mirror_dst_ip = test_args["mirror_dst_ip"]
-	acl_type = test_args["type"]
-	global testcase_id
-	mirror_dirs = [ "ingress", "egress" ]
-
-	for mirror_dir in mirror_dirs:
-		param = { 'ovs_path' : ovs_path,
-			  'br' : br,
-			  'logfd' : logfd,
-			  'mirror_id': "9900",
-			  'mirror_dst_ip': mirror_dst_ip,
-			  'vm_name': vm_name,
-			  'vpm_dir' : mirror_dir,
-			  'pbm_dir' : None,
-			  'acl_type' : None,
-			}
-		testcase_desc = "Port Mirror: " + mirror_dir
-		test = vca_test.TEST(testcase_id, testcase_desc,
-				     vpm_single_mirror__, param)
-		suite.register_test(test)
-		test.run()
-		suite.assert_test_result(test)
-		testcase_id = testcase_id + 1
 	return
 
 def pbm_vpm_single_mirror__(param):
@@ -1061,48 +1005,20 @@ def pbm_redirect(test_args):
 		testcase_id = testcase_id + 1
 	return
 
-def main(argc, argv):
-	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
+def run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
+	    logfd, ovs_path, ovs_vers, exit_on_failure):
 	global testcase_id
-	vm_name = None
-	aux_vm_name = None
-	mirror_dst_ip = None
-	exit_on_failure = False
-	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
-	try:
-		opts, args = getopt.getopt(argv, "hv:i:e")
-	except getopt.GetoptError as err:
-		print progname + ": invalid argument, " + str(err)
-		usage()
-	for opt, arg in opts:
-		if opt == "-h":
-			usage()
-		elif opt == "-v":
-			if (arg.find(",") > 0):
-				vm_name = arg.split(",")[0]
-				aux_vm_name = arg.split(",")[1]
-			else:
-				vm_name = arg
-		elif opt == "-i":
-			mirror_dst_ip = arg
-		elif opt == "-e":
-			exit_on_failure = True
-		else:
-			usage()
-	logfd = logger.open_log(logfile)
-	if (vm_name == None or mirror_dst_ip == None):
-		usage()
-
-	suite = vca_test.SUITE("Mirror")
+	suite = vca_test.SUITE("PBM")
 	suite.set_exit_on_failure(exit_on_failure)
 	test_handlers = [
 		pbm_single_mirror,
 		pbm_multiple_acl_mirrors,
-		vpm_single_mirror,
 		pbm_vpm_single_mirror,
 		pbm_traffic,
 	]
 	types = [ "default", "static", "reflexive", ]
+	testcase_id = 1
+	suite.print_header()
 	for type in types:
 		test_args = {
 			"suite" : suite,
@@ -1132,6 +1048,139 @@ def main(argc, argv):
 	}
 	suite.run(test_handlers, test_args)
 	suite.print_summary()
+
+################################# VPM ########################################
+def vpm_single_mirror__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	mirror_dir = param['vpm_dir']
+	n_sub_tests = 0
+
+	vpm = vca_vpm.VPM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
+			  vm_name)
+	vpm.local_create(mirror_dir)
+	vpm.dump(False)
+	vpm.show(False)
+	mobjs = [ vpm ]
+	param['nrefs'] = "1"
+	passed, n_this_sub_tests = mirror_verify_all__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	vpm.local_destroy()
+	st_param = {	'mirror_obj' : vpm,
+			'ovs_path' : ovs_path,
+			'mirror_dst_ip' : mirror_dst_ip,
+	}
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
+
+def vpm_single_mirror(test_args):
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_ip = test_args["mirror_dst_ip"]
+	acl_type = test_args["type"]
+	global testcase_id
+	mirror_dirs = [ "ingress", "egress" ]
+
+	for mirror_dir in mirror_dirs:
+		param = { 'ovs_path' : ovs_path,
+			  'br' : br,
+			  'logfd' : logfd,
+			  'mirror_id': "9900",
+			  'mirror_dst_ip': mirror_dst_ip,
+			  'vm_name': vm_name,
+			  'vpm_dir' : mirror_dir,
+			  'pbm_dir' : None,
+			  'acl_type' : None,
+			}
+		testcase_desc = "Port Mirror: " + mirror_dir
+		test = vca_test.TEST(testcase_id, testcase_desc,
+				     vpm_single_mirror__, param)
+		suite.register_test(test)
+		test.run()
+		suite.assert_test_result(test)
+		testcase_id = testcase_id + 1
+	return
+
+def run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+	    logfd, ovs_path, ovs_vers, exit_on_failure):
+	global testcase_id
+	suite = vca_test.SUITE("VPM")
+	suite.set_exit_on_failure(exit_on_failure)
+	test_handlers = [
+		vpm_single_mirror,
+	]
+	test_args = {
+		"suite" : suite,
+		"ovs_path" : ovs_path,
+		"br" : br,
+		"logfd" : logfd,
+		"vm_name": vm_name,
+		"aux_vm_name" : aux_vm_name,
+		"mirror_dst_ip" : mirror_dst_ip,
+		"type" : None,
+		"ovs_vers" : ovs_vers,
+	}
+	testcase_id = 1
+	suite.print_header()
+	suite.run(test_handlers, test_args)
+	suite.print_summary()
+
+############################### MAIN #########################################
+def main(argc, argv):
+	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
+	global testcase_id
+	vm_name = None
+	aux_vm_name = None
+	mirror_dst_ip = None
+	exit_on_failure = False
+	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
+	suite = "all"
+	try:
+		opts, args = getopt.getopt(argv, "hv:i:es:")
+	except getopt.GetoptError as err:
+		print progname + ": invalid argument, " + str(err)
+		usage()
+	for opt, arg in opts:
+		if opt == "-h":
+			usage()
+		elif opt == "-v":
+			if (arg.find(",") > 0):
+				vm_name = arg.split(",")[0]
+				aux_vm_name = arg.split(",")[1]
+			else:
+				vm_name = arg
+		elif opt == "-i":
+			mirror_dst_ip = arg
+		elif opt == "-e":
+			exit_on_failure = True
+		elif opt == "-s":
+			suite = arg
+		else:
+			usage()
+	logfd = logger.open_log(logfile)
+	if (vm_name == None or mirror_dst_ip == None):
+		usage()
+
+	if (suite == "PBM"):
+		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
+	elif (suite == "VPM"):
+		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
+	else:
+		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
+		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
 
 	exit(0)
 
