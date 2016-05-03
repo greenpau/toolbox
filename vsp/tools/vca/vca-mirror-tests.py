@@ -1135,6 +1135,30 @@ def run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 	suite.print_summary()
 
 ############################### MAIN #########################################
+def validate_args(progname, suite,
+		  vm_name, aux_vm_name,
+		  mirror_dst_ip):
+	success = True
+	if (vm_name == None):
+		print progname + ": missing VM name"
+		success = False
+	elif (vm_name.find("-") == 0):
+		print progname + ": option -v requires an argument"
+		success = False
+	if (suite == "PBM"):
+		if (mirror_dst_ip == None):
+			print progname + ": missing mirror destination IP for PBM suite"
+			success = False
+	elif (suite == "VPM"):
+		if (mirror_dst_ip == None):
+			print progname + ": missing mirror destination IP for VPM suite"
+			success = False
+	elif (suite == "all"):
+		if (mirror_dst_ip == None):
+			print progname + ": missing mirror destination IP for all suite"
+			success = False
+	return success
+
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
 	global testcase_id
@@ -1167,9 +1191,9 @@ def main(argc, argv):
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
-	if (vm_name == None or mirror_dst_ip == None):
-		usage()
-
+	if (validate_args(progname, suite,
+			  vm_name, aux_vm_name, mirror_dst_ip) == False):
+		exit(1)
 	if (suite == "PBM"):
 		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
 			logfd, ovs_path, ovs_vers, exit_on_failure)
