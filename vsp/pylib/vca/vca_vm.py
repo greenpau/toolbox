@@ -7,6 +7,7 @@ import shell
 import ovs_ofproto
 
 class VM(object):
+	vm_start_path = "/usr/local/openvswitch/tools/vca/vca-vm-start.sh"
 	def __init__(self, ovs_path, br, vm_uuid, vm_iface, vm_ip_local,
 		     vm_subnet, vm_netmask, vm_gw_ip, vm_mac, vm_xml,
 		     vm_type, logfd):
@@ -52,6 +53,12 @@ class VM(object):
 			xmlout.write(outline)
 		xmlin.close()
 		xmlout.close()
+
+	def resolve(self, vm_list):
+		for vm_name in vm_list:
+			cmd = [ self.vm_start_path, vm_name ]
+			shell.run_cmd("Resolving VM: " + vm_name,
+				      cmd, self.logfd)
 
 	def define(self):
 		cmd = [ self.appctl_path, "vm/send-event", "define",
