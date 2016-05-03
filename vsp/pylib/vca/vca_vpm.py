@@ -60,10 +60,10 @@ class VPM(object):
 		if (self.mirror != None):
 			self.mirror.show(to_stdout)
 
-	def get_dst_ip(self):
+	def get_destination(self):
 		dst_ip = None
 		if (self.mirror != None):
-			dst_ip = self.mirror.get_dst_ip()
+			dst_ip = self.mirror.get_destination()
 		return dst_ip
 
 	def get_nrefs(self):

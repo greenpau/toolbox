@@ -20,6 +20,7 @@ sys.path.append("/usr/local/openvswitch/pylib/vca")
 import vca_test
 import vca_pbm
 import vca_vpm
+import vca_dyn
 import vca_vm
 
 def usage():
@@ -27,8 +28,9 @@ def usage():
 	print "options:"
 	print "    -v vm_name(s): comma separated VM names for mirroring"
 	print "    -i <ip>: mirror destination IPv4 address"
+	print "    -p <name>: mirror destination port (dyn-mirror)"
 	print "    -e: exitOnFailure=true"
-	print "    -s <suite>: suite name to run ('PBM', 'VPM')"
+	print "    -s <suite>: suite name to run ('PBM', 'VPM', 'DYN')"
 	sys.exit(1)
 
 ############################### HELPERS #####################################
@@ -42,12 +44,12 @@ def get_vm_attr__(ovs_path, br, logfd, vm_name):
 	ofp_port = vm.port_ofp_port()
 	return port_name, mac, ip, ofp_port
 
-def mirror_verify_dst_ip__(param):
+def mirror_verify_destination__(param):
 	mobj = param['mirror_obj']
-	mirror_dst_ip = param['mirror_dst_ip']
-	mobj_dst_ip = str(mobj.get_dst_ip())
-	if (mirror_dst_ip != mobj_dst_ip):
-		print "Mirror Destination IP verification failed (expected: " + mirror_dst_ip + ", got: " + mobj_dst_ip + ")"
+	in_mirror_dst = param['mirror_dst']
+	mobj_destination = str(mobj.get_destination())
+	if (in_mirror_dst != mobj_destination):
+		print "Mirror Destination IP verification failed (expected: " + in_mirror_dst + ", got: " + mobj_destination + ")"
 		return False
 	else :
 		print "Mirror Destination IP verification passed"
@@ -109,10 +111,10 @@ def mirror_verify_all__(mobjs, param):
 
 	for mobj in mobjs:
 		st_param = {	'mirror_obj' : mobj,
-				'mirror_dst_ip' : mirror_dst_ip,
+				'mirror_dst' : mirror_dst_ip,
 			   }
 		n_sub_tests = n_sub_tests + 1
-		passed = mirror_verify_dst_ip__(st_param)
+		passed = mirror_verify_destination__(st_param)
 		if (passed == False):
 			break
 		st_param = {	'mirror_obj' : mobj,
@@ -146,9 +148,9 @@ def mirror_verify_cleanup__(param):
 	mirror_dst_ip = param['mirror_dst_ip']
 	n_sub_tests = 0
 
-	mobj_dst_ip = mobj.get_dst_ip()
+	mobj_destination = mobj.get_destination()
 	n_sub_tests = n_sub_tests + 1
-	if (mobj_dst_ip != None):
+	if (mobj_destination != None):
 		print "mirror cleanup check failed"
 		return False, n_sub_tests
 	else:
@@ -1134,10 +1136,163 @@ def run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 	suite.run(test_handlers, test_args)
 	suite.print_summary()
 
+################################### DYN ######################################
+def mirror_verify_dyn__(mobjs, param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst = param['mirror_dst_port']
+	vm_name = param['vm_name']
+	nrefs = param['nrefs']
+	passed = True
+	n_sub_tests = 0
+
+	for mobj in mobjs:
+		st_param = {	'mirror_obj' : mobj,
+				'mirror_dst' : mirror_dst,
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = mirror_verify_destination__(st_param)
+		if (passed == False):
+			break
+		st_param = {	'mirror_obj' : mobj,
+				'mirror_nrefs' : nrefs,
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = mirror_verify_nrefs__(st_param)
+		if (passed == False):
+			break
+	return passed, n_sub_tests
+
+def dyn_mirror_single_provisioning__(param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	dyn_type = param['dyn_type']
+	n_sub_tests = 0
+
+	dyn = vca_dyn.DYN(ovs_path, br, logfd, mirror_id, mirror_dst_port,
+			  vm_name, dyn_type)
+	dyn.local_create()
+	dyn.dump(False)
+	dyn.show(False)
+	mobjs = [ dyn ]
+	param['nrefs'] = "0"
+	passed, n_this_sub_tests = mirror_verify_dyn__(mobjs, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	dyn.local_destroy()
+	st_param = {	'mirror_obj' : dyn,
+			'ovs_path' : ovs_path,
+			'mirror_dst_ip' : mirror_dst_ip,
+			'mirror_dst_port' : mirror_dst_port,
+	}
+	n_sub_tests = n_sub_tests + 1
+	passed, n_this_sub_tests = mirror_verify_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
+
+def dyn_mirror_single_traffic__(param):
+	passed = True
+	n_sub_tests = 0
+	n_this_sub_tests = 0
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	mirror_dst_ip = param['mirror_dst_ip']
+	vm_name = param['vm_name']
+	dyn_type = param['dyn_type']
+
+	print "Dyn Mirror Traffic Test - " + dyn_type
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
+
+def dyn_single_mirror(test_args):
+	global testcase_id
+	suite = test_args["suite"]
+	ovs_path = test_args["ovs_path"]
+	br = test_args["br"]
+	logfd = test_args["logfd"]
+	vm_name = test_args["vm_name"]
+	mirror_dst_port = test_args["mirror_dst_port"]
+	aux_mirror_dst_port = test_args["aux_mirror_dst_port"]
+	mirror_dst_ip = "0.0.0.0"
+	pbm_dir = "n/a"
+	vpm_dir = "n/a"
+	acl_type = "n/a"
+
+	if (aux_mirror_dst_port != None):
+		dyn_types = [ "gen", "dpi" ]
+	else:
+		dyn_types = [ "gen" ]
+	dyn_single_mirror_tests = [
+		{
+			'handler' : dyn_mirror_single_provisioning__,
+			'desc' : "provisioning",
+		},
+		{
+			'handler' : dyn_mirror_single_traffic__,
+			'desc' : "traffic",
+		},
+	]
+	for dyn_type in dyn_types :
+		if (dyn_type == "dpi"):
+			mirror_dst_port = aux_mirror_dst_port
+		param = { 'ovs_path' : ovs_path,
+			  'br' : br,
+			  'logfd' : logfd,
+			  'mirror_id': "9900",
+			  'mirror_dst_port': mirror_dst_port,
+			  'mirror_dst_ip': mirror_dst_ip,
+			  'vm_name': vm_name,
+			  'dyn_type' : dyn_type
+		}
+		for dsm_test in dyn_single_mirror_tests:
+			this_desc = dsm_test['desc']
+			this_test = dsm_test['handler']
+			testcase_desc = "Dynamic Single Mirror - " + this_desc + ": " + dyn_type
+			test = vca_test.TEST(testcase_id, testcase_desc,
+					     this_test, param)
+			suite.register_test(test)
+			test.run()
+			suite.assert_test_result(test)
+			testcase_id = testcase_id + 1
+
+def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, aux_mirror_dst_port,
+	    logfd, ovs_path, ovs_vers, exit_on_failure):
+	global testcase_id
+	suite = vca_test.SUITE("DYN")
+	suite.set_exit_on_failure(exit_on_failure)
+	test_handlers = [
+		dyn_single_mirror,
+	]
+	test_args = {
+		"suite" : suite,
+		"ovs_path" : ovs_path,
+		"br" : br,
+		"logfd" : logfd,
+		"vm_name": vm_name,
+		"aux_vm_name" : aux_vm_name,
+		"mirror_dst_port" : mirror_dst_port,
+		"aux_mirror_dst_port": aux_mirror_dst_port,
+		"ovs_vers" : ovs_vers,
+	}
+	testcase_id = 1
+	suite.print_header()
+	suite.run(test_handlers, test_args)
+	suite.print_summary()
+
 ############################### MAIN #########################################
 def validate_args(progname, suite,
 		  vm_name, aux_vm_name,
-		  mirror_dst_ip):
+		  mirror_dst_ip,
+		  mirror_dst_port, aux_mirror_dst_port):
 	success = True
 	if (vm_name == None):
 		print progname + ": missing VM name"
@@ -1153,9 +1308,16 @@ def validate_args(progname, suite,
 		if (mirror_dst_ip == None):
 			print progname + ": missing mirror destination IP for VPM suite"
 			success = False
+	elif (suite == "DYN"):
+		if (mirror_dst_port == None):
+			print progname + ": missing mirror destination port for DYN suite"
+			success = False
 	elif (suite == "all"):
 		if (mirror_dst_ip == None):
 			print progname + ": missing mirror destination IP for all suite"
+			success = False
+		if (mirror_dst_port == None):
+			print progname + ": missing mirror destination port for all suite"
 			success = False
 	return success
 
@@ -1165,11 +1327,13 @@ def main(argc, argv):
 	vm_name = None
 	aux_vm_name = None
 	mirror_dst_ip = None
+	mirror_dst_port = None
+	aux_mirror_dst_port = None
 	exit_on_failure = False
 	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
 	suite = "all"
 	try:
-		opts, args = getopt.getopt(argv, "hv:i:es:")
+		opts, args = getopt.getopt(argv, "hv:i:es:p:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -1177,6 +1341,7 @@ def main(argc, argv):
 		if opt == "-h":
 			usage()
 		elif opt == "-v":
+			vm_list = arg
 			if (arg.find(",") > 0):
 				vm_name = arg.split(",")[0]
 				aux_vm_name = arg.split(",")[1]
@@ -1184,6 +1349,13 @@ def main(argc, argv):
 				vm_name = arg
 		elif opt == "-i":
 			mirror_dst_ip = arg
+		elif opt == "-p":
+			if (arg.find(",") > 0):
+				mirror_dst_port = arg.split(",")[0]
+				aux_mirror_dst_port = arg.split(",")[1]
+			else:
+				mirror_dst_port = arg
+				vm_name = arg
 		elif opt == "-e":
 			exit_on_failure = True
 		elif opt == "-s":
@@ -1192,7 +1364,8 @@ def main(argc, argv):
 			usage()
 	logfd = logger.open_log(logfile)
 	if (validate_args(progname, suite,
-			  vm_name, aux_vm_name, mirror_dst_ip) == False):
+			  vm_name, aux_vm_name, mirror_dst_ip,
+			  mirror_dst_port, aux_mirror_dst_port) == False):
 		exit(1)
 	if (suite == "PBM"):
 		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
@@ -1200,10 +1373,17 @@ def main(argc, argv):
 	elif (suite == "VPM"):
 		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 			logfd, ovs_path, ovs_vers, exit_on_failure)
+	elif (suite == "DYN"):
+		run_dyn(br, vm_name, aux_vm_name,
+			mirror_dst_port, aux_mirror_dst_port,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
 	else:
 		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
 			logfd, ovs_path, ovs_vers, exit_on_failure)
 		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+			logfd, ovs_path, ovs_vers, exit_on_failure)
+		run_dyn(br, vm_name, aux_vm_name,
+			mirror_dst_port, aux_mirror_dst_port,
 			logfd, ovs_path, ovs_vers, exit_on_failure)
 
 	exit(0)

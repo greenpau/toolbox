@@ -56,7 +56,7 @@ class Mirror(object):
 				break
 		return out
 
-	def get_dst_ip(self):
+	def get_destination(self):
 		return self.__parse_show_mirror(self.mirror_id, 6)
 
 	def get_nrefs(self):
