@@ -1,12 +1,17 @@
 #!/bin/bash
 progname=`basename $0`
-machine=$1
-vm=$2
-if [ -z "${machine}" -o -z "${vm}" ]; then
-	echo "usage: ${progname} <machine> <vm>"
+vm=$1
+if [ -d /mv* ]; then
+	testbed=`basename /mv*`
+fi
+if [ -z "${testbed}" -o -z "${vm}" ]; then
+	echo "usage: ${progname} <vm> [<testbed>]"
 	exit 1
 fi
-virsh define /home/${machine}/${vm}.xml
-uuid=`grep -i uuid /home/${machine}/${vm}.xml | awk -F">" '{print $2}' | awk -F"<" '{print $1}'`
-echo "Starting vm ${vm} with UUID ${uuid} in machine ${machine}"
+xml=/home/${testbed}/${vm}.xml
+virsh define ${xml}
+uuid=`grep -i uuid ${xml} | awk -F">" '{print $2}' | awk -F"<" '{print $1}'`
+echo "Defining vm ${vm} from XML file ${xml}"
+ovs-appctl vm/send-event define ${xml}
+echo "Starting vm ${vm} with UUID ${uuid}"
 ovs-appctl vm/send-event ${uuid} start
