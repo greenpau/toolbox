@@ -37,7 +37,7 @@ class OFProto(object):
 			line_tok = line.split()
 			port_str = line_tok[1]
 			port_tok = port_str.split('/')
-			odp_port_num = port_tok[1]
+			odp_port_num = port_tok[1].replace(":","")
 			break
 		return odp_port_num
 

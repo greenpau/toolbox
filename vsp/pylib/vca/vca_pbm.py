@@ -98,11 +98,11 @@ class PBM(object):
 	def __setup_acl_mirror(self, action, acl_type, acl_dir):
 		flowstr = None
 		table_type = None
-		if (acl_type == "redirect") :
+		if (acl_type == "Redirect") :
 			table_type = "redirect"
-		elif (acl_dir == "ingress"):
+		elif (acl_dir == "Ingress"):
 			table_type = "pre"
-		elif (acl_dir == "egress"):
+		elif (acl_dir == "Egress"):
 			table_type = "post"
 
 		if (table_type == None):
@@ -119,7 +119,7 @@ class PBM(object):
 				flowstr = self.__setup_static_acl_mirror_flowstr(table_type)
 			else:
 				flowstr = self.__cleanup_static_acl_mirror_flowstr(table_type)
-		elif (acl_type == "redirect"):
+		elif (acl_type == "Redirect"):
 			if (action == "Set"):
 				flowstr = self.__setup_static_acl_flowstr("pre")
 				cmd = [ self.ofctl_path, "add-flow", self.br, flowstr ]
@@ -153,7 +153,7 @@ class PBM(object):
 						self.mirror_id)
 
 	def local_destroy(self):
-		if (self.acl_type != None and self.acl_dir != None) or (self.acl_type == "redirect"):
+		if (self.acl_type != None and self.acl_dir != None) or (self.acl_type == "Redirect"):
 			self.__setup_acl_mirror("Unset", self.acl_type, self.acl_dir)
 
 	def dump(self, to_stdout):
@@ -232,11 +232,11 @@ class PBM(object):
 		n_packets = 0
 		n_bytes = 0
 		table_id = -1
-		if (acl_type == "ingress"):
+		if (acl_type == "Ingress"):
 			table_id = 9
-		elif (acl_type == "egress"):
+		elif (acl_type == "Egress"):
 			table_id = 14
-		elif (acl_type == "redirect"):
+		elif (acl_type == "Redirect"):
 			table_id = 10
 		if (table_id == -1):
 			return n_packets, n_bytes, None

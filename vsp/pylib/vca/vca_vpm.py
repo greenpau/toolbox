@@ -42,7 +42,7 @@ class VPM(object):
 		shell.run_cmd(hdrstr, cmd, self.logfd)
 
 	def local_create(self, mirror_dir):
-		self.mirror_dir = mirror_dir
+		self.mirror_dir = mirror_dir.lower()
 		self.__setup_vport_mirror("Set")
 		self.mirror = vca_mirror.Mirror(self.ovs_path, self.br,
 						self.logfd, "Port",

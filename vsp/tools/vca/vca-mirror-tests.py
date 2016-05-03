@@ -178,11 +178,11 @@ def pbm_verify_flow_attrs__(param):
 	for mirror_attr in mirror_attrs:
 		table_id = mirror_attr['table_id']
 		if (table_id == "9"):
-			flow_acl_type = "ingress"
+			flow_acl_type = "Ingress"
 		elif (table_id == "14"):
-			flow_acl_type = "egress"
+			flow_acl_type = "Egress"
 		elif (table_id == "10"):
-			flow_acl_type = "redirect"
+			flow_acl_type = "Redirect"
 		else:
 			print "Flow returned bad table_id: " + table_id
 			return False
@@ -221,13 +221,13 @@ def pbm_verify_mirror_vport__(param):
 	mirror_dir = param['mirror_dir']
 	acl_type = param['acl_type']
 
-	if (acl_type != "redirect"):
+	if (acl_type != "Redirect"):
 		acl_type = mirror_dir
 	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(acl_type)
 	port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
 			br, logfd, vm_name)
 	if (port_name == mirror_vport):
-		print "Mirror VPORT name verification passed"
+		print "Mirror VPORT name verification passed (" + mirror_vport_ofp_port + "/" + mirror_vport_odp_port + ")" 
 	else:
 		print "Mirror vport: " + mirror_vport + ", mirror_ofp_port: " + mirror_vport_ofp_port + ", vport: " + vport
 		print "mirror VPORT name verification failed"
@@ -304,17 +304,17 @@ def pbm_multiple_acl_mirrors__(param):
 	acl_type = param['acl_type']
 	n_sub_tests = 0
 
-	if (acl_type == "redirect"):
+	if (acl_type == "Redirect"):
 		print "Multiple ACL mirror tests skipped for redirect ACL"
 		return True, n_sub_tests
 	pbm1 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			   vm_name)
-	pbm1.local_create(acl_type, "ingress")
+	pbm1.local_create(acl_type, "Ingress")
 	pbm1.dump(False)
 	pbm1.show(False)
 	pbm2 = vca_pbm.PBM(ovs_path, br, logfd, mirror_id, mirror_dst_ip,
 			   vm_name)
-	pbm2.local_create(acl_type, "egress")
+	pbm2.local_create(acl_type, "Egress")
 	pbm2.dump(False)
 	pbm2.show(False)
 	mobjs = [ pbm1, pbm2 ]
@@ -326,7 +326,7 @@ def pbm_multiple_acl_mirrors__(param):
 		pbm2.local_destroy()
 		return False, n_sub_tests
 	st_param = {	'mirror_obj' : pbm1,
-			'mirror_dir' : "ingress",
+			'mirror_dir' : "Ingress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 			'acl_type' : acl_type,
@@ -334,7 +334,7 @@ def pbm_multiple_acl_mirrors__(param):
 	n_sub_tests = n_sub_tests + 1
 	passed = pbm_verify_flow_attrs__(st_param)
 	st_param = {	'mirror_obj' : pbm2,
-			'mirror_dir' : "egress",
+			'mirror_dir' : "Egress",
 			'mirror_id' : mirror_id,
 			'mirror_dst_ip' : mirror_dst_ip,
 			'acl_type' : acl_type,
@@ -367,7 +367,7 @@ def pbm_single_mirror(test_args):
 	vm_name = test_args["vm_name"]
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
-	acl_dirs = [ "ingress", "egress" ]
+	acl_dirs = [ "Ingress", "Egress" ]
 	global testcase_id
 
 	for acl_dir in acl_dirs:
@@ -504,8 +504,8 @@ def pbm_vpm_single_mirror(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	global testcase_id
-	acl_dirs = [ "ingress", "egress" ]
-	vpm_dirs = [ "ingress", "egress", "both" ]
+	acl_dirs = [ "Ingress", "Egress" ]
+	vpm_dirs = [ "Ingress", "Egress", "both" ]
 
 	for pbm_dir in acl_dirs:
 		for vpm_dir in vpm_dirs:
@@ -600,7 +600,7 @@ def pbm_traffic_pkt_out__(param):
 	shell.execute(cmd)
 
 	if (acl_type == "reflexive"):
-		if (pbm_dir == "egress"):
+		if (pbm_dir == "Egress"):
 			mac_1 = src_mac
 			ip_1 = src_ip
 			mac_2 = dst_mac
@@ -632,7 +632,7 @@ def pbm_traffic_pkt_out__(param):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
 
-	if (acl_type == "redirect") :
+	if (acl_type == "Redirect") :
 		rule_n_packets, rule_n_bytes, flow = pbm.get_flow_pkt_counters(acl_type)
 		flow_n_packets, flow_n_bytes, flow = pbm.get_flow_pkt_counters_mirror(acl_type)
 	else:
@@ -643,7 +643,7 @@ def pbm_traffic_pkt_out__(param):
 		passed = False
 		print "Packet count is 0 in rule: " + flow
 		return passed, n_sub_tests
-	if (acl_type == "redirect"):
+	if (acl_type == "Redirect"):
 		print "Rule packet count is non-zero in " + acl_type + " ACL, passed" 
 	else:
 		print "Rule packet count is non-zero in " + pbm_dir + " ACL, passed" 
@@ -652,7 +652,7 @@ def pbm_traffic_pkt_out__(param):
 		passed = False
 		print "Mirror Packet count is 0 in rule: " + flow
 		return passed, n_sub_tests
-	if (acl_type == "redirect"):
+	if (acl_type == "Redirect"):
 		print "Rule mirror packet count is non-zero in " + acl_type + " ACL, passed" 
 	else:
 		print "Rule mirror packet count is non-zero in " + pbm_dir + " ACL, passed" 
@@ -662,7 +662,7 @@ def pbm_traffic_pkt_out__(param):
 		passed = False
 		print "Mirror attribute NOT found in rule: " + flow
 		return passed, n_sub_tests
-	if (acl_type == "redirect"):
+	if (acl_type == "Redirect"):
 		print "Mirror attribute found for rule in " + acl_type + " ACL, passed" 
 	else:
 		print "Mirror attribute found for rule in " + pbm_dir + " ACL, passed" 
@@ -707,13 +707,13 @@ def pbm_traffic_pkt_out__(param):
 
 		mirror_attr_table_id = mirror_attr['table_id']
 		n_sub_tests = n_sub_tests + 1
-		if (acl_type == "redirect") and (mirror_attr_table_id == "10"):
+		if (acl_type == "Redirect") and (mirror_attr_table_id == "10"):
 			print "bridge/dump-flows-detail: redirect mirror table_id check passed"
-		elif (pbm_dir == "ingress") and (mirror_attr_table_id == "9"):
+		elif (pbm_dir == "Ingress") and (mirror_attr_table_id == "9"):
 			print "bridge/dump-flows-detail: ingress mirror table_id check passed"
-		elif (pbm_dir == "egress") and (mirror_attr_table_id == "14"):
+		elif (pbm_dir == "Egress") and (mirror_attr_table_id == "14"):
 			print "bridge/dump-flows-detail: egress mirror table_id check passed"
-		elif (acl_type == "redirect"):
+		elif (acl_type == "Redirect"):
 			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", acl_type: " + acl_type + ", failed"
 		else:
 			print "bridge/dump-flows-detail: table_id: " + mirror_attr_table_id + ", pbm_dir: " + pbm_dir + ", failed"
@@ -829,7 +829,7 @@ def pbm_traffic(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	ovs_vers = test_args["ovs_vers"]
-	acl_dirs = [ "ingress", "egress" ]
+	acl_dirs = [ "Ingress", "Egress" ]
 	global testcase_id
 
 	if (ovs_vers == 0x230):
@@ -1043,7 +1043,7 @@ def run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
 		"vm_name": vm_name,
 		"aux_vm_name" : aux_vm_name,
 		"mirror_dst_ip" : mirror_dst_ip,
-		"type" : "redirect",
+		"type" : "Redirect",
 		"ovs_vers" : ovs_vers,
 	}
 	suite.run(test_handlers, test_args)
@@ -1088,7 +1088,7 @@ def vpm_single_mirror(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	global testcase_id
-	mirror_dirs = [ "ingress", "egress" ]
+	mirror_dirs = [ "Ingress", "Egress" ]
 
 	for mirror_dir in mirror_dirs:
 		param = { 'ovs_path' : ovs_path,

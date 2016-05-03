@@ -6,6 +6,7 @@ sys.path.append("/usr/local/openvswitch/pylib/system")
 import shell
 
 sys.path.append("/usr/local/openvswitch/pylib/vca")
+import ovs_ofproto
 
 class Mirror(object):
 	def __init__(self, ovs_path, br, logfd, mirror_type, mirror_id):
@@ -74,9 +75,14 @@ class Mirror(object):
 		return mirror_iface, mirror_ports
 
 	def get_mirror_vport(self, type):
-		return self.__parse_show_mirror(type, 1), self.__parse_show_mirror(type, 2)
+		port_name = self.__parse_show_mirror(type, 2)
+		ofproto = ovs_ofproto.OFProto(self.ovs_path)
+		ofp_port = ofproto.ofp_port(self.br, port_name)
+		odp_port = ofproto.odp_port(port_name)
+		port_nums = ofp_port + "/" + odp_port
+		return port_name, port_nums
 
 	def get_mirror_traffic_stats(self):
-		n_packets = self.__parse_show_mirror("Traffic Statistics:", 3).replace(",", "")
-		n_bytes = self.__parse_show_mirror("Traffic Statistics:", 5)
+		n_packets = self.__parse_show_mirror("Mirror Port Cumulative Statistics:", 5).replace(",", "")
+		n_bytes = self.__parse_show_mirror("Mirror Port Cumulative Statistics:", 7)
 		return n_packets, n_bytes
