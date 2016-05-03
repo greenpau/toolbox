@@ -50,6 +50,7 @@ install__ 0755 pylib/vca/vca_evpn_dhcp.py
 install__ 0755 pylib/vca/vca_evpn.py
 install__ 0755 pylib/vca/vca_pbm.py
 install__ 0755 pylib/vca/vca_vpm.py
+install__ 0755 pylib/vca/vca_dyn.py
 install__ 0755 pylib/vca/vca_mirror.py
 install__ 0755 pylib/vca/vca_test.py
 
@@ -111,6 +112,7 @@ install__ 0755 tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/pylib/vca/vca_evpn.py
 /usr/local/openvswitch/pylib/vca/vca_pbm.py
 /usr/local/openvswitch/pylib/vca/vca_vpm.py
+/usr/local/openvswitch/pylib/vca/vca_dyn.py
 /usr/local/openvswitch/pylib/vca/vca_mirror.py
 /usr/local/openvswitch/pylib/vca/vca_test.py
 
