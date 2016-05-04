@@ -1137,6 +1137,22 @@ def run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 	suite.print_summary()
 
 ################################### DYN ######################################
+def dyn_verify_mirror_vport__(param):
+	mobj = param['mirror_obj']
+	vm_name = param['vm_name']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	in_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
+							br, logfd, vm_name)
+	mobj_port_name = str(mobj.get_port_name())
+	if (in_port_name != mobj_port_name):
+		print "Mirror vport name verification failed (expected: " + in_port_name + ", got: " + mobj_port_name + ")"
+		return False
+	else :
+		print "Mirror port name verification passed"
+	return True
+
 def mirror_verify_dyn__(mobjs, param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -1161,6 +1177,16 @@ def mirror_verify_dyn__(mobjs, param):
 			   }
 		n_sub_tests = n_sub_tests + 1
 		passed = mirror_verify_nrefs__(st_param)
+		if (passed == False):
+			break
+		st_param = {	'mirror_obj' : mobj,
+				'vm_name' : vm_name,
+				'ovs_path': ovs_path,
+				'br': br,
+				'logfd': logfd,
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = dyn_verify_mirror_vport__(st_param)
 		if (passed == False):
 			break
 	return passed, n_sub_tests

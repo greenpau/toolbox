@@ -56,6 +56,9 @@ class Mirror(object):
 				break
 		return out
 
+	def get_port_name(self):
+		return self.__parse_show_mirror(self.mirror_id, 3)
+
 	def get_destination(self):
 		return self.__parse_show_mirror(self.mirror_id, 6)
 

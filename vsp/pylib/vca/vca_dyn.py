@@ -103,6 +103,12 @@ class DYN(object):
 			nrefs = self.mirror.get_nrefs()
 		return nrefs
 
+	def get_port_name(self):
+		port_name = None
+		if (self.mirror != None):
+			port_name = self.mirror.get_port_name()
+		return port_name
+
 	def get_internal_name(self):
 		int_name = None
 		if (self.mirror != None):
