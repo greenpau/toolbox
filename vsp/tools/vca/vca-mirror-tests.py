@@ -1222,6 +1222,70 @@ def dyn_mirror_single_provisioning__(param):
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
+
+def dyn_traffic_pkt_out__(param):
+	passed = True
+	n_sub_tests = 0
+	dyn = param['dyn']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	src_ofp_port = param['src_ofp_port']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	mirror_id = param['mirror_id']
+	n_pkts_sent = int(10)
+
+	mirror_iface = dyn.get_destination()
+	if (mirror_iface == None):
+		passed = False
+		print "Failed to parse mirror interface"
+		return passed, n_sub_tests
+
+	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
+	shell.execute(cmd)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters("Ingress",
+							ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_in != n_pkts_sent):
+		print "Ingress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
+		passed = False
+		return passed, n_sub_tests
+	print "Ingress dyn mirror packet count test: passed"
+
+	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
+	shell.execute(cmd)
+	mac_1 = dst_mac
+	ip_1 = dst_ip
+	mac_2 = src_mac
+	ip_2 = src_ip
+	ofp_port = dst_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters("Egress",
+							ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_in != n_pkts_sent):
+		print "Egress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
+		passed = False
+		return passed, n_sub_tests
+	print "Egress dyn mirror packet count test: passed"
+	return passed, n_sub_tests
+
 def dyn_mirror_single_traffic__(param):
 	passed = True
 	n_sub_tests = 0
@@ -1231,11 +1295,37 @@ def dyn_mirror_single_traffic__(param):
 	logfd = param['logfd']
 	mirror_id = param['mirror_id']
 	mirror_dst_port = param['mirror_dst_port']
-	mirror_dst_ip = param['mirror_dst_ip']
-	vm_name = param['vm_name']
 	dyn_type = param['dyn_type']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
 
 	print "Dyn Mirror Traffic Test - " + dyn_type
+
+	dyn = vca_dyn.DYN(ovs_path, br, logfd, mirror_id, mirror_dst_port,
+			  src_vm_name, dyn_type)
+	dyn.local_create()
+	dyn.dump(False)
+	dyn.show(False)
+
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, src_vm_name)
+	st_param = {
+		'dyn' : dyn,
+		'ovs_path' : ovs_path,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': src_mac,
+		'src_ip': src_ip,
+		'dst_mac': dst_mac,
+		'dst_ip': dst_ip,
+		'src_ofp_port': src_ofp_port,
+		'dst_ofp_port': dst_ofp_port,
+		'mirror_id' : mirror_id,
+	}
+	passed, this_n_sub_tests = dyn_traffic_pkt_out__(st_param)
+	dyn.local_destroy()
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
@@ -1246,6 +1336,7 @@ def dyn_single_mirror(test_args):
 	br = test_args["br"]
 	logfd = test_args["logfd"]
 	vm_name = test_args["vm_name"]
+	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_port = test_args["mirror_dst_port"]
 	aux_mirror_dst_port = test_args["aux_mirror_dst_port"]
 	mirror_dst_ip = "0.0.0.0"
@@ -1277,6 +1368,7 @@ def dyn_single_mirror(test_args):
 			  'mirror_dst_port': mirror_dst_port,
 			  'mirror_dst_ip': mirror_dst_ip,
 			  'vm_name': vm_name,
+			  'aux_vm_name': aux_vm_name,
 			  'dyn_type' : dyn_type
 		}
 		for dsm_test in dyn_single_mirror_tests:
