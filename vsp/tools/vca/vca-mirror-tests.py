@@ -1161,7 +1161,7 @@ def dyn_verify_agent__(param):
 		print "Mirror Dyn Agent verification failed (expected: " + in_dyn_agent + ", got: " + mobj_dyn_agent + ")"
 		return False
 	else :
-		print "Mirror port name verification passed"
+		print "Mirror agent name verification passed"
 	return True
 
 def mirror_verify_dyn__(mobjs, param):
@@ -1349,7 +1349,7 @@ def dyn_single_mirror(test_args):
 		},
        		{
 			'dyn_agent': "dpi",
-			'mirror_dst': "svc-dpi-port",
+			'mirror_dst': "svc-dpi-tap",
 		},
 	]
 	dyn_single_mirror_tests = [
@@ -1368,7 +1368,7 @@ def dyn_single_mirror(test_args):
 		param = { 'ovs_path' : ovs_path,
 			  'br' : br,
 			  'logfd' : logfd,
-			  'mirror_id': "9900",
+			  'mirror_id': "99",
 			  'mirror_dst_port': mirror_dst,
 			  'mirror_dst_ip': mirror_dst_ip,
 			  'vm_name': vm_name,
