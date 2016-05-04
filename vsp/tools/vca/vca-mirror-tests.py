@@ -1355,7 +1355,6 @@ def main(argc, argv):
 				aux_mirror_dst_port = arg.split(",")[1]
 			else:
 				mirror_dst_port = arg
-				vm_name = arg
 		elif opt == "-e":
 			exit_on_failure = True
 		elif opt == "-s":
