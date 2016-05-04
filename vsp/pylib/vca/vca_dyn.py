@@ -119,6 +119,12 @@ class DYN(object):
 	def get_tunnel_port(self):
 		return None, None
 
+	def get_dyn_agent(self):
+		agent = None
+		if (self.mirror != None):
+			agent = self.mirror.get_dyn_agent()
+		return agent
+
 	def __parse_dump_flows(self, type, ofp_port):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		out = shell.execute(cmd).splitlines()

@@ -65,6 +65,9 @@ class Mirror(object):
 	def get_nrefs(self):
 		return self.__parse_show_mirror(self.mirror_id, 5)
 
+	def get_dyn_agent(self):
+		return self.__parse_show_mirror("Dyn Mirror Agent:", 3)
+
 	def get_internal_name(self):
 		return self.__parse_show_mirror("Mirror Internal Name:", 3)
 

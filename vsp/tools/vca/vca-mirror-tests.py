@@ -1153,6 +1153,17 @@ def dyn_verify_mirror_vport__(param):
 		print "Mirror port name verification passed"
 	return True
 
+def dyn_verify_agent__(param):
+	mobj = param['mirror_obj']
+	in_dyn_agent = param['dyn_agent']
+	mobj_dyn_agent = str(mobj.get_dyn_agent())
+	if (in_dyn_agent != mobj_dyn_agent):
+		print "Mirror Dyn Agent verification failed (expected: " + in_dyn_agent + ", got: " + mobj_dyn_agent + ")"
+		return False
+	else :
+		print "Mirror port name verification passed"
+	return True
+
 def mirror_verify_dyn__(mobjs, param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -1161,6 +1172,7 @@ def mirror_verify_dyn__(mobjs, param):
 	mirror_dst = param['mirror_dst_port']
 	vm_name = param['vm_name']
 	nrefs = param['nrefs']
+	dyn_agent = param['dyn_agent']
 	passed = True
 	n_sub_tests = 0
 
@@ -1187,6 +1199,13 @@ def mirror_verify_dyn__(mobjs, param):
 			   }
 		n_sub_tests = n_sub_tests + 1
 		passed = dyn_verify_mirror_vport__(st_param)
+		if (passed == False):
+			break
+		st_param = {	'mirror_obj' : mobj,
+				'dyn_agent': dyn_agent,
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = dyn_verify_agent__(st_param)
 		if (passed == False):
 			break
 	return passed, n_sub_tests
@@ -1325,7 +1344,7 @@ def dyn_single_mirror(test_args):
 	acl_type = "n/a"
 	agents = [
        		{
-			'dyn_agent': "gen",
+			'dyn_agent': "dyn-mirror",
 			'mirror_dst': mirror_dst_port,
 		},
        		{
