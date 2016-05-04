@@ -12,7 +12,7 @@ import vca_vm
 class DYN(object):
 	mirror = None
 	def __init__(self, ovs_path, br, logfd, mirror_id, mirror_dst_port,
-		     vm_name, dyn_type):
+		     vm_name, agent):
 		self.ovs_path = ovs_path
 		self.ofctl_path = self.ovs_path + "/ovs-ofctl"
 		self.vsctl_path = self.ovs_path + "/ovs-vsctl"
@@ -22,7 +22,7 @@ class DYN(object):
 		self.mirror_id = mirror_id
 		self.mirror_dst_port = mirror_dst_port
 		self.vm_name = vm_name
-		self.dyn_type = dyn_type
+		self.agent = agent
 		self.__init()
 		self.__setup_mirror_dst("Set")
 
@@ -54,25 +54,38 @@ class DYN(object):
 
 	def __setup_vport_mirror(self, action):
 		if (action == "Set"):
-			cmd = [ self.vsctl_path, "set", "interface",
-				self.port_name,
-				"other_config:dyn-mirror=enable",
-				"other_config:mirror-dst-port=" +
-				 self.mirror_dst_port,
-				"other_config:mirror-dir=both",
-				"other_config:mirror-id=" + self.mirror_id,
-			      ]
-			hdrstr = "create mirror on vport " + self.port_name
+			if (self.agent == "dpi"):
+				cmd = [ self.vsctl_path, "set", "interface",
+					self.port_name,
+					"other_config:dpi=enable",
+					"other_config:dpi-id=" + self.mirror_id,
+				      ]
+			else:
+				cmd = [ self.vsctl_path, "set", "interface",
+					self.port_name,
+					"other_config:dyn-mirror=enable",
+					"other_config:mirror-dst-port=" +
+					 self.mirror_dst_port,
+					"other_config:mirror-dir=both",
+					"other_config:mirror-id=" + self.mirror_id,
+				      ]
+			hdrstr = "create mirror on vport " + self.port_name + " agent: " + self.agent
 		else :
-			cmd = [ self.vsctl_path, "set", "interface",
-				self.port_name,
-				"other_config:dyn-mirror=disable",
-				"other_config:mirror-dst-port=" +
-				 self.mirror_dst_port,
-				"other_config:mirror-dir=both",
-				"other_config:mirror-id=" + self.mirror_id,
-			      ]
-			hdrstr = "destroy mirror on vport " + self.port_name
+			if (self.agent == "dpi"):
+				cmd = [ self.vsctl_path, "set", "interface",
+					self.port_name,
+					"other_config:dpi=disable",
+				      ]
+			else:
+				cmd = [ self.vsctl_path, "set", "interface",
+					self.port_name,
+					"other_config:dyn-mirror=disable",
+					"other_config:mirror-dst-port=" +
+					 self.mirror_dst_port,
+					"other_config:mirror-dir=both",
+					"other_config:mirror-id=" + self.mirror_id,
+				      ]
+			hdrstr = "destroy mirror on vport " + self.port_name + " agent: " + self.agent
 		shell.run_cmd(hdrstr, cmd, self.logfd)
 
 	def local_create(self):
