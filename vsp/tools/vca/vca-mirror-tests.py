@@ -1359,7 +1359,7 @@ def dpi_traffic_pkt_out__(param):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
 	new_n_pkts, new_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
-	n_pkts_received = new_n_pkts - curr_n_pkts
+	n_pkts_received = int(new_n_pkts) - int(curr_n_pkts)
 	n_sub_tests = n_sub_tests + 1
 	if (n_pkts_received != n_pkts_sent):
 		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
