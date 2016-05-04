@@ -16,6 +16,7 @@ class DYN(object):
 		self.ovs_path = ovs_path
 		self.ofctl_path = self.ovs_path + "/ovs-ofctl"
 		self.vsctl_path = self.ovs_path + "/ovs-vsctl"
+		self.appctl_path = self.ovs_path + "/ovs-appctl"
 		self.br = br
 		self.logfd = logfd
 		self.mirror_id = mirror_id
@@ -117,3 +118,39 @@ class DYN(object):
 
 	def get_tunnel_port(self):
 		return None, None
+
+	def __parse_dump_flows(self, type, ofp_port):
+		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
+		out = shell.execute(cmd).splitlines()
+		n_packets = 0
+		n_bytes = 0
+		table_id = -1
+		if (type == "Ingress"):
+			table_id = 5
+		elif (type == "Egress"):
+			table_id = 6
+		if (table_id == -1):
+			return n_packets, n_bytes, None
+		for l in out:
+			this_table_id = str(l.split(",")[0]).split("=")[1]
+			if (this_table_id != str(table_id)):
+				continue
+			if (l.find("create_dyn_mirror") >= 0):
+				continue
+			toks = l.split()
+			rule = toks[5]
+			prio = rule.split(",")[0].split("=")[1]
+			if (prio != "16384"):
+				continue
+			print rule
+			in_port = rule.split(",")[2].split("=")[1]
+			if (in_port != str(ofp_port)):
+				continue
+			this_n_pkts = int(toks[2].replace(",", "").split("=")[1])
+			this_n_bytes = int(toks[4].replace(",", "").split("=")[1])
+			n_packets = n_packets + this_n_pkts
+			n_bytes = n_bytes + this_n_bytes
+		return n_packets, n_bytes, l
+
+	def get_flow_pkt_counters(self, type, ofp_port):
+		return self.__parse_dump_flows(type, ofp_port)
