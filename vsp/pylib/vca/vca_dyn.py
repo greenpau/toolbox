@@ -192,3 +192,12 @@ class DYN(object):
 		else:
 			match_pattern = "DPI Port"
 		return self.__parse_dpi_show(match_pattern, 0)
+
+	def get_dpi_stats_by_mirror_id(self, mirror_id):
+		if (mirror_id == "-"):
+			match_pattern = "DPI Engine"
+		else:
+			match_pattern = "DPI Port"
+		n_pkts = self.__parse_dpi_show(match_pattern, 4)
+		n_bytes = self.__parse_dpi_show(match_pattern, 5)
+		return n_pkts, n_bytes

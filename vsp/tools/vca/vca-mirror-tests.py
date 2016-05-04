@@ -1328,6 +1328,46 @@ def dyn_traffic_pkt_out__(param):
 
 	return passed, n_sub_tests
 
+def dpi_traffic_pkt_out__(param):
+	passed = True
+	n_sub_tests = 0
+	dyn = param['dyn']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	src_ofp_port = param['src_ofp_port']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	mirror_id = param['mirror_id']
+	dyn_agent = param['dyn_agent']
+	n_pkts_sent = int(10)
+
+	if (dyn_agent != "dpi"):
+		return passed, n_sub_tests
+
+	curr_n_pkts, curr_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	new_n_pkts, new_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	n_pkts_received = new_n_pkts - curr_n_pkts
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_received != n_pkts_sent):
+		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Packets received matched with sent (" + str(n_pkts_sent) + "), passed"
+	return passed, n_sub_tests
+
 def dyn_mirror_single_traffic__(param):
 	passed = True
 	n_sub_tests = 0
@@ -1365,10 +1405,18 @@ def dyn_mirror_single_traffic__(param):
 		'src_ofp_port': src_ofp_port,
 		'dst_ofp_port': dst_ofp_port,
 		'mirror_id' : mirror_id,
+		'dyn_agent': dyn_agent,
 	}
 	passed, this_n_sub_tests = dyn_traffic_pkt_out__(st_param)
-	dyn.local_destroy()
 	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
+
+	passed, this_n_sub_tests = dpi_traffic_pkt_out__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+
+	dyn.local_destroy()
 	return passed, n_sub_tests
 
 def dyn_single_mirror(test_args):
