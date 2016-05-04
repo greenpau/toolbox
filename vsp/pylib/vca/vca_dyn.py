@@ -172,3 +172,23 @@ class DYN(object):
 
 	def get_flow_pkt_counters(self, type, ofp_port):
 		return self.__parse_dump_flows(type, ofp_port)
+
+	def __parse_dpi_show(self, match_pattern, field):
+		cmd = [ self.appctl_path, "dpi/show", self.br ]
+		out = shell.execute(cmd).splitlines()
+		for l in out:
+			line_tok = l.split()
+			if (line_tok == None) or (line_tok == []):
+				continue
+			if (l.find(match_pattern) < 0):
+				continue
+			out = line_tok[field]
+			break
+		return out
+
+	def get_dpi_port_by_mirror_id(self, mirror_id):
+		if (mirror_id == "-"):
+			match_pattern = "DPI Engine"
+		else:
+			match_pattern = "DPI Port"
+		return self.__parse_dpi_show(match_pattern, 0)

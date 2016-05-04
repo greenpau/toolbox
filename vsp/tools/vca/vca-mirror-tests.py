@@ -1210,6 +1210,44 @@ def mirror_verify_dyn__(mobjs, param):
 			break
 	return passed, n_sub_tests
 
+def mirror_verify_dpi__(dyn, param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst = param['mirror_dst_port']
+	vm_name = param['vm_name']
+	nrefs = param['nrefs']
+	dyn_agent = param['dyn_agent']
+	passed = True
+	n_sub_tests = 0
+
+	if (dyn_agent != "dpi"):
+		return passed, n_sub_tests
+
+	mobj_vport, mac, ip, ofp_port = get_vm_attr__(ovs_path, br,
+						      logfd, vm_name)
+	mobj_mirror_dst = str(dyn.get_destination())
+
+	dpi_vport = str(dyn.get_dpi_port_by_mirror_id(mirror_id))
+	dpi_mirror_dst = str(dyn.get_dpi_port_by_mirror_id("-"))
+
+	n_sub_tests = n_sub_tests + 1
+	if (dpi_vport != mobj_vport):
+		passed = False
+		print "Mirror vport check, (got: " + dpi_vport + ", expect: " + mobj_vport + "), failed"
+		return passed, n_sub_tests
+	print "Mirror vport " + mobj_vport + " listed in dpi/show, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (dpi_mirror_dst != mobj_mirror_dst):
+		passed = False
+		print "Mirror destination check, (got: " + dpi_mirror_dst + ", expect: " + mobj_mirror_dst + "), failed"
+		return passed, n_sub_tests
+	print "Mirror destination " + mobj_mirror_dst + " listed in dpi/show, passed"
+
+	return passed, n_sub_tests
+
 def dyn_mirror_single_provisioning__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -1230,6 +1268,10 @@ def dyn_mirror_single_provisioning__(param):
 	param['nrefs'] = "0"
 	passed, n_this_sub_tests = mirror_verify_dyn__(mobjs, param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
+
+	passed, n_this_sub_tests = mirror_verify_dpi__(dyn, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+
 	dyn.local_destroy()
 	st_param = {	'mirror_obj' : dyn,
 			'ovs_path' : ovs_path,
