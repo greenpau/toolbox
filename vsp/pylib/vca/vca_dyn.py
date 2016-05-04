@@ -142,7 +142,6 @@ class DYN(object):
 			prio = rule.split(",")[0].split("=")[1]
 			if (prio != "16384"):
 				continue
-			print rule
 			in_port = rule.split(",")[2].split("=")[1]
 			if (in_port != str(ofp_port)):
 				continue

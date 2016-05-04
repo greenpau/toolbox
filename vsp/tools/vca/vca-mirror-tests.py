@@ -1265,25 +1265,6 @@ def dyn_traffic_pkt_out__(param):
 		return passed, n_sub_tests
 	print "Ingress dyn mirror packet count test: passed"
 
-	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
-	shell.execute(cmd)
-	mac_1 = dst_mac
-	ip_1 = dst_ip
-	mac_2 = src_mac
-	ip_2 = src_ip
-	ofp_port = dst_ofp_port
-
-	for i in range(n_pkts_sent):
-		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
-				ofp_port, "vca-mirror-tests")
-	n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters("Egress",
-							ofp_port)
-	n_sub_tests = n_sub_tests + 1
-	if (n_pkts_in != n_pkts_sent):
-		print "Egress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
-		passed = False
-		return passed, n_sub_tests
-	print "Egress dyn mirror packet count test: passed"
 	return passed, n_sub_tests
 
 def dyn_mirror_single_traffic__(param):
