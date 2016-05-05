@@ -1210,44 +1210,6 @@ def mirror_verify_dyn__(mobjs, param):
 			break
 	return passed, n_sub_tests
 
-def mirror_verify_dpi__(dyn, param):
-	ovs_path = param['ovs_path']
-	br = param['br']
-	logfd = param['logfd']
-	mirror_id = param['mirror_id']
-	mirror_dst = param['mirror_dst_port']
-	vm_name = param['vm_name']
-	nrefs = param['nrefs']
-	dyn_agent = param['dyn_agent']
-	passed = True
-	n_sub_tests = 0
-
-	if (dyn_agent != "dpi"):
-		return passed, n_sub_tests
-
-	mobj_vport, mac, ip, ofp_port = get_vm_attr__(ovs_path, br,
-						      logfd, vm_name)
-	mobj_mirror_dst = str(dyn.get_destination())
-
-	dpi_vport = str(dyn.get_dpi_port_by_mirror_id(mirror_id))
-	dpi_mirror_dst = str(dyn.get_dpi_port_by_mirror_id("-"))
-
-	n_sub_tests = n_sub_tests + 1
-	if (dpi_vport != mobj_vport):
-		passed = False
-		print "Mirror vport check, (got: " + dpi_vport + ", expect: " + mobj_vport + "), failed"
-		return passed, n_sub_tests
-	print "Mirror vport " + mobj_vport + " listed in dpi/show, passed"
-
-	n_sub_tests = n_sub_tests + 1
-	if (dpi_mirror_dst != mobj_mirror_dst):
-		passed = False
-		print "Mirror destination check, (got: " + dpi_mirror_dst + ", expect: " + mobj_mirror_dst + "), failed"
-		return passed, n_sub_tests
-	print "Mirror destination " + mobj_mirror_dst + " listed in dpi/show, passed"
-
-	return passed, n_sub_tests
-
 def dyn_mirror_single_provisioning__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -1326,46 +1288,6 @@ def dyn_traffic_pkt_out__(param):
 		return passed, n_sub_tests
 	print "Ingress dyn mirror packet count test: passed"
 
-	return passed, n_sub_tests
-
-def dpi_traffic_pkt_out__(param):
-	passed = True
-	n_sub_tests = 0
-	dyn = param['dyn']
-	ovs_path = param['ovs_path']
-	br = param['br']
-	logfd = param['logfd']
-	src_mac = param['src_mac']
-	src_ip = param['src_ip']
-	src_ofp_port = param['src_ofp_port']
-	dst_mac = param['dst_mac']
-	dst_ip = param['dst_ip']
-	dst_ofp_port = param['dst_ofp_port']
-	mirror_id = param['mirror_id']
-	dyn_agent = param['dyn_agent']
-	n_pkts_sent = int(10)
-
-	if (dyn_agent != "dpi"):
-		return passed, n_sub_tests
-
-	curr_n_pkts, curr_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
-	mac_1 = src_mac
-	ip_1 = src_ip
-	mac_2 = dst_mac
-	ip_2 = dst_ip
-	ofp_port = src_ofp_port
-
-	for i in range(n_pkts_sent):
-		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
-				ofp_port, "vca-mirror-tests")
-	new_n_pkts, new_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
-	n_pkts_received = int(new_n_pkts) - int(curr_n_pkts)
-	n_sub_tests = n_sub_tests + 1
-	if (n_pkts_received != n_pkts_sent):
-		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
-		passed = False
-		return passed, n_sub_tests
-	print "Packets received matched with sent (" + str(n_pkts_sent) + "), passed"
 	return passed, n_sub_tests
 
 def dyn_mirror_single_traffic__(param):
@@ -1498,6 +1420,85 @@ def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port,
 	suite.print_header()
 	suite.run(test_handlers, test_args)
 	suite.print_summary()
+
+################################ DPI (dyn-mirror) ############################
+def mirror_verify_dpi__(dyn, param):
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst = param['mirror_dst_port']
+	vm_name = param['vm_name']
+	nrefs = param['nrefs']
+	dyn_agent = param['dyn_agent']
+	passed = True
+	n_sub_tests = 0
+
+	if (dyn_agent != "dpi"):
+		return passed, n_sub_tests
+
+	mobj_vport, mac, ip, ofp_port = get_vm_attr__(ovs_path, br,
+						      logfd, vm_name)
+	mobj_mirror_dst = str(dyn.get_destination())
+
+	dpi_vport = str(dyn.get_dpi_port_by_mirror_id(mirror_id))
+	dpi_mirror_dst = str(dyn.get_dpi_port_by_mirror_id("-"))
+
+	n_sub_tests = n_sub_tests + 1
+	if (dpi_vport != mobj_vport):
+		passed = False
+		print "Mirror vport check, (got: " + dpi_vport + ", expect: " + mobj_vport + "), failed"
+		return passed, n_sub_tests
+	print "Mirror vport " + mobj_vport + " listed in dpi/show, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (dpi_mirror_dst != mobj_mirror_dst):
+		passed = False
+		print "Mirror destination check, (got: " + dpi_mirror_dst + ", expect: " + mobj_mirror_dst + "), failed"
+		return passed, n_sub_tests
+	print "Mirror destination " + mobj_mirror_dst + " listed in dpi/show, passed"
+
+	return passed, n_sub_tests
+
+def dpi_traffic_pkt_out__(param):
+	passed = True
+	n_sub_tests = 0
+	dyn = param['dyn']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	src_ofp_port = param['src_ofp_port']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	mirror_id = param['mirror_id']
+	dyn_agent = param['dyn_agent']
+	n_pkts_sent = int(10)
+
+	if (dyn_agent != "dpi"):
+		return passed, n_sub_tests
+
+	curr_n_pkts, curr_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	new_n_pkts, new_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	n_pkts_received = int(new_n_pkts) - int(curr_n_pkts)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_received != n_pkts_sent):
+		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Packets received matched with sent (" + str(n_pkts_sent) + "), passed"
+	return passed, n_sub_tests
 
 ############################### MAIN #########################################
 def validate_args(progname, suite,
