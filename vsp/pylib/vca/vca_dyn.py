@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import time
 
 sys.path.append("/usr/local/openvswitch/pylib/system")
 import shell
@@ -51,6 +52,7 @@ class DYN(object):
 			      ]
 			hdrstr = "destroy mirror destination " + self.mirror_dst_port
 		shell.run_cmd(hdrstr, cmd, self.logfd)
+		time.sleep(1)
 
 	def __setup_vport_mirror(self, action):
 		if (action == "Set"):
@@ -87,6 +89,7 @@ class DYN(object):
 				      ]
 			hdrstr = "destroy mirror on vport " + self.port_name + " agent: " + self.agent
 		shell.run_cmd(hdrstr, cmd, self.logfd)
+		time.sleep(1)
 
 	def local_create(self):
 		self.__setup_vport_mirror("Set")
