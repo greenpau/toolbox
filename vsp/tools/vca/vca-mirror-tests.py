@@ -1246,7 +1246,7 @@ def dyn_mirror_single_provisioning__(param):
 	return passed, n_sub_tests
 
 
-def dyn_traffic_pkt_out__(param):
+def dyn_traffic_pkt_out_onward__(param):
 	passed = True
 	n_sub_tests = 0
 	dyn = param['dyn']
@@ -1286,7 +1286,16 @@ def dyn_traffic_pkt_out__(param):
 		print "Ingress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
 		passed = False
 		return passed, n_sub_tests
-	print "Ingress dyn mirror packet count test: passed"
+	print "Onward - Ingress dyn mirror packet count test: passed"
+
+	n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters("Egress",
+								   ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_eg != 0):
+		print "Egress dyn mirror packet count is non-zero (" + str(n_pkts_eg) + ", failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Onward - Egress dyn mirror packet count zero test: passed"
 
 	return passed, n_sub_tests
 
@@ -1329,7 +1338,7 @@ def dyn_mirror_single_traffic__(param):
 		'mirror_id' : mirror_id,
 		'dyn_agent': dyn_agent,
 	}
-	passed, this_n_sub_tests = dyn_traffic_pkt_out__(st_param)
+	passed, this_n_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
