@@ -141,11 +141,9 @@ class DYN(object):
 			agent = self.mirror.get_dyn_agent()
 		return agent
 
-	def __parse_dump_flows(self, type, ofp_port):
+	def __parse_dump_flows(self, type, ofp_port, field):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		out = shell.execute(cmd).splitlines()
-		n_packets = 0
-		n_bytes = 0
 		table_id = -1
 		if (type == "Ingress"):
 			table_id = 5
@@ -153,6 +151,7 @@ class DYN(object):
 			table_id = 6
 		if (table_id == -1):
 			return n_packets, n_bytes, None
+		val = None
 		for l in out:
 			this_table_id = str(l.split(",")[0]).split("=")[1]
 			if (this_table_id != str(table_id)):
@@ -167,14 +166,45 @@ class DYN(object):
 			in_port = rule.split(",")[2].split("=")[1]
 			if (in_port != str(ofp_port)):
 				continue
-			this_n_pkts = int(toks[2].replace(",", "").split("=")[1])
-			this_n_bytes = int(toks[4].replace(",", "").split("=")[1])
-			n_packets = n_packets + this_n_pkts
-			n_bytes = n_bytes + this_n_bytes
-		return n_packets, n_bytes, l
+			val = toks[field]
+			break
+		return val, l
 
 	def get_flow_pkt_counters(self, type, ofp_port):
-		return self.__parse_dump_flows(type, ofp_port)
+		n_pkts_str, flow = self.__parse_dump_flows(type, ofp_port, 2)
+		if (n_pkts_str == None):
+			n_pkts = 0
+		else:
+			n_pkts = n_pkts_str.replace(",", "").split("=")[1]
+		n_bytes_str, flow = self.__parse_dump_flows(type, ofp_port, 4)
+		if (n_bytes_str == None):
+			n_bytes = 0
+		else:
+			n_bytes = n_bytes_str.replace(",", "").split("=")[1]
+		return int(n_pkts), int(n_bytes), flow
+
+	def get_flow_mirror_actions(self, type, ofp_port):
+		rule, flow = self.__parse_dump_flows(type, ofp_port, 5)
+		if (rule == None):
+			actions = None
+		else:
+			actions = rule.split("actions=")[1]
+		return actions, flow
+
+	def get_flow_mirror_actions_output(self, type, ofp_port):
+		actions, flow = self.get_flow_mirror_actions(type, ofp_port)
+		output_ofp_port = None
+		if (actions != None):
+			output_ofp_port = actions.split("output:")[1].split(",")[0]
+		return output_ofp_port
+
+	def get_flow_mirror_actions_resub_table(self, type, ofp_port):
+		actions, flow = self.get_flow_mirror_actions(type, ofp_port)
+		resub_table = None
+		if (actions != None):
+			resub_table = actions.split("resubmit(,")[1].replace(")", "")
+		return resub_table
+
 
 	def __parse_dpi_show(self, match_pattern, field):
 		cmd = [ self.appctl_path, "dpi/show", self.br ]
