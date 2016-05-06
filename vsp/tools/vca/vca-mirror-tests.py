@@ -1260,6 +1260,7 @@ def dyn_traffic_pkt_out_onward__(param):
 	dst_ip = param['dst_ip']
 	dst_ofp_port = param['dst_ofp_port']
 	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
 	n_pkts_sent = int(10)
 
 	mirror_iface = dyn.get_destination()
@@ -1280,7 +1281,7 @@ def dyn_traffic_pkt_out_onward__(param):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
 	n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters("Ingress",
-							ofp_port)
+								   ofp_port)
 	n_sub_tests = n_sub_tests + 1
 	if (n_pkts_in != n_pkts_sent):
 		print "Ingress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
@@ -1296,6 +1297,38 @@ def dyn_traffic_pkt_out_onward__(param):
 		passed = False
 		return passed, n_sub_tests
 	print "Onward - Egress dyn mirror packet count zero test: passed"
+
+	actions, flow = dyn.get_flow_mirror_actions("Ingress", ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (actions == None):
+		passed = False
+		print "Onward - Mirror flow actions are NULL, failed" + flow
+		return passed, n_sub_tests
+	print "Onward - Mirror flow actions are non-NULL, passed"
+	n_sub_tests = n_sub_tests + 1
+	if (actions.find("output") < 0) or (actions.find("resubmit") < 0):
+		passed = False
+		print "Onward - Mirror flow donot contain output or resubmit at ingress, failed" + flow
+		return passed, n_sub_tests
+	print "Onward - Mirror flow contain output and resubmit actions at ingress, passed"
+	output_ofp_port = dyn.get_flow_mirror_actions_output("Ingress", ofp_port)
+	tap = ovs_vport_tap.Tap(ovs_path, "system", br, mirror_dst_port,
+				"0.0.0.0", logfd)
+	ovs_ofp_port = str(tap.get_ofp_port())
+	n_sub_tests = n_sub_tests + 1
+	if (output_ofp_port != ovs_ofp_port):
+		passed = False
+		print "Onward - Mirror flow output (" + output_ofp_port + ") != ovs ofp_port (" + ovs_ofp_port + "), failed"
+		return passed, n_sub_tests
+	print "Onward - Mirror flow output (" + output_ofp_port + ") matches with ovs ofp_port, passed"
+
+	resub_table = dyn.get_flow_mirror_actions_resub_table("Ingress", ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (resub_table != "7"):
+		passed = False
+		print "Onward - Mirror flow shows wrong resubmit table (" + resub_table + "), failed"
+		return passed, n_sub_tests
+	print "Onward - Mirror flow resubmit table (" + resub_table + ") check, passed"
 
 	return passed, n_sub_tests
 
@@ -1336,6 +1369,7 @@ def dyn_mirror_single_traffic__(param):
 		'src_ofp_port': src_ofp_port,
 		'dst_ofp_port': dst_ofp_port,
 		'mirror_id' : mirror_id,
+		'mirror_dst_port' : mirror_dst_port,
 		'dyn_agent': dyn_agent,
 	}
 	passed, this_n_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
@@ -1344,8 +1378,11 @@ def dyn_mirror_single_traffic__(param):
 		dyn.local_destroy()
 		return passed, n_sub_tests
 
-	passed, this_n_sub_tests = dpi_traffic_pkt_out__(st_param)
+	passed, this_n_sub_tests = dpi_traffic_pkt_out_onward__(st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
 
 	dyn.local_destroy()
 	return passed, n_sub_tests
@@ -1469,7 +1506,7 @@ def mirror_verify_dpi__(dyn, param):
 
 	return passed, n_sub_tests
 
-def dpi_traffic_pkt_out__(param):
+def dpi_traffic_pkt_out_onward__(param):
 	passed = True
 	n_sub_tests = 0
 	dyn = param['dyn']
@@ -1506,7 +1543,7 @@ def dpi_traffic_pkt_out__(param):
 		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
 		passed = False
 		return passed, n_sub_tests
-	print "Packets received matched with sent (" + str(n_pkts_sent) + "), passed"
+	print "Packets received at DPI port matched with sent (" + str(n_pkts_sent) + "), passed"
 	return passed, n_sub_tests
 
 ############################### MAIN #########################################
