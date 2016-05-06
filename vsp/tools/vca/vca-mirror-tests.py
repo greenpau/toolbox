@@ -1341,7 +1341,7 @@ def dyn_traffic_pkt_out_onward__(param):
 	if (n_flows_in != exp_n_flows_tbl5_total):
 		passed = False
 		print "Onward - Ingress Mirror Table flow count (" + str(n_flows_in) + ") != expected (" + str(exp_n_flows_tbl5_total) + "), failed"
-		return passed
+		return passed, n_sub_tests
 	print "Onward - Ingress Mirror Table flow count (" + str(exp_n_flows_tbl5_total) + "), passed"
 
 	n_flows_eg, n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters(
@@ -1353,7 +1353,7 @@ def dyn_traffic_pkt_out_onward__(param):
 	if (n_flows_eg != exp_n_flows_tbl6_total):
 		passed = False
 		print "Onward - Egress Mirror Table flow count (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
-		return passed
+		return passed, n_sub_tests
 	print "Onward - Egress Mirror Table flow count (" + str(exp_n_flows_tbl6_total) + "), passed"
 
 	return passed, n_sub_tests
