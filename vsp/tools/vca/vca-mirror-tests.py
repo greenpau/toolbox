@@ -1372,13 +1372,13 @@ def dyn_mirror_single_traffic__(param):
 		'mirror_dst_port' : mirror_dst_port,
 		'dyn_agent': dyn_agent,
 	}
-	passed, this_n_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
+	passed, n_this_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
 		return passed, n_sub_tests
 
-	passed, this_n_sub_tests = dpi_traffic_pkt_out_onward__(st_param)
+	passed, n_this_sub_tests = dpi_traffic_pkt_out_onward__(st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
