@@ -1506,6 +1506,60 @@ def mirror_verify_dpi__(dyn, param):
 
 	return passed, n_sub_tests
 
+# ['push_vlan:0x8100', 'mod_vlan_vid:99', 'mod_vlan_pcp:0', 'strip_vlan']
+def dpi_traffic_pkt_out_action_check__(act, loc, traffic_dir,
+	       			       mirror_id, n_sub_tests):
+	passed = True
+	if (act.find("push_vlan") >= 0):
+		n_sub_tests = n_sub_tests + 1
+		if (loc != 1):
+			passed = False
+			print traffic_dir + " - push_vlan action not the first one, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: push_vlan position check passed"
+		n_sub_tests = n_sub_tests + 1
+		proto = act.split(":")[1]
+		if (proto != "0x8100"):
+			passed = False
+			print traffic_dir + " - push_vlan action protocol not 0x8100, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: push_vlan protocol 0x8100, passed"
+	elif (act.find("mod_vlan_vid") >= 0):
+		n_sub_tests = n_sub_tests + 1
+		if (loc != 2):
+			passed = False
+			print traffic_dir + " - mod_vlan_vid action not the first one, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: mod_vlan_vid position check passed"
+		vid = act.split(":")[1]
+		n_sub_tests = n_sub_tests + 1
+		if (vid != str(mirror_id)):
+			print traffic_dir + " - mod_vlan_vid action (" + vid + ") != mirror_id (" + mirror_id + "), failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: mod_vlan_vid value (" + vid + ") check passed"
+	elif (act.find("mod_vlan_pcp") >= 0):
+		n_sub_tests = n_sub_tests + 1
+		if (loc != 3):
+			passed = False
+			print traffic_dir + " - mod_vlan_pcp action not the first one, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: mod_vlan_pcp position check passed"
+		pcp = act.split(":")[1]
+		n_sub_tests = n_sub_tests + 1
+		if (pcp != "0"):
+			passed = False
+			print traffic_dir + " - mod_vlan_pcp action value not 0, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: mod_vlan_pcp value 0, passed"
+	elif (act.find("strip_vlan") >= 0):
+		n_sub_tests = n_sub_tests + 1
+		if (loc != 4):
+			passed = False
+			print traffic_dir + " - strip_vlan action not the first one, failed"
+			return passed, n_sub_tests
+		print traffic_dir + " - DPI custom action: strip_vlan position check passed"
+	return passed, n_sub_tests
+
 def dpi_traffic_pkt_out_onward__(param):
 	passed = True
 	n_sub_tests = 0
@@ -1540,10 +1594,25 @@ def dpi_traffic_pkt_out_onward__(param):
 	n_pkts_received = int(new_n_pkts) - int(curr_n_pkts)
 	n_sub_tests = n_sub_tests + 1
 	if (n_pkts_received != n_pkts_sent):
-		print "Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
+		print "Onward - Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
 		passed = False
 		return passed, n_sub_tests
-	print "Packets received at DPI port matched with sent (" + str(n_pkts_sent) + "), passed"
+	print "Onward - packets received at DPI port matched with sent (" + str(n_pkts_sent) + "), passed"
+
+	vlan_acts = dyn.get_flow_mirror_actions_vlan_opts("Ingress", ofp_port)
+	i = int(0)
+	n_exp_actions = int(4)
+	for act in vlan_acts:
+		i = i + 1
+		passed, n_sub_tests = dpi_traffic_pkt_out_action_check__(
+						act, i, "Onward", mirror_id,
+						n_sub_tests)
+
+	n_sub_tests = n_sub_tests + 1
+	if (i != n_exp_actions):
+		passed = False
+		print "Onward - DPI custom action count check failed, expected: " + str(n_exp_actions) + ", got: " + str(i)
+	print "Onward - DPI custom action count check (" + str(n_exp_actions) + "), passed"
 	return passed, n_sub_tests
 
 ############################### MAIN #########################################
