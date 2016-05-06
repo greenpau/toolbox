@@ -30,7 +30,7 @@ def usage():
 	print "    -i <ip>: mirror destination IPv4 address"
 	print "    -p <name>: mirror destination port (dyn-mirror)"
 	print "    -e: exitOnFailure=true"
-	print "    -s <suite>: suite name to run ('PBM', 'VPM', 'DYN')"
+	print "    -s <suite>: CSV of suite name(s) to run ('PBM', 'VPM', 'DYN')"
 	sys.exit(1)
 
 ############################### HELPERS #####################################
@@ -1714,7 +1714,7 @@ def main(argc, argv):
 	mirror_dst_port = None
 	exit_on_failure = False
 	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
-	suite = "all"
+	suite_list = [ "all" ]
 	try:
 		opts, args = getopt.getopt(argv, "hv:i:es:p:")
 	except getopt.GetoptError as err:
@@ -1737,33 +1737,34 @@ def main(argc, argv):
 		elif opt == "-e":
 			exit_on_failure = True
 		elif opt == "-s":
-			suite = arg
+			suite_list = arg.split(",")
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
-	if (validate_args(progname, suite,
-			  vm_name, aux_vm_name, mirror_dst_ip,
-			  mirror_dst_port) == False):
-		exit(1)
-	if (suite == "PBM"):
-		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-	elif (suite == "VPM"):
-		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-	elif (suite == "DYN"):
-		run_dyn(br, vm_name, aux_vm_name,
-			mirror_dst_port,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-	else:
-		run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-		run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-		run_dyn(br, vm_name, aux_vm_name,
-			mirror_dst_port,
-			logfd, ovs_path, ovs_vers, exit_on_failure)
-
+	for suite in suite_list:
+		if (validate_args(progname, suite,
+				  vm_name, aux_vm_name, mirror_dst_ip,
+				  mirror_dst_port) == False):
+			exit(1)
+		if (suite == "PBM"):
+			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+		elif (suite == "VPM"):
+			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+		elif (suite == "DYN"):
+			run_dyn(br, vm_name, aux_vm_name,
+				mirror_dst_port,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+		else:
+			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+			run_dyn(br, vm_name, aux_vm_name,
+				mirror_dst_port,
+				logfd, ovs_path, ovs_vers, exit_on_failure)
+	
 	exit(0)
 
 if __name__ == "__main__":
