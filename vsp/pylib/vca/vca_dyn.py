@@ -205,6 +205,15 @@ class DYN(object):
 			resub_table = actions.split("resubmit(,")[1].replace(")", "")
 		return resub_table
 
+	def get_flow_mirror_actions_vlan_opts(self, type, ofp_port):
+		actions, flow = self.get_flow_mirror_actions(type, ofp_port)
+		actions_list = actions.split(",")
+		vlan_actions = []
+		for a in actions_list:
+			if (a.find("vlan") < 0):
+				continue
+			vlan_actions.append(a)
+		return vlan_actions
 
 	def __parse_dpi_show(self, match_pattern, field):
 		cmd = [ self.appctl_path, "dpi/show", self.br ]
