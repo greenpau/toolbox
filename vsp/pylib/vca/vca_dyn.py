@@ -141,7 +141,8 @@ class DYN(object):
 			agent = self.mirror.get_dyn_agent()
 		return agent
 
-	def __parse_dump_flows(self, type, ofp_port, field):
+	def __parse_dump_flows(self, type, ofp_port, field,
+			       get_template, prio_check, in_prio):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		out = shell.execute(cmd).splitlines()
 		table_id = -1
@@ -152,39 +153,51 @@ class DYN(object):
 		if (table_id == -1):
 			return n_packets, n_bytes, None
 		val = None
+		n_flows = 0
 		for l in out:
 			this_table_id = str(l.split(",")[0]).split("=")[1]
 			if (this_table_id != str(table_id)):
 				continue
-			if (l.find("create_dyn_mirror") >= 0):
+			n_flows = n_flows + 1
+			if ((get_template == False) and
+			    (l.find("create_dyn_mirror") >= 0)):
 				continue
 			toks = l.split()
 			rule = toks[5]
-			prio = rule.split(",")[0].split("=")[1]
-			if (prio != "16384"):
-				continue
+			if (prio_check == True):
+				prio = rule.split(",")[0].split("=")[1]
+				if (prio != str(in_prio)):
+					continue
 			in_port = rule.split(",")[2].split("=")[1]
 			if (in_port != str(ofp_port)):
 				continue
 			val = toks[field]
-			break
-		return val, l
+			if (get_template == False):
+				break
+		return n_flows, val, l
 
 	def get_flow_pkt_counters(self, type, ofp_port):
-		n_pkts_str, flow = self.__parse_dump_flows(type, ofp_port, 2)
+		if (str(ofp_port) == "-1"):
+			get_template = True
+		else:
+			get_template = False
+		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
+					ofp_port, 2, get_template, True, 16384)
 		if (n_pkts_str == None):
 			n_pkts = 0
 		else:
 			n_pkts = n_pkts_str.replace(",", "").split("=")[1]
-		n_bytes_str, flow = self.__parse_dump_flows(type, ofp_port, 4)
+		n_flows, n_bytes_str, flow = self.__parse_dump_flows(type,
+					ofp_port, 4, get_template, True, 16384)
 		if (n_bytes_str == None):
 			n_bytes = 0
 		else:
 			n_bytes = n_bytes_str.replace(",", "").split("=")[1]
-		return int(n_pkts), int(n_bytes), flow
+		return int(n_flows), int(n_pkts), int(n_bytes), flow
 
 	def get_flow_mirror_actions(self, type, ofp_port):
-		rule, flow = self.__parse_dump_flows(type, ofp_port, 5)
+		n_flows, rule, flow = self.__parse_dump_flows(type, ofp_port,
+					5, False, True, 16384)
 		if (rule == None):
 			actions = None
 		else:
