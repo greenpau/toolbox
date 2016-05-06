@@ -1358,6 +1358,34 @@ def dyn_traffic_pkt_out_onward__(param):
 
 	return passed, n_sub_tests
 
+def dyn_traffic_cleanup__(param):
+	passed = True
+	n_sub_tests = 0
+	dyn = param['dyn']
+
+	n_flows_in, n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters(
+						"Ingress", "-1")
+	exp_n_flows_tbl5_prio_0 = 1
+	exp_n_flows_tbl5_total = exp_n_flows_tbl5_prio_0
+	n_sub_tests = n_sub_tests + 1
+	if (n_flows_in != exp_n_flows_tbl5_total):
+		passed = False
+		print "Flow cleanup check - Ingress Mirror Table (" + str(n_flows_in) + ") != expected (" + str(exp_n_flows_tbl5_total) + "), failed"
+		return passed
+	print "Flow cleanup check - Ingress Mirror Table (" + str(exp_n_flows_tbl5_total) + "), passed"
+
+	n_flows_eg, n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters(
+						"Egress", "-1")
+	exp_n_flows_tbl6_prio_0 = 1
+	exp_n_flows_tbl6_total = exp_n_flows_tbl6_prio_0
+	n_sub_tests = n_sub_tests + 1
+	if (n_flows_eg != exp_n_flows_tbl6_total):
+		passed = False
+		print "Flow cleanup check - Egress Mirror Table (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
+		return passed
+	print "Flow cleanup check - Egress Mirror Table (" + str(exp_n_flows_tbl6_total) + "), passed"
+	return passed, n_sub_tests
+
 def dyn_mirror_single_traffic__(param):
 	passed = True
 	n_sub_tests = 0
@@ -1411,6 +1439,9 @@ def dyn_mirror_single_traffic__(param):
 		return passed, n_sub_tests
 
 	dyn.local_destroy()
+
+	passed, n_this_sub_tests = dyn_traffic_cleanup__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
 def dyn_single_mirror(test_args):
