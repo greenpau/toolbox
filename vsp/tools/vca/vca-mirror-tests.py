@@ -44,7 +44,8 @@ def get_vm_attr__(ovs_path, br, logfd, vm_name):
 	mac = vm.port_mac()
 	ip = vm.port_ip()
 	ofp_port = vm.port_ofp_port()
-	return port_name, mac, ip, ofp_port
+	vrf_id = vm.vrf_id()
+	return port_name, mac, ip, ofp_port, vrf_id
 
 def get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip):
 	tnl = ovs_vport_tnl.Tunnel(ovs_path, br, None, None, remote_ovs_ip,
@@ -237,8 +238,8 @@ def pbm_verify_mirror_vport__(param):
 	if (acl_type != "Redirect"):
 		acl_type = mirror_dir
 	mirror_vport, mirror_vport_ofp_port, mirror_vport_odp_port = pbm.get_mirror_vport(acl_type)
-	port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, vm_name)
+	port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, vm_name)
 	if (port_name == mirror_vport):
 		print "Mirror VPORT name verification passed (" + mirror_vport_ofp_port + "/" + mirror_vport_odp_port + ")" 
 	else:
@@ -784,10 +785,10 @@ def pbm_traffic_single__(param):
 	pbm.dump(False)
 	pbm.show(False)
 
-	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, dst_vm_name)
-	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, src_vm_name)
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
 
 	n_sub_tests = n_sub_tests + 1
 	st_param = {
@@ -1154,8 +1155,8 @@ def dyn_verify_mirror_vport__(param):
 	ovs_path = param['ovs_path']
 	br = param['br']
 	logfd = param['logfd']
-	in_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
-							br, logfd, vm_name)
+	in_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, vm_name)
 	mobj_port_name = str(mobj.get_port_name())
 	if (in_port_name != mobj_port_name):
 		print "Mirror vport name verification failed (expected: " + in_port_name + ", got: " + mobj_port_name + ")"
@@ -1382,10 +1383,10 @@ def dyn_mirror_single_traffic_onward__(dyn, param):
 	dst_vm_name = param['aux_vm_name']
 	remote_ovs_ip = param['remote_ovs_ip']
 
-	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, dst_vm_name)
-	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, src_vm_name)
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
 	st_param = {
 		'dyn' : dyn,
 		'ovs_path' : ovs_path,
@@ -1401,6 +1402,7 @@ def dyn_mirror_single_traffic_onward__(dyn, param):
 		'mirror_dst_port' : mirror_dst_port,
 		'dyn_agent': dyn_agent,
 	}
+	print 
 	print "Running onward traffic test with " + dst_port_name + ", ofp_port: " + str(dst_ofp_port)
 	passed, n_this_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
@@ -1428,6 +1430,7 @@ def dyn_traffic_pkt_out_return__(param):
 	dst_ofp_port = param['dst_ofp_port']
 	mirror_id = param['mirror_id']
 	mirror_dst_port = param['mirror_dst_port']
+	vrf_id = hex(int(param['vrf_id']))
 	n_pkts_sent = int(10)
 
 	mirror_iface = dyn.get_destination()
@@ -1447,6 +1450,84 @@ def dyn_traffic_pkt_out_return__(param):
 	for i in range(n_pkts_sent):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
+
+	n_flows, n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters(
+						"Egress", vrf_id)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_in != n_pkts_sent):
+		print "Egress dyn mirror packet count test: n_pkts_in (" + str(n_pkts_in) + ") != n_pkts_sent (" + str(n_pkts_sent) + ")"
+		passed = False
+		return passed, n_sub_tests
+	print "Return - Egress dyn mirror packet count test: passed"
+
+	n_flows, n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters(
+						"Ingress", ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_eg != 0):
+		print "Return - Ingress dyn mirror packet count is non-zero (" + str(n_pkts_eg) + ", failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Return - Ingress dyn mirror packet count zero test: passed"
+
+	actions, flow = dyn.get_flow_mirror_actions("Egress", vrf_id)
+	n_sub_tests = n_sub_tests + 1
+	if (actions == None):
+		passed = False
+		print "Return - Mirror flow actions are NULL, failed" + flow
+		return passed, n_sub_tests
+	print "Return - Mirror flow actions are non-NULL, passed"
+	n_sub_tests = n_sub_tests + 1
+	if (actions.find("output") < 0):
+		passed = False
+		print "Return - Mirror flow donot contain output at egress, failed, " + flow
+		return passed, n_sub_tests
+	print "Return - Mirror flow contain output action at egress, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (actions.find("resubmit") >= 0):
+		passed = False
+		print "Return - Mirror flow contains output at egress, failed, " + flow
+		return passed, n_sub_tests
+	print "Return - Mirror flow donot contain contains resubmit action at egress, passed"
+
+	output_ofp_port = dyn.get_flow_mirror_actions_output("Egress", vrf_id)
+	tap = ovs_vport_tap.Tap(ovs_path, "system", br, mirror_dst_port,
+				"0.0.0.0", logfd)
+	ovs_ofp_port = str(tap.get_ofp_port())
+	n_sub_tests = n_sub_tests + 1
+	if (output_ofp_port != ovs_ofp_port):
+		passed = False
+		print "Return - Mirror flow output (" + output_ofp_port + ") != ovs ofp_port (" + ovs_ofp_port + "), failed"
+		return passed, n_sub_tests
+	print "Return - Mirror flow output (" + output_ofp_port + ") matches with ovs ofp_port, passed"
+
+	n_flows_eg, n_pkts, n_bytes, flow = dyn.get_flow_pkt_counters(
+						"Egress", "-1")
+	exp_n_flows_tbl6_prio_0 = 1
+	exp_n_flows_tbl6_prio_1 = 0
+	exp_n_flows_tbl6_prio_2 = 1
+	exp_n_flows_tbl6_prio_16384 = 1
+	exp_n_flows_tbl6_total = exp_n_flows_tbl6_prio_0 + exp_n_flows_tbl6_prio_1 + exp_n_flows_tbl6_prio_2 + exp_n_flows_tbl6_prio_16384
+	n_sub_tests = n_sub_tests + 1
+	if (n_flows_eg != exp_n_flows_tbl6_total):
+		passed = False
+		print "Return - Egress Mirror Table flow count (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
+		return passed, n_sub_tests
+	print "Return - Egress Mirror Table flow count (" + str(exp_n_flows_tbl6_total) + "), passed"
+
+	n_flows_in, n_pkts, n_bytes, flow = dyn.get_flow_pkt_counters(
+						"Ingress", "-1")
+	exp_n_flows_tbl5_prio_0 = 1
+	exp_n_flows_tbl5_prio_1 = 1
+	exp_n_flows_tbl5_prio_2 = 1	# due to onward traffic
+	exp_n_flows_tbl5_prio_16384 = 1	# due to onward traffic
+	exp_n_flows_tbl5_total = exp_n_flows_tbl5_prio_0 + exp_n_flows_tbl5_prio_1 + exp_n_flows_tbl5_prio_2 + exp_n_flows_tbl5_prio_16384
+	n_sub_tests = n_sub_tests + 1
+	if (n_flows_in != exp_n_flows_tbl5_total):
+		passed = False
+		print "Return - Ingress Mirror Table flow count (" + str(n_flows_in) + ") != expected (" + str(exp_n_flows_tbl5_total) + "), failed"
+		return passed, n_sub_tests
+	print "Return - Ingress Mirror Table flow count (" + str(exp_n_flows_tbl5_total) + "), passed"
 
 	return passed, n_sub_tests
 
@@ -1468,13 +1549,14 @@ def dyn_mirror_single_traffic_return__(dyn, param):
 		return passed, n_sub_tests
 
 	tunnel_port, tnl_mac, tnl_ip, tnl_ofp_port = get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip)
-	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, src_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
 	if (tunnel_port == None):
 		print "Tunnel port not found for " + remote_ovs_ip
 		return passed, n_sub_tests
 
-	print "Running return traffic test with " + tunnel_port + ", ofp_port: " + str(tnl_ofp_port)
+	print 
+	print "Running return traffic test with " + tunnel_port + ", ofp_port: " + str(tnl_ofp_port) + ", vrf_id: " + str(vrf_id)
 	st_param = {
 		'dyn' : dyn,
 		'ovs_path' : ovs_path,
@@ -1488,6 +1570,7 @@ def dyn_mirror_single_traffic_return__(dyn, param):
 		'dst_ofp_port': src_ofp_port,
 		'mirror_id' : mirror_id,
 		'mirror_dst_port' : mirror_dst_port,
+		'vrf_id': vrf_id,
 		'dyn_agent': dyn_agent,
 	}
 	passed, n_this_sub_tests = dyn_traffic_pkt_out_return__(st_param)
@@ -1664,8 +1747,8 @@ def mirror_verify_dpi__(dyn, param):
 	if (dyn_agent != "dpi"):
 		return passed, n_sub_tests
 
-	mobj_vport, mac, ip, ofp_port = get_vm_attr__(ovs_path, br,
-						      logfd, vm_name)
+	mobj_vport, mac, ip, ofp_port, vrf_id = get_vm_attr__(ovs_path, br,
+							      logfd, vm_name)
 	mobj_mirror_dst = str(dyn.get_destination())
 
 	dpi_vport = str(dyn.get_dpi_port_by_mirror_id(mirror_id))
