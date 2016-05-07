@@ -1577,6 +1577,11 @@ def dyn_mirror_single_traffic_return__(dyn, param):
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		return passed, n_sub_tests
+
+	passed, n_this_sub_tests = dpi_traffic_pkt_out_return__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
 	return passed, n_sub_tests
 
 def dyn_traffic_cleanup__(dyn):
@@ -1877,6 +1882,64 @@ def dpi_traffic_pkt_out_onward__(param):
 		passed = False
 		print "Onward - DPI custom action count check failed, expected: " + str(n_exp_actions) + ", got: " + str(i)
 	print "Onward - DPI custom action count check (" + str(n_exp_actions) + "), passed"
+	return passed, n_sub_tests
+
+def dpi_traffic_pkt_out_return__(param):
+	passed = True
+	n_sub_tests = 0
+	dyn = param['dyn']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	src_ofp_port = param['src_ofp_port']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	mirror_id = param['mirror_id']
+	dyn_agent = param['dyn_agent']
+	vrf_id = hex(int(param['vrf_id']))
+	n_pkts_sent = int(10)
+
+	if (dyn_agent != "dpi"):
+		return passed, n_sub_tests
+
+	curr_n_pkts, curr_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	new_n_pkts, new_n_bytes = dyn.get_dpi_stats_by_mirror_id(mirror_id)
+	n_pkts_received = int(new_n_pkts) - int(curr_n_pkts)
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_received != n_pkts_sent):
+		print "Return - Packets received at DPI port (" + str(n_pkts_received) + ") != sent (" + str(n_pkts_sent), + "), failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Return - packets received at DPI port matched with sent (" + str(n_pkts_sent) + "), passed"
+
+	vlan_acts = dyn.get_flow_mirror_actions_vlan_opts("Egress", vrf_id)
+	i = int(0)
+	n_exp_actions = int(4)
+	if (vlan_acts != None):
+		for act in vlan_acts:
+			i = i + 1
+			passed, n_sub_tests = dpi_traffic_pkt_out_action_check__(
+						act, i, "Return", mirror_id,
+						n_sub_tests)
+
+	n_sub_tests = n_sub_tests + 1
+	if (i != n_exp_actions):
+		passed = False
+		print "Return - DPI custom action count check failed, expected: " + str(n_exp_actions) + ", got: " + str(i)
+		return passed, n_sub_tests
+	print "Return - DPI custom action count check (" + str(n_exp_actions) + "), passed"
 	return passed, n_sub_tests
 
 ############################### MAIN #########################################

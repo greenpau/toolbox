@@ -225,6 +225,8 @@ class DYN(object):
 
 	def get_flow_mirror_actions_vlan_opts(self, type, ofp_port):
 		actions, flow = self.get_flow_mirror_actions(type, ofp_port)
+		if (actions == None):
+			return None
 		actions_list = actions.split(",")
 		vlan_actions = []
 		for a in actions_list:
