@@ -4,6 +4,7 @@ import sys
 sys.path.append("/usr/local/openvswitch/pylib/system")
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import shell
+import net
 import ovs_ofproto
 
 class Tunnel(object):
@@ -21,17 +22,30 @@ class Tunnel(object):
 		if (tnl_key != None):
 			self.__set_tnl_iface()
 			self.__create()
+		else:
+			self.__set_tnl_iface()
 
 	def __set_tnl_iface(self):
-		if (self.tep_type == "rtep"):
-			val = self.tnl_ip.split(".")
-			tnl_ip_hex = ("%x" % int(val[0])) + \
-				     ("%x" % int(val[1])) + \
-				     ("%x" % int(val[2])) + \
-				     ("%x" % int(val[3]))
-			self.iface = "t" + tnl_ip_hex + self.tnl_key
+		if (self.tnl_key != None):
+			if (self.tep_type == "rtep"):
+				val = self.tnl_ip.split(".")
+				tnl_ip_hex = ("%x" % int(val[0])) + \
+					     ("%x" % int(val[1])) + \
+					     ("%x" % int(val[2])) + \
+					     ("%x" % int(val[3]))
+				self.iface = "t" + tnl_ip_hex + self.tnl_key
+			else:
+				self.iface = self.tep_type + "-" + self.tnl_key
 		else:
-			self.iface = self.tep_type + "-" + self.tnl_key
+			if (self.tep_type == "rtep"):
+				self.iface = "t" + net.ipaddr2hex(self.tnl_ip)
+			else:
+				self.iface = "ltep-" + net.ipaddr2hex(self.tnl_ip)
+			iface_list = self.__get_ifaces()
+			for iface in iface_list:
+				if (iface.find(self.iface) >= 0):
+					self.iface = iface
+					break
 
 	def __set_tnl_ipstr(self):
 		if (self.tep_type == "rtep"):
@@ -59,7 +73,7 @@ class Tunnel(object):
 				   self.logfd);
 
 	def __get_ifaces(self):
-		cmd = [ "sudo", self.appctl_path, "dpif/show" ]
+		cmd = [ self.appctl_path, "dpif/show" ]
 		appctl_out = shell.execute(cmd).splitlines()
 		ifaces = []
 		for line in appctl_out:
