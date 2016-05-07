@@ -141,15 +141,17 @@ class DYN(object):
 			agent = self.mirror.get_dyn_agent()
 		return agent
 
-	def __parse_dump_flows(self, type, ofp_port, field,
+	def __parse_dump_flows(self, type, pv_val, field,
 			       get_template, prio_check, in_prio):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
 		out = shell.execute(cmd).splitlines()
 		table_id = -1
 		if (type == "Ingress"):
 			table_id = 5
+			pv_key_index = 2
 		elif (type == "Egress"):
 			table_id = 6
+			pv_key_index = 1
 		if (table_id == -1):
 			return n_packets, n_bytes, None
 		val = None
@@ -168,8 +170,11 @@ class DYN(object):
 				prio = rule.split(",")[0].split("=")[1]
 				if (prio != str(in_prio)):
 					continue
-			in_port = rule.split(",")[2].split("=")[1]
-			if (in_port != str(ofp_port)):
+			pv_key_str = rule.split(",")[pv_key_index]
+			if (pv_key_str == None):
+				continue
+			pv_key = pv_key_str.split("=")[1]
+			if (pv_key != str(pv_val)):
 				continue
 			val = toks[field]
 			if (get_template == False):
