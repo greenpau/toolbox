@@ -14,6 +14,7 @@ import shell
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import ovs_helper
 import ovs_vport_tap
+import ovs_vport_tnl
 
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
@@ -27,6 +28,7 @@ def usage():
 	print "usage: " + progname + " [options]"
 	print "options:"
 	print "    -v vm_name(s): comma separated VM names for mirroring"
+	print "    -r <ip>: remote ovs IPv4 address"
 	print "    -i <ip>: mirror destination IPv4 address"
 	print "    -p <name>: mirror destination port (dyn-mirror)"
 	print "    -e: exitOnFailure=true"
@@ -43,6 +45,15 @@ def get_vm_attr__(ovs_path, br, logfd, vm_name):
 	ip = vm.port_ip()
 	ofp_port = vm.port_ofp_port()
 	return port_name, mac, ip, ofp_port
+
+def get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip):
+	tnl = ovs_vport_tnl.Tunnel(ovs_path, br, None, None, remote_ovs_ip,
+				    "rtep", logfd)
+	mac = "00:11:22:33:44:55"
+	ip = "1.2.3.4"
+	ofp_port = tnl.get_ofp_port()
+	tunnel_port = tnl.get_tnl_name()
+	return tunnel_port, mac, ip, ofp_port
 
 def mirror_verify_destination__(param):
 	mobj = param['mirror_obj']
@@ -1358,10 +1369,136 @@ def dyn_traffic_pkt_out_onward__(param):
 
 	return passed, n_sub_tests
 
-def dyn_traffic_cleanup__(param):
+def dyn_mirror_single_traffic_onward__(dyn, param):
+	passed = True
+	n_sub_tests = 0
+	dyn_agent = param['dyn_agent']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
+
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, src_vm_name)
+	st_param = {
+		'dyn' : dyn,
+		'ovs_path' : ovs_path,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': src_mac,
+		'src_ip': src_ip,
+		'dst_mac': dst_mac,
+		'dst_ip': dst_ip,
+		'src_ofp_port': src_ofp_port,
+		'dst_ofp_port': dst_ofp_port,
+		'mirror_id' : mirror_id,
+		'mirror_dst_port' : mirror_dst_port,
+		'dyn_agent': dyn_agent,
+	}
+	print "Running onward traffic test with " + dst_port_name + ", ofp_port: " + str(dst_ofp_port)
+	passed, n_this_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
+
+	passed, n_this_sub_tests = dpi_traffic_pkt_out_onward__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
+	return passed, n_sub_tests
+
+def dyn_traffic_pkt_out_return__(param):
 	passed = True
 	n_sub_tests = 0
 	dyn = param['dyn']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	src_ofp_port = param['src_ofp_port']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	dst_ofp_port = param['dst_ofp_port']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	n_pkts_sent = int(10)
+
+	mirror_iface = dyn.get_destination()
+	if (mirror_iface == None):
+		passed = False
+		print "Failed to parse mirror interface"
+		return passed, n_sub_tests
+
+	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
+	shell.execute(cmd)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+
+	return passed, n_sub_tests
+
+def dyn_mirror_single_traffic_return__(dyn, param):
+	passed = True
+	n_sub_tests = 0
+	dyn_agent = param['dyn_agent']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
+
+	if (remote_ovs_ip == None):
+		print "Remote ovs_ip is not specified, return traffic tests not ran"
+		return passed, n_sub_tests
+
+	tunnel_port, tnl_mac, tnl_ip, tnl_ofp_port = get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip)
+	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
+			br, logfd, src_vm_name)
+	if (tunnel_port == None):
+		print "Tunnel port not found for " + remote_ovs_ip
+		return passed, n_sub_tests
+
+	print "Running return traffic test with " + tunnel_port + ", ofp_port: " + str(tnl_ofp_port)
+	st_param = {
+		'dyn' : dyn,
+		'ovs_path' : ovs_path,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': tnl_mac,
+		'src_ip': tnl_ip,
+		'src_ofp_port': tnl_ofp_port,
+		'dst_mac': src_mac,
+		'dst_ip': src_ip,
+		'dst_ofp_port': src_ofp_port,
+		'mirror_id' : mirror_id,
+		'mirror_dst_port' : mirror_dst_port,
+		'dyn_agent': dyn_agent,
+	}
+	passed, n_this_sub_tests = dyn_traffic_pkt_out_return__(st_param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
+	return passed, n_sub_tests
+
+def dyn_traffic_cleanup__(dyn):
+	passed = True
+	n_sub_tests = 0
 
 	n_flows_in, n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters(
 						"Ingress", "-1")
@@ -1398,6 +1535,7 @@ def dyn_mirror_single_traffic__(param):
 	dyn_agent = param['dyn_agent']
 	src_vm_name = param['vm_name']
 	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
 
 	print "Dyn Mirror Traffic Test - " + dyn_agent
 
@@ -1407,32 +1545,15 @@ def dyn_mirror_single_traffic__(param):
 	dyn.dump(False)
 	dyn.show(False)
 
-	dst_port_name, dst_mac, dst_ip, dst_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, dst_vm_name)
-	src_port_name, src_mac, src_ip, src_ofp_port = get_vm_attr__(ovs_path,
-			br, logfd, src_vm_name)
-	st_param = {
-		'dyn' : dyn,
-		'ovs_path' : ovs_path,
-		'br': br,
-		'logfd': logfd,
-		'src_mac': src_mac,
-		'src_ip': src_ip,
-		'dst_mac': dst_mac,
-		'dst_ip': dst_ip,
-		'src_ofp_port': src_ofp_port,
-		'dst_ofp_port': dst_ofp_port,
-		'mirror_id' : mirror_id,
-		'mirror_dst_port' : mirror_dst_port,
-		'dyn_agent': dyn_agent,
-	}
-	passed, n_this_sub_tests = dyn_traffic_pkt_out_onward__(st_param)
+	passed, n_this_sub_tests = dyn_mirror_single_traffic_onward__(dyn,
+								      param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
 		return passed, n_sub_tests
 
-	passed, n_this_sub_tests = dpi_traffic_pkt_out_onward__(st_param)
+	passed, n_this_sub_tests = dyn_mirror_single_traffic_return__(dyn,
+								      param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
@@ -1440,7 +1561,7 @@ def dyn_mirror_single_traffic__(param):
 
 	dyn.local_destroy()
 
-	passed, n_this_sub_tests = dyn_traffic_cleanup__(st_param)
+	passed, n_this_sub_tests = dyn_traffic_cleanup__(dyn)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
@@ -1453,6 +1574,7 @@ def dyn_single_mirror(test_args):
 	vm_name = test_args["vm_name"]
 	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_port = test_args["mirror_dst_port"]
+	remote_ovs_ip = test_args["remote_ovs_ip"]
 	mirror_dst_ip = "0.0.0.0"
 	pbm_dir = "n/a"
 	vpm_dir = "n/a"
@@ -1486,6 +1608,7 @@ def dyn_single_mirror(test_args):
 			  'mirror_id': "99",
 			  'mirror_dst_port': mirror_dst,
 			  'mirror_dst_ip': mirror_dst_ip,
+			  'remote_ovs_ip': remote_ovs_ip,
 			  'vm_name': vm_name,
 			  'aux_vm_name': aux_vm_name,
 			  'dyn_agent' : dyn_agent,
@@ -1501,7 +1624,7 @@ def dyn_single_mirror(test_args):
 			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
 
-def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, 
+def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, remote_ovs_ip,
 	    logfd, ovs_path, ovs_vers, exit_on_failure):
 	global testcase_id
 	suite = vca_test.SUITE("DYN")
@@ -1517,6 +1640,7 @@ def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port,
 		"vm_name": vm_name,
 		"aux_vm_name" : aux_vm_name,
 		"mirror_dst_port" : mirror_dst_port,
+		"remote_ovs_ip" : remote_ovs_ip,
 		"ovs_vers" : ovs_vers,
 	}
 	testcase_id = 1
@@ -1712,11 +1836,12 @@ def main(argc, argv):
 	aux_vm_name = None
 	mirror_dst_ip = None
 	mirror_dst_port = None
+	remote_ovs_ip = None
 	exit_on_failure = False
 	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
 	suite_list = [ "all" ]
 	try:
-		opts, args = getopt.getopt(argv, "hv:i:es:p:")
+		opts, args = getopt.getopt(argv, "hv:i:es:p:r:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -1732,6 +1857,8 @@ def main(argc, argv):
 				vm_name = arg
 		elif opt == "-i":
 			mirror_dst_ip = arg
+		elif opt == "-r":
+			remote_ovs_ip = arg
 		elif opt == "-p":
 			mirror_dst_port = arg
 		elif opt == "-e":
@@ -1754,7 +1881,7 @@ def main(argc, argv):
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 		elif (suite == "DYN"):
 			run_dyn(br, vm_name, aux_vm_name,
-				mirror_dst_port,
+				mirror_dst_port, remote_ovs_ip,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 		else:
 			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
@@ -1762,7 +1889,7 @@ def main(argc, argv):
 			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 			run_dyn(br, vm_name, aux_vm_name,
-				mirror_dst_port,
+				mirror_dst_port, remote_ovs_ip,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 	
 	exit(0)
