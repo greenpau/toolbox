@@ -1817,6 +1817,27 @@ def dyn_mirror_flow_mod_onward__(dyn, param):
 		print "Onward - mod-flows reg-del test #4: still load present, " + actions
 		return passed, n_sub_tests
 	print "Onward - mod-flows reg-del test #4 successfully deleted reg action, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	has_resubmit = actions.find("resubmit") >= 0
+	if (has_resubmit == False):
+		passed = False
+		print "Onward - mod-flows reg-del missing resubmit action"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #5 has resubmit action, passed"
+
+	has_output = actions.find("output") >= 0
+	n_sub_tests = n_sub_tests + 1
+	if (has_output == False):
+		passed = False
+		print "Onward - mod-flows reg-del missing output action"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #6 has output action, passed"
+
+	passed, n_this_sub_tests = dpi_flow_mod_onward__(dyn, actions, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
 	return passed, n_sub_tests
 
 def dyn_mirror_flow_mod_return__(dyn, param):
