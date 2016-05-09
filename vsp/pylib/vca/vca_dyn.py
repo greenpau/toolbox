@@ -263,3 +263,56 @@ class DYN(object):
 		n_pkts = self.__parse_dpi_show(match_pattern, 4)
 		n_bytes = self.__parse_dpi_show(match_pattern, 5)
 		return n_pkts, n_bytes
+
+	def set_flow_reg(self, type, pv_val, iface, reg, reg_val):
+		if (type == "Ingress"):
+			table_id = "5"
+		elif (type == "Egress"):
+			table_id = "6"
+		else:
+			table_id = None
+		if (table_id == None):
+			return None, None, None
+		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
+					pv_val, 2, False, True, 16384)
+		if (n_flows < 1):
+			return None, None, None
+		n_pkts_org = n_pkts_str.replace(",", "").split("=")[1]
+		rule = flow.split()[5]
+		nw_proto = rule.split(",")[1]
+		if (nw_proto == "tcp"):
+			nw_proto_val = "6"
+		elif (nw_proto == "udp"):
+			nw_proto_val = "17"
+		else:
+			return None, None, None
+		rule_pv_tuple = rule.split(",")[2]
+		if (rule_pv_tuple == None):
+			return None, None, None
+		rule_pv_val = rule_pv_tuple.split("=")[1]
+		if (rule_pv_val != pv_val):
+			return None, None, None
+		pv_tuple = "interface=" + iface
+		table_id_tuple = "table_id=" + table_id
+		dl_type_tuple = "dl_type=0x800"
+		nw_proto_tuple = "nw_proto=" + nw_proto_val
+		nw_src_tuple = rule.split(",")[3]
+		nw_dst_tuple= rule.split(",")[4]
+		tp_src_tuple = rule.split(",")[5]
+		tp_dst_tuple = rule.split(",")[6]
+		match_str = table_id_tuple + "," + pv_tuple + "," + dl_type_tuple + "," + nw_proto_tuple + "," + nw_src_tuple + "," + nw_dst_tuple + "," + tp_src_tuple + "," + tp_dst_tuple
+		action_str = "action=" + reg + ":" + reg_val
+		flow_str = "flow_type=mirror" + "," + match_str + "," + action_str
+		cmd = [ self.ofctl_path, "mod-flows", self.br, flow_str ]
+		hdrstr = "Modifying mirror flow string for " + iface
+		shell.run_cmd(hdrstr, cmd, self.logfd)
+		time.sleep(1)
+		actions, flow = self.get_flow_mirror_actions(type, pv_val)
+		if (actions == None):
+			return None, None, None
+		flow_tuples = flow.split()
+		if (flow_tuples == None):
+			return None, None, None
+		n_pkts_str = flow_tuples[2]
+		n_pkts_new = n_pkts_str.replace(",", "").split("=")[1]
+		return actions, n_pkts_org, n_pkts_new
