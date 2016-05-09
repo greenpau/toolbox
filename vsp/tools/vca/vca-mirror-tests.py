@@ -1693,6 +1693,9 @@ def dyn_mirror_flow_mod_onward__(dyn, param):
 	for i in range(n_pkts_sent):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
+
+	print
+	print "Adding reg modification action to Ingress Mirror Table rule"
 	actions, n_pkts_org, n_pkts_new = dyn.set_flow_reg("Ingress", ofp_port,
 		       					   src_port_name,
 							   add_reg_name,
@@ -1767,11 +1770,14 @@ def dyn_mirror_flow_mod_onward__(dyn, param):
 		return passed, n_sub_tests
 	print "Onward - mod-flows reg-add has output action, passed"
 
+	param['op'] = "reg-add"
 	passed, n_this_sub_tests = dpi_flow_mod_onward__(dyn, actions, param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		return passed, n_sub_tests
 
+	print
+	print "Traffic test after modifying mirror actions"
 	for i in range(n_pkts_sent):
 		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
 				ofp_port, "vca-mirror-tests")
@@ -1784,6 +1790,8 @@ def dyn_mirror_flow_mod_onward__(dyn, param):
 		return passed, n_sub_tests
 	print "Onward - mirror packets upon flow modification, passed"
 
+	print
+	print "Deleting reg modification action from Ingress Mirror Table rule"
 	actions, n_pkts_org, n_pkts_new = dyn.set_flow_reg("Ingress", ofp_port,
 		       					   src_port_name,
 							   del_reg_name,
@@ -1834,6 +1842,7 @@ def dyn_mirror_flow_mod_onward__(dyn, param):
 		return passed, n_sub_tests
 	print "Onward - mod-flows reg-del test #6 has output action, passed"
 
+	param['op'] = "reg-del"
 	passed, n_this_sub_tests = dpi_flow_mod_onward__(dyn, actions, param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
@@ -2182,6 +2191,7 @@ def dpi_flow_mod_onward__(dyn, actions, param):
 	passed = True
 	n_sub_tests = 0
 	dyn_agent = param['dyn_agent']
+	op = param['op']
 	action_set = [ 'push_vlan', 'strip_vlan', 'mod_vlan_vid', 'mod_vlan_pcp' ]
 
 	if (dyn_agent != "dpi"):
@@ -2192,9 +2202,9 @@ def dpi_flow_mod_onward__(dyn, actions, param):
 		n_sub_tests = n_sub_tests + 1
 		if (has_action == False):
 			passed = False
-			print "Onward - DPI agent mod-flows reg-add missing " + a + " action"
+			print "Onward - DPI agent mod-flows " + op + " missing " + a + " action"
 			return passed, n_sub_tests
-		print "Onward - mod-flows reg-add has DPI agent custom action (" + a + "), passed"
+		print "Onward - mod-flows " + op + " has DPI agent custom action (" + a + "), passed"
 
 	return passed, n_sub_tests
 
