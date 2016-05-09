@@ -1596,7 +1596,7 @@ def dyn_traffic_cleanup__(dyn):
 	if (n_flows_in != exp_n_flows_tbl5_total):
 		passed = False
 		print "Flow cleanup check - Ingress Mirror Table (" + str(n_flows_in) + ") != expected (" + str(exp_n_flows_tbl5_total) + "), failed"
-		return passed
+		return passed, n_sub_tests
 	print "Flow cleanup check - Ingress Mirror Table (" + str(exp_n_flows_tbl5_total) + "), passed"
 
 	n_flows_eg, n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters(
@@ -1607,7 +1607,7 @@ def dyn_traffic_cleanup__(dyn):
 	if (n_flows_eg != exp_n_flows_tbl6_total):
 		passed = False
 		print "Flow cleanup check - Egress Mirror Table (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
-		return passed
+		return passed, n_sub_tests
 	print "Flow cleanup check - Egress Mirror Table (" + str(exp_n_flows_tbl6_total) + "), passed"
 	return passed, n_sub_tests
 
@@ -1653,6 +1653,196 @@ def dyn_mirror_single_traffic__(param):
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
+def dyn_mirror_flow_mod_onward__(dyn, param):
+	passed = True
+	n_sub_tests = 0
+	dyn_agent = param['dyn_agent']
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
+	n_pkts_sent = int(10)
+	ofreg_str = "NXM_NX_REG5"
+	add_reg_name = "reg5"
+	add_reg_val = "100"
+	del_reg_name = "reg12"
+	del_reg_val = "0"
+
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
+	mirror_iface = dyn.get_destination()
+	if (mirror_iface == None):
+		passed = False
+		print "Failed to parse mirror interface"
+		return passed, n_sub_tests
+
+	cmd = [ ovs_path + "/ovs-appctl", "bridge/clear-flow-stats", br ]
+	shell.execute(cmd)
+	mac_1 = src_mac
+	ip_1 = src_ip
+	mac_2 = dst_mac
+	ip_2 = dst_ip
+	ofp_port = src_ofp_port
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	actions, n_pkts_org, n_pkts_new = dyn.set_flow_reg("Ingress", ofp_port,
+		       					   src_port_name,
+							   add_reg_name,
+							   add_reg_val)
+	n_sub_tests = n_sub_tests + 1
+	if (actions == None or n_pkts_org == None or n_pkts_new == None):
+		passed = False
+		print "Onward - mod-flows reg-add test #1, actions: " + actions + ", n_pkts_org: " + n_pkts_org + ", n_pkts_new: " + n_pkts_new + ", failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #1 - non NULL actions, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_org != str(n_pkts_sent)):
+		passed = False
+		print "Onward - mod-flows reg-add test #2, n_pkts_org (" + n_pkts_org + ") != n_pkts_sent (" + str(n_pkts_sent) + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #2 - n_pkts_org = n_pkts_sent, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	exp_n_pkts_new = int(0)
+	if (n_pkts_new != str(exp_n_pkts_new)):
+		passed = False
+		print "Onward - mod-flows reg-add test #3, n_pkts_new (" + n_pkts_new + ") != exp_n_pkts_new (" + str(exp_n_pkts_new) + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #3 - n_pkts_new = " + str(exp_n_pkts_new) + ", passed"
+
+	n_sub_tests = n_sub_tests + 1
+	actions_has_load = actions.find("load") >= 0
+	if (actions_has_load == False):
+		passed = False
+		print "Onward - mod-flows reg-add test #4: no load" + actions
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #4: " + actions
+
+	n_sub_tests = n_sub_tests + 1
+	actions_has_ofreg_str = actions.find(ofreg_str) >= 0
+	if (actions_has_ofreg_str == False):
+		passed = False
+		print "Onward - mod-flows reg-add test #5: expected (" + ofreg_str + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #5: openflow reg5 check"
+
+	n_sub_tests = n_sub_tests + 1
+	load_str = actions.split("->")
+	if (load_str == None):
+		passed = False
+		print "Onward - mod-flows reg-add test #6: NULL load_str, failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #6: load_str non-null, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	new_reg_val = load_str[0].split(":")[1]
+	if (new_reg_val != hex(int(add_reg_val))):
+		passed = False
+		print "Onward - mod-flows reg-add test #7: register value: expected (" + add_reg_val + "), got: (" + new_reg_val + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-add test #7: register value sanity (" + add_reg_val + ") check, passed"
+
+	for i in range(n_pkts_sent):
+		net.send_packet(ovs_path, br, i, mac_1, ip_1, mac_2, ip_2,
+				ofp_port, "vca-mirror-tests")
+	n_flows_in, n_pkts_in, n_bytes_in, flow_in = dyn.get_flow_pkt_counters(
+						"Ingress", ofp_port)
+	n_sub_tests = n_sub_tests + 1
+	if (str(n_pkts_in) != str(n_pkts_sent)):
+		print "Onward - unable to mirror packets upon flow modification, n_pkts_in: " + str(n_pkts_in) + ", failed"
+		passed = False
+		return passed, n_sub_tests
+	print "Onward - mirror packets upon flow modification, passed"
+
+	actions, n_pkts_org, n_pkts_new = dyn.set_flow_reg("Ingress", ofp_port,
+		       					   src_port_name,
+							   del_reg_name,
+							   del_reg_val)
+	n_sub_tests = n_sub_tests + 1
+	if (actions == None or n_pkts_org == None or n_pkts_new == None):
+		passed = False
+		print "Onward - mod-flows reg-del test #1, actions: " + actions + ", n_pkts_org: " + n_pkts_org + ", n_pkts_new: " + n_pkts_new + ", failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #1 - non NULL actions, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	if (n_pkts_org != str(n_pkts_sent)):
+		passed = False
+		print "Onward - mod-flows reg-del test #2, n_pkts_org (" + n_pkts_org + ") != n_pkts_sent (" + str(n_pkts_sent) + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #2 - n_pkts_org = n_pkts_sent, passed"
+
+	n_sub_tests = n_sub_tests + 1
+	exp_n_pkts_new = int(0)
+	if (n_pkts_new != str(exp_n_pkts_new)):
+		passed = False
+		print "Onward - mod-flows reg-del test #3, n_pkts_new (" + n_pkts_new + ") != exp_n_pkts_new (" + str(exp_n_pkts_new) + "), failed"
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #3 - n_pkts_new = " + str(exp_n_pkts_new) + ", passed"
+
+	n_sub_tests = n_sub_tests + 1
+	actions_has_load = actions.find("load") >= 0
+	if (actions_has_load == True):
+		passed = False
+		print "Onward - mod-flows reg-del test #4: still load present, " + actions
+		return passed, n_sub_tests
+	print "Onward - mod-flows reg-del test #4 successfully deleted reg action, passed"
+	return passed, n_sub_tests
+
+def dyn_mirror_flow_mod_return__(dyn, param):
+	passed = True
+	n_sub_tests = 0
+	return passed, n_sub_tests
+
+def dyn_mirror_flow_mod__(param):
+	passed = True
+	n_sub_tests = 0
+	n_this_sub_tests = 0
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	mirror_id = param['mirror_id']
+	mirror_dst_port = param['mirror_dst_port']
+	dyn_agent = param['dyn_agent']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
+
+	print "Dyn Mirror Flow Modification Test - " + dyn_agent
+
+	dyn = vca_dyn.DYN(ovs_path, br, logfd, mirror_id, mirror_dst_port,
+			  src_vm_name, dyn_agent)
+	dyn.local_create()
+	dyn.dump(False)
+	dyn.show(False)
+
+	passed, n_this_sub_tests = dyn_mirror_flow_mod_onward__(dyn, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
+
+	passed, n_this_sub_tests = dyn_mirror_flow_mod_return__(dyn, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
+
+	dyn.local_destroy()
+
+	passed, n_this_sub_tests = dyn_traffic_cleanup__(dyn)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	return passed, n_sub_tests
+
 def dyn_single_mirror(test_args):
 	global testcase_id
 	suite = test_args["suite"]
@@ -1685,6 +1875,10 @@ def dyn_single_mirror(test_args):
 		{
 			'handler' : dyn_mirror_single_traffic__,
 			'desc' : "traffic",
+		},
+		{
+			'handler' : dyn_mirror_flow_mod__,
+			'desc' : "flow-modification",
 		},
 	]
 	for a in agents :
