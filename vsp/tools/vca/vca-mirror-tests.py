@@ -1313,8 +1313,8 @@ def dyn_traffic_pkt_out_onward__(param):
 
 	n_sub_tests = n_sub_tests + 1
 	n_flows_t, n_pkts_t, n_bytes_t, flow_t = dyn.get_flow_pkt_counters_template("Egress", vrf_id)
-	if (n_pkts_t != n_pkts_sent):
-		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != sent (" + str(n_pkts_sent) + "), " + flow_t
+	if (n_pkts_t != 0):
+		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(0) + "), " + flow_t
 	else:
 		print "Onward - Egress create_dyn_mirror packet count sanity test: passed"
 
@@ -1371,9 +1371,10 @@ def dyn_traffic_pkt_out_onward__(param):
 	exp_n_flows_tbl6_total = exp_n_flows_tbl6_prio_0 + exp_n_flows_tbl6_prio_2
 	n_sub_tests = n_sub_tests + 1
 	if (n_flows_eg != exp_n_flows_tbl6_total):
-		passed = False
-		print "Onward - Egress Mirror Table flow count (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
-		return passed, n_sub_tests
+		if (n_flows_eg != exp_n_flows_tbl6_prio_0):
+			passed = False
+			print "Onward - Egress Mirror Table flow count (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
+			return passed, n_sub_tests
 	print "Onward - Egress Mirror Table flow count (" + str(exp_n_flows_tbl6_total) + "), passed"
 
 	return passed, n_sub_tests
@@ -1618,12 +1619,14 @@ def dyn_traffic_cleanup__(dyn):
 	n_flows_eg, n_pkts_eg, n_bytes_eg, flow_eg = dyn.get_flow_pkt_counters(
 						"Egress", "-1")
 	exp_n_flows_tbl6_prio_0 = 1
-	exp_n_flows_tbl6_total = exp_n_flows_tbl6_prio_0
+	exp_n_flows_tbl6_prio_1 = 1
+	exp_n_flows_tbl6_total = exp_n_flows_tbl6_prio_0 + exp_n_flows_tbl6_prio_1
 	n_sub_tests = n_sub_tests + 1
 	if (n_flows_eg != exp_n_flows_tbl6_total):
-		passed = False
-		print "Flow cleanup check - Egress Mirror Table (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
-		return passed, n_sub_tests
+		if (n_flows_eg != exp_n_flows_tbl6_prio_0):
+			passed = False
+			print "Flow cleanup check - Egress Mirror Table (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
+			return passed, n_sub_tests
 	print "Flow cleanup check - Egress Mirror Table (" + str(exp_n_flows_tbl6_total) + "), passed"
 	return passed, n_sub_tests
 
