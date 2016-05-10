@@ -148,7 +148,10 @@ class DYN(object):
 		table_id = -1
 		if (type == "Ingress"):
 			table_id = 5
-			pv_key_index = 2
+			if ((get_template == True) and (pv_val != "-1")):
+				pv_key_index = 1
+			else:
+				pv_key_index = 2
 		elif (type == "Egress"):
 			table_id = 6
 			pv_key_index = 1
@@ -179,7 +182,24 @@ class DYN(object):
 			val = toks[field]
 			if (get_template == False):
 				break
+			elif ((get_template == True) and (pv_val != "-1")):
+				break
 		return n_flows, val, l
+
+	def get_flow_pkt_counters_template(self, type, pv_val):
+		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
+					pv_val, 2, True, True, 2)
+		if (n_pkts_str == None):
+			n_pkts = 0
+		else:
+			n_pkts = n_pkts_str.replace(",", "").split("=")[1]
+		n_flows, n_bytes_str, flow = self.__parse_dump_flows(type,
+					pv_val, 4, True, True, 2)
+		if (n_bytes_str == None):
+			n_bytes = 0
+		else:
+			n_bytes = n_bytes_str.replace(",", "").split("=")[1]
+		return int(n_flows), int(n_pkts), int(n_bytes), flow
 
 	def get_flow_pkt_counters(self, type, ofp_port):
 		if (str(ofp_port) == "-1"):
@@ -276,6 +296,8 @@ class DYN(object):
 		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
 					pv_val, 2, False, True, 16384)
 		if (n_flows < 1):
+			return None, None, None
+		if (n_pkts_str == None):
 			return None, None, None
 		n_pkts_org = n_pkts_str.replace(",", "").split("=")[1]
 		rule = flow.split()[5]
