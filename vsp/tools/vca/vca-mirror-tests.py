@@ -1273,6 +1273,7 @@ def dyn_traffic_pkt_out_onward__(param):
 	dst_ofp_port = param['dst_ofp_port']
 	mirror_id = param['mirror_id']
 	mirror_dst_port = param['mirror_dst_port']
+	vrf_id = hex(int(param['vrf_id']))
 	n_pkts_sent = int(10)
 
 	mirror_iface = dyn.get_destination()
@@ -1309,6 +1310,13 @@ def dyn_traffic_pkt_out_onward__(param):
 		passed = False
 		return passed, n_sub_tests
 	print "Onward - Egress dyn mirror packet count zero test: passed"
+
+	n_sub_tests = n_sub_tests + 1
+	n_flows_t, n_pkts_t, n_bytes_t, flow_t = dyn.get_flow_pkt_counters_template("Egress", vrf_id)
+	if (n_pkts_t != n_pkts_sent):
+		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != sent (" + str(n_pkts_sent) + "), " + flow_t
+	else:
+		print "Onward - Egress create_dyn_mirror packet count sanity test: passed"
 
 	actions, flow = dyn.get_flow_mirror_actions("Ingress", ofp_port)
 	n_sub_tests = n_sub_tests + 1
@@ -1401,6 +1409,7 @@ def dyn_mirror_single_traffic_onward__(dyn, param):
 		'mirror_id' : mirror_id,
 		'mirror_dst_port' : mirror_dst_port,
 		'dyn_agent': dyn_agent,
+		'vrf_id': vrf_id,
 	}
 	print 
 	print "Running onward traffic test with " + dst_port_name + ", ofp_port: " + str(dst_ofp_port)
@@ -1468,6 +1477,13 @@ def dyn_traffic_pkt_out_return__(param):
 		passed = False
 		return passed, n_sub_tests
 	print "Return - Ingress dyn mirror packet count zero test: passed"
+
+	n_sub_tests = n_sub_tests + 1
+	n_flows_t, n_pkts_t, n_bytes_t, flow_t = dyn.get_flow_pkt_counters_template("Ingress", dst_ofp_port)
+	if (n_pkts_t != 0):
+		print "Return - Ingress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(0) + "), " + flow_t
+	else:
+		print "Return - Egress create_dyn_mirror packet count sanity test: passed"
 
 	actions, flow = dyn.get_flow_mirror_actions("Egress", vrf_id)
 	n_sub_tests = n_sub_tests + 1
