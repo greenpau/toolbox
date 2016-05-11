@@ -1177,6 +1177,17 @@ def dyn_verify_agent__(param):
 		print "Mirror agent name verification passed"
 	return True
 
+def dyn_verify_pkt_fwd_flows__(param):
+	mobj = param['mirror_obj']
+	in_n_flows = param['n_flows']
+	table = param['table']
+	mobj_n_flows, n_pkts, n_btyes, flow = mobj.get_flow_pkt_counters_pkt_fwd(table, "-1")
+	if (in_n_flows != str(mobj_n_flows)):
+		print "Mirror table pkt-fwd n_flows (" + str(mobj_n_flows) + ") in " + table + " != expected (" + in_n_flows + "), failed"
+		return False
+	print "Mirror " + table + " pkt-fwd n_flows (" + str(mobj_n_flows) + "), passed"
+	return True
+
 def mirror_verify_dyn__(mobjs, param):
 	ovs_path = param['ovs_path']
 	br = param['br']
@@ -1219,6 +1230,22 @@ def mirror_verify_dyn__(mobjs, param):
 			   }
 		n_sub_tests = n_sub_tests + 1
 		passed = dyn_verify_agent__(st_param)
+		if (passed == False):
+			break
+		st_param = {	'mirror_obj' : mobj,
+				'n_flows': "0",
+				'table': "Ingress",
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = dyn_verify_pkt_fwd_flows__(st_param)
+		if (passed == False):
+			break
+		st_param = {	'mirror_obj' : mobj,
+				'n_flows': "0",
+				'table': "Egress",
+			   }
+		n_sub_tests = n_sub_tests + 1
+		passed = dyn_verify_pkt_fwd_flows__(st_param)
 		if (passed == False):
 			break
 	return passed, n_sub_tests
