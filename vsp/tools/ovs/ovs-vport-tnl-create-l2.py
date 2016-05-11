@@ -105,11 +105,11 @@ def main(argc, argv):
 	time.sleep(2)
 
 	rtep = ovs_vport_tnl.Tunnel(ovs_path, br, tnl_type, tnl_key, rtep_ip,
-				    "rtep", logfd)
+				    "rtep", logfd, True)
 	rtep_port = rtep.get_tnl_name()
 	time.sleep(2)
 	ltep = ovs_vport_tnl.Tunnel(ovs_path, br, tnl_type, tnl_key, mgmt_ip,
-				    "ltep", logfd)
+				    "ltep", logfd, True)
 	ltep_port = ltep.get_tnl_name()
 	time.sleep(2)
 

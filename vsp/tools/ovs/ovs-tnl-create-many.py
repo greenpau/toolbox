@@ -112,10 +112,10 @@ def main(argc, argv):
 		key = tnl_key + str(x)
 		print "ITERATION: " + str(x) + ", key: " + key
 		rtep = ovs_vport_tnl.Tunnel(ovs_path, br, tnl_type,
-					    key, rtep_ip, "rtep", logfd)
+					    key, rtep_ip, "rtep", logfd, True)
 		rtep_port = rtep.get_tnl_name()
 		ltep = ovs_vport_tnl.Tunnel(ovs_path, br, tnl_type,
-					    key, mgmt_ip, "ltep", logfd)
+					    key, mgmt_ip, "ltep", logfd, True)
 		ltep_port = ltep.get_tnl_name()
 		print "Created rtep_port " + rtep_port + " ltep_port " + ltep_port + " with tnl_key " + key
 		if (x % 2) == 0:

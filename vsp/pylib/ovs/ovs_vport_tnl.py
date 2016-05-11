@@ -9,7 +9,7 @@ import ovs_ofproto
 
 class Tunnel(object):
 	def __init__(self, ovs_path, br, tnl_type, tnl_key, tnl_ip, tep_type,
-		     logfd):
+		     logfd, do_create):
 		self.ovs_path = ovs_path
 		self.vsctl_path = ovs_path + "/ovs-vsctl"
 		self.appctl_path = ovs_path + "/ovs-appctl"
@@ -19,14 +19,13 @@ class Tunnel(object):
 		self.tnl_ip = tnl_ip
 		self.tep_type = tep_type
 		self.logfd = logfd
-		if (tnl_key != None):
-			self.__set_tnl_iface()
+		self.do_create = do_create
+		self.__set_tnl_iface()
+		if (do_create == True):
 			self.__create()
-		else:
-			self.__set_tnl_iface()
 
 	def __set_tnl_iface(self):
-		if (self.tnl_key != None):
+		if (self.do_create == True):
 			if (self.tep_type == "rtep"):
 				val = self.tnl_ip.split(".")
 				tnl_ip_hex = ("%x" % int(val[0])) + \
@@ -38,9 +37,12 @@ class Tunnel(object):
 				self.iface = self.tep_type + "-" + self.tnl_key
 		else:
 			if (self.tep_type == "rtep"):
-				self.iface = "t" + net.ipaddr2hex(self.tnl_ip)
+				self.iface = "t" + net.ipaddr2hex(self.tnl_ip) +  self.tnl_key
 			else:
-				self.iface = "ltep-" + net.ipaddr2hex(self.tnl_ip)
+				if (self.tnl_key != None):
+					self.iface = "ltep-" + net.ipaddr2hex(self.tnl_ip) + "-" + self.tnl_key
+				else:
+					self.iface = "ltep-" + net.ipaddr2hex(self.tnl_ip)
 			iface_list = self.__get_ifaces()
 			for iface in iface_list:
 				if (iface.find(self.iface) >= 0):
