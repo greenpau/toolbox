@@ -164,9 +164,9 @@ class DYN(object):
 			if (this_table_id != str(table_id)):
 				continue
 			n_flows = n_flows + 1
-			if ((get_template == False) and
-			    (l.find("create_dyn_mirror") >= 0)):
-				continue
+			if (get_template == False):
+				if (l.find("create_dyn_mirror") >= 0):
+					continue
 			toks = l.split()
 			rule = toks[5]
 			if (prio_check == True):
@@ -175,6 +175,8 @@ class DYN(object):
 					continue
 			pv_key_str = rule.split(",")[pv_key_index]
 			if (pv_key_str == None):
+				continue
+			if (pv_key_str.find("=") < 0):
 				continue
 			pv_key = pv_key_str.split("=")[1]
 			if (pv_key != str(pv_val)):
@@ -185,6 +187,23 @@ class DYN(object):
 			elif ((get_template == True) and (pv_val != "-1")):
 				break
 		return n_flows, val, l
+
+	def get_flow_pkt_counters_pkt_fwd(self, type, pv_val):
+		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
+					pv_val, 2, False, True, 1)
+		if (n_pkts_str == None):
+			n_pkts = 0
+			n_flows = 0
+		else:
+			n_pkts = n_pkts_str.replace(",", "").split("=")[1]
+		n_flows, n_bytes_str, flow = self.__parse_dump_flows(type,
+					pv_val, 4, True, True, 1)
+		if (n_bytes_str == None):
+			n_bytes = 0
+			n_flows = 0
+		else:
+			n_bytes = n_bytes_str.replace(",", "").split("=")[1]
+		return int(n_flows), int(n_pkts), int(n_bytes), flow
 
 	def get_flow_pkt_counters_template(self, type, pv_val):
 		n_flows, n_pkts_str, flow = self.__parse_dump_flows(type,
