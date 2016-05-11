@@ -29,7 +29,7 @@ def usage():
 	print "options:"
 	print "    -v vm_name(s): comma separated VM names for mirroring"
 	print "    -r <ip>: remote ovs IPv4 address"
-	print "    -i <ip>: mirror destination IPv4 address"
+	print "    -i <ip>:<key> - mirror destination IPv4 address & tunnel key"
 	print "    -p <name>: mirror destination port (dyn-mirror)"
 	print "    -e: exitOnFailure=true"
 	print "    -s <suite>: CSV of suite name(s) to run ('PBM', 'VPM', 'DYN')"
@@ -47,9 +47,10 @@ def get_vm_attr__(ovs_path, br, logfd, vm_name):
 	vrf_id = vm.vrf_id()
 	return port_name, mac, ip, ofp_port, vrf_id
 
-def get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip):
-	tnl = ovs_vport_tnl.Tunnel(ovs_path, br, None, None, remote_ovs_ip,
-				    "rtep", logfd)
+def get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip, tun_key):
+	tnl = ovs_vport_tnl.Tunnel(ovs_path, br, None,
+				   str(hex(int(tun_key))).replace("0x", ""),
+				   remote_ovs_ip, "rtep", logfd, False)
 	mac = "00:11:22:33:44:55"
 	ip = "1.2.3.4"
 	ofp_port = tnl.get_ofp_port()
@@ -1560,12 +1561,13 @@ def dyn_mirror_single_traffic_return__(dyn, param):
 	src_vm_name = param['vm_name']
 	dst_vm_name = param['aux_vm_name']
 	remote_ovs_ip = param['remote_ovs_ip']
+	tun_key = param['tun_key']
 
 	if (remote_ovs_ip == None):
 		print "Remote ovs_ip is not specified, return traffic tests not ran"
 		return passed, n_sub_tests
 
-	tunnel_port, tnl_mac, tnl_ip, tnl_ofp_port = get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip)
+	tunnel_port, tnl_mac, tnl_ip, tnl_ofp_port = get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip, tun_key)
 	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
 			ovs_path, br, logfd, src_vm_name)
 	if (tunnel_port == None):
@@ -1643,6 +1645,7 @@ def dyn_mirror_single_traffic__(param):
 	src_vm_name = param['vm_name']
 	dst_vm_name = param['aux_vm_name']
 	remote_ovs_ip = param['remote_ovs_ip']
+	tun_key = param['tun_key']
 
 	print "Dyn Mirror Traffic Test - " + dyn_agent
 
@@ -1923,6 +1926,7 @@ def dyn_single_mirror(test_args):
 	aux_vm_name = test_args["aux_vm_name"]
 	mirror_dst_port = test_args["mirror_dst_port"]
 	remote_ovs_ip = test_args["remote_ovs_ip"]
+	tun_key = test_args['tun_key']
 	mirror_dst_ip = "0.0.0.0"
 	pbm_dir = "n/a"
 	vpm_dir = "n/a"
@@ -1964,6 +1968,7 @@ def dyn_single_mirror(test_args):
 			  'vm_name': vm_name,
 			  'aux_vm_name': aux_vm_name,
 			  'dyn_agent' : dyn_agent,
+			  'tun_key' : tun_key,
 		}
 		for dsm_test in dyn_single_mirror_tests:
 			this_desc = dsm_test['desc']
@@ -1976,7 +1981,7 @@ def dyn_single_mirror(test_args):
 			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
 
-def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, remote_ovs_ip,
+def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, remote_ovs_ip, tun_key,
 	    logfd, ovs_path, ovs_vers, exit_on_failure):
 	global testcase_id
 	suite = vca_test.SUITE("DYN")
@@ -1993,6 +1998,7 @@ def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, remote_ovs_ip,
 		"aux_vm_name" : aux_vm_name,
 		"mirror_dst_port" : mirror_dst_port,
 		"remote_ovs_ip" : remote_ovs_ip,
+		"tun_key": tun_key,
 		"ovs_vers" : ovs_vers,
 	}
 	testcase_id = 1
@@ -2268,6 +2274,7 @@ def main(argc, argv):
 	mirror_dst_ip = None
 	mirror_dst_port = None
 	remote_ovs_ip = None
+	tun_key = None
 	exit_on_failure = False
 	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
 	suite_list = [ "all" ]
@@ -2289,7 +2296,12 @@ def main(argc, argv):
 		elif opt == "-i":
 			mirror_dst_ip = arg
 		elif opt == "-r":
-			remote_ovs_ip = arg
+			if (arg.find(":") < 0):
+				print progname + ": format <ip>:<key>"
+				exit(1)
+			ip_key_list = arg.split(":")
+			remote_ovs_ip = ip_key_list[0]
+			tun_key = ip_key_list[1]
 		elif opt == "-p":
 			mirror_dst_port = arg
 		elif opt == "-e":
@@ -2312,7 +2324,7 @@ def main(argc, argv):
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 		elif (suite == "DYN"):
 			run_dyn(br, vm_name, aux_vm_name,
-				mirror_dst_port, remote_ovs_ip,
+				mirror_dst_port, remote_ovs_ip, tun_key,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 		else:
 			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
@@ -2320,7 +2332,7 @@ def main(argc, argv):
 			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 			run_dyn(br, vm_name, aux_vm_name,
-				mirror_dst_port, remote_ovs_ip,
+				mirror_dst_port, remote_ovs_ip, tun_key,
 				logfd, ovs_path, ovs_vers, exit_on_failure)
 	
 	exit(0)
