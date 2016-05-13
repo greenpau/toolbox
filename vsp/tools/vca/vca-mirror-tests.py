@@ -33,6 +33,7 @@ def usage():
 	print "    -p <name>: mirror destination port (dyn-mirror)"
 	print "    -e: exitOnFailure=true"
 	print "    -s <suite>: CSV of suite name(s) to run ('PBM', 'VPM', 'DYN')"
+	print "    -t <testproc>: CSV of testproc name(s) to run"
 	sys.exit(1)
 
 ############################### HELPERS #####################################
@@ -400,7 +401,8 @@ def pbm_single_mirror(test_args):
 		testcase_desc = "Single ACL Mirror: " + acl_dir + " " + acl_type
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     pbm_single_mirror__, param)
-		suite.register_test(test)
+		if (suite.register_test(test) == False):
+			continue
 		test.run()
 		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
@@ -428,7 +430,8 @@ def pbm_multiple_acl_mirrors(test_args):
 	testcase_desc = "Multiple ACL Mirror: " + acl_type
 	test = vca_test.TEST(testcase_id, testcase_desc,
 			     pbm_multiple_acl_mirrors__, param)
-	suite.register_test(test)
+	if (suite.register_test(test) == False):
+		return
 	test.run()
 	suite.assert_test_result(test)
 	testcase_id = testcase_id + 1
@@ -537,7 +540,8 @@ def pbm_vpm_single_mirror(test_args):
 			testcase_desc = "PBM/VPM Single ACL Mirror: PBM - " + pbm_dir + " " + acl_type + ", VPM - " + vpm_dir
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     pbm_vpm_single_mirror__, param)
-			suite.register_test(test)
+			if (suite.register_test(test) == False):
+				continue
 			test.run()
 			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
@@ -876,7 +880,8 @@ def pbm_traffic(test_args):
 		for traffic_test_handler in traffic_test_handlers:
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     traffic_test_handler, param)
-			suite.register_test(test)
+			if (suite.register_test(test) == False):
+				continue
 			test.run()
 			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
@@ -1014,16 +1019,18 @@ def pbm_redirect(test_args):
 		testcase_desc = "PBM Redirect ACL - " + this_test_desc
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     this_test_handler, param)
-		suite.register_test(test)
+		if (suite.register_test(test) == False):
+			continue
 		test.run()
 		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
 	return
 
 def run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
-	    logfd, ovs_path, ovs_vers, exit_on_failure):
+	    logfd, ovs_path, ovs_vers, exit_on_failure, test_subset):
 	global testcase_id
 	suite = vca_test.SUITE("PBM")
+	suite.register_test_subset(test_subset)
 	suite.set_exit_on_failure(exit_on_failure)
 	test_handlers = [
 		pbm_single_mirror,
@@ -1119,16 +1126,18 @@ def vpm_single_mirror(test_args):
 		testcase_desc = "Port Mirror: " + mirror_dir
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     vpm_single_mirror__, param)
-		suite.register_test(test)
+		if (suite.register_test(test) == False):
+			continue
 		test.run()
 		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
 	return
 
 def run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
-	    logfd, ovs_path, ovs_vers, exit_on_failure):
+	    logfd, ovs_path, ovs_vers, exit_on_failure, test_subset):
 	global testcase_id
 	suite = vca_test.SUITE("VPM")
+	suite.register_test_subset(test_subset)
 	suite.set_exit_on_failure(exit_on_failure)
 	test_handlers = [
 		vpm_single_mirror,
@@ -2003,15 +2012,17 @@ def dyn_single_mirror(test_args):
 			testcase_desc = "Dynamic Single Mirror - " + this_desc + ": " + dyn_agent
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     this_test, param)
-			suite.register_test(test)
+			if (suite.register_test(test) == False):
+				continue
 			test.run()
 			suite.assert_test_result(test)
 			testcase_id = testcase_id + 1
 
 def run_dyn(br, vm_name, aux_vm_name, mirror_dst_port, remote_ovs_ip, tun_key,
-	    logfd, ovs_path, ovs_vers, exit_on_failure):
+	    logfd, ovs_path, ovs_vers, exit_on_failure, test_subset):
 	global testcase_id
 	suite = vca_test.SUITE("DYN")
+	suite.register_test_subset(test_subset)
 	suite.set_exit_on_failure(exit_on_failure)
 	test_handlers = [
 		dyn_single_mirror,
@@ -2305,8 +2316,9 @@ def main(argc, argv):
 	exit_on_failure = False
 	ovs_vers = ovs_helper.get_ovs_version(ovs_path)
 	suite_list = [ "all" ]
+	test_subset = []
 	try:
-		opts, args = getopt.getopt(argv, "hv:i:es:p:r:")
+		opts, args = getopt.getopt(argv, "hv:i:es:p:r:t:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -2335,6 +2347,8 @@ def main(argc, argv):
 			exit_on_failure = True
 		elif opt == "-s":
 			suite_list = arg.split(",")
+		elif opt == "-t":
+			test_subset = arg.split(",")
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
@@ -2345,22 +2359,28 @@ def main(argc, argv):
 			exit(1)
 		if (suite == "PBM"):
 			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 		elif (suite == "VPM"):
 			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 		elif (suite == "DYN"):
 			run_dyn(br, vm_name, aux_vm_name,
 				mirror_dst_port, remote_ovs_ip, tun_key,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 		else:
 			run_pbm(br, vm_name, aux_vm_name, mirror_dst_ip,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 			run_vpm(br, vm_name, aux_vm_name, mirror_dst_ip,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 			run_dyn(br, vm_name, aux_vm_name,
 				mirror_dst_port, remote_ovs_ip, tun_key,
-				logfd, ovs_path, ovs_vers, exit_on_failure)
+				logfd, ovs_path, ovs_vers, exit_on_failure,
+				test_subset)
 	
 	exit(0)
 
