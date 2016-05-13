@@ -15,6 +15,7 @@ sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import ovs_helper
 import ovs_vport_tap
 import ovs_vport_tnl
+import ovs_flows
 
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
@@ -1294,6 +1295,76 @@ def dyn_mirror_single_provisioning__(param):
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	return passed, n_sub_tests
 
+def dyn_traffic_check_n_pkts_by_table_id__(param, n_pkts_sent, dir):
+	passed = True
+	n_sub_tests = 0
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	flows = ovs_flows.Flows(ovs_path, logfd)
+	exp_n_pkts_by_table_id_list = [
+		{
+			'table_id' : 4,
+			'n_pkts_hit': n_pkts_sent,
+			'n_flows': 1,
+			'dir': "Both",
+		},
+		{
+			'table_id' : 7,
+			'n_pkts_hit': n_pkts_sent,
+			'n_flows': 1,
+			'dir': "Onward",
+		},
+		{
+			'table_id' : 9,
+			'n_pkts_hit': n_pkts_sent,
+			'n_flows': 1,
+			'dir': "Onward",
+		},
+		{
+			'table_id' : 14,
+			'n_pkts_hit': n_pkts_sent,
+			'n_flows': 1,
+			'dir': "Both",
+		},
+		{
+			'table_id' : 11,
+			'n_pkts_hit': n_pkts_sent,
+			'n_flows': 1,
+			'dir': "Both",
+		},
+	]
+
+	for exp_n_pkts_by_table_id in exp_n_pkts_by_table_id_list:
+		exp_table_id = exp_n_pkts_by_table_id['table_id']
+		exp_n_pkts_hit = exp_n_pkts_by_table_id['n_pkts_hit']
+		exp_n_flows_hit = exp_n_pkts_by_table_id['n_flows']
+		exp_dir = exp_n_pkts_by_table_id['dir']
+		act_n_flows_hit, flow_list = flows.get_n_pkts_hit_by_table(br, str(exp_table_id))
+		if ((exp_dir != "Both") and (exp_dir != dir)):
+			continue
+		n_sub_tests = n_sub_tests + 1
+		if (exp_n_flows_hit != act_n_flows_hit):
+			passed = False
+			print dir + " - Flow Table ID (" + str(exp_table_id) + "): num flows hit exp (" + str(exp_n_flows_hit) + "), got: (" + str(act_n_flows_hit) + "), failed"
+			return passed, n_sub_tests
+		print dir + " - Flow Table ID (" + str(exp_table_id) + ") num flows hit (" + str(exp_n_flows_hit) + "), check passed"
+		for f in flow_list:
+			act_table_id = f[0]
+			act_n_pkts_hit = f[1]
+			n_sub_tests = n_sub_tests + 1
+			if (act_table_id != exp_table_id):
+				passed = False
+				print dir + " - Flow Table ID exp: (" + str(exp_table_id) + "), got: (" + str(act_table_id) + "), failed"
+				return passed, n_sub_tests
+			print dir + " - Flow Table ID (" + str(exp_table_id) + "), check passed"
+			n_sub_tests = n_sub_tests + 1
+			if (act_n_pkts_hit != exp_n_pkts_hit):
+				passed = False
+				print dir + " - Flow Table ID packet count - exp: (" + str(exp_n_pkts_hit) + "), got: (" + str(act_n_pkts_hit) + "), failed"
+				return passed, n_sub_tests
+			print dir + " - Flow Table ID packet count (" + str(act_n_pkts_hit) + "), check passed"
+	return passed, n_sub_tests
 
 def dyn_traffic_pkt_out_onward__(param):
 	passed = True
@@ -1413,6 +1484,12 @@ def dyn_traffic_pkt_out_onward__(param):
 			print "Onward - Egress Mirror Table flow count (" + str(n_flows_eg) + ") != expected (" + str(exp_n_flows_tbl6_total) + "), failed"
 			return passed, n_sub_tests
 	print "Onward - Egress Mirror Table flow count (" + str(exp_n_flows_tbl6_total) + "), passed"
+
+	passed, n_this_sub_tests = dyn_traffic_check_n_pkts_by_table_id__(param,
+							n_pkts_sent, "Onward")
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
 
 	return passed, n_sub_tests
 
@@ -1582,6 +1659,12 @@ def dyn_traffic_pkt_out_return__(param):
 		print "Return - Ingress Mirror Table flow count (" + str(n_flows_in) + ") != expected (" + str(exp_n_flows_tbl5_total) + "), failed"
 		return passed, n_sub_tests
 	print "Return - Ingress Mirror Table flow count (" + str(exp_n_flows_tbl5_total) + "), passed"
+
+	passed, n_this_sub_tests = dyn_traffic_check_n_pkts_by_table_id__(param,
+							n_pkts_sent, "Return")
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		return passed, n_sub_tests
 
 	return passed, n_sub_tests
 
