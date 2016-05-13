@@ -10,14 +10,32 @@ class SUITE(object):
 	def __init__(self, suite_name):
 		self.suite_name = suite_name
 		self.tests = []
+		self.test_subset = []
 		self.exit_on_failure = False
 		self.n_sub_tests = 0
 	
 	def set_exit_on_failure(self, exit_on_failure):
 		self.exit_on_failure = exit_on_failure
 
+	def register_test_subset(self, test_subset):
+		if len(test_subset) == 0:
+			return
+		self.test_subset.append(test_subset)
+
 	def register_test(self, TEST):
-		self.tests.append(TEST)
+		if len(self.test_subset) == 0:
+			self.tests.append(TEST)
+			return True
+		this_test = []
+		this_test.append(TEST)
+		for t in this_test:
+			for subset in self.test_subset:
+				test_func = t.handler.__name__
+				subset_testname = str(subset).replace("'", "").replace("[", "").replace("]", "")
+				if (test_func == subset_testname):
+					self.tests.append(TEST)
+					return True
+		return False
 
 	def run(self, test_handlers, test_args):
 		for handler in test_handlers:
