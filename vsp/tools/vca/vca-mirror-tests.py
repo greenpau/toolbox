@@ -35,6 +35,7 @@ def usage():
 	print "    -e: exitOnFailure=true"
 	print "    -s <suite>: CSV of suite name(s) to run ('PBM', 'VPM', 'DYN')"
 	print "    -t <testproc>: CSV of testproc name(s) to run"
+	print "    -l: list all testprocs"
 	sys.exit(1)
 
 ############################### HELPERS #####################################
@@ -386,6 +387,7 @@ def pbm_single_mirror(test_args):
 	acl_type = test_args["type"]
 	acl_dirs = [ "Ingress", "Egress" ]
 	global testcase_id
+	global listing
 
 	for acl_dir in acl_dirs:
 		param = { 'ovs_path' : ovs_path,
@@ -404,6 +406,9 @@ def pbm_single_mirror(test_args):
 				     pbm_single_mirror__, param)
 		if (suite.register_test(test) == False):
 			continue
+		if (listing == True):
+			test.list()
+			continue
 		test.run()
 		suite.assert_test_result(test)
 		testcase_id = testcase_id + 1
@@ -418,6 +423,8 @@ def pbm_multiple_acl_mirrors(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	global testcase_id
+	global listing
+
 	param = { 'ovs_path' : ovs_path,
 		  'br' : br,
 		  'logfd' : logfd,
@@ -432,6 +439,9 @@ def pbm_multiple_acl_mirrors(test_args):
 	test = vca_test.TEST(testcase_id, testcase_desc,
 			     pbm_multiple_acl_mirrors__, param)
 	if (suite.register_test(test) == False):
+		return
+	if (listing == True):
+		test.list()
 		return
 	test.run()
 	suite.assert_test_result(test)
@@ -523,6 +533,7 @@ def pbm_vpm_single_mirror(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	global testcase_id
+	global listing
 	acl_dirs = [ "Ingress", "Egress" ]
 	vpm_dirs = [ "Ingress", "Egress", "both" ]
 
@@ -542,6 +553,9 @@ def pbm_vpm_single_mirror(test_args):
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     pbm_vpm_single_mirror__, param)
 			if (suite.register_test(test) == False):
+				continue
+			if (listing == True):
+				test.list()
 				continue
 			test.run()
 			suite.assert_test_result(test)
@@ -851,6 +865,7 @@ def pbm_traffic(test_args):
 	ovs_vers = test_args["ovs_vers"]
 	acl_dirs = [ "Ingress", "Egress" ]
 	global testcase_id
+	global listing
 
 	if (ovs_vers == 0x230):
 		otdtf = 6
@@ -882,6 +897,9 @@ def pbm_traffic(test_args):
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     traffic_test_handler, param)
 			if (suite.register_test(test) == False):
+				continue
+			if (listing == True):
+				test.list()
 				continue
 			test.run()
 			suite.assert_test_result(test)
@@ -971,6 +989,7 @@ def pbm_redirect(test_args):
 	acl_type = test_args["type"]
 	ovs_vers = test_args["ovs_vers"]
 	global testcase_id
+	global listing
 
 	if (aux_vm_name == None):
 		print "Traffic tests need comma separated VM names (for source and destination)"
@@ -1021,6 +1040,9 @@ def pbm_redirect(test_args):
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     this_test_handler, param)
 		if (suite.register_test(test) == False):
+			continue
+		if (listing == True):
+			test.list()
 			continue
 		test.run()
 		suite.assert_test_result(test)
@@ -1111,6 +1133,7 @@ def vpm_single_mirror(test_args):
 	mirror_dst_ip = test_args["mirror_dst_ip"]
 	acl_type = test_args["type"]
 	global testcase_id
+	global listing
 	mirror_dirs = [ "Ingress", "Egress" ]
 
 	for mirror_dir in mirror_dirs:
@@ -1128,6 +1151,9 @@ def vpm_single_mirror(test_args):
 		test = vca_test.TEST(testcase_id, testcase_desc,
 				     vpm_single_mirror__, param)
 		if (suite.register_test(test) == False):
+			continue
+		if (listing == True):
+			test.list()
 			continue
 		test.run()
 		suite.assert_test_result(test)
@@ -2037,6 +2063,7 @@ def dyn_mirror_flow_mod__(param):
 
 def dyn_single_mirror(test_args):
 	global testcase_id
+	global listing
 	suite = test_args["suite"]
 	ovs_path = test_args["ovs_path"]
 	br = test_args["br"]
@@ -2096,6 +2123,9 @@ def dyn_single_mirror(test_args):
 			test = vca_test.TEST(testcase_id, testcase_desc,
 					     this_test, param)
 			if (suite.register_test(test) == False):
+				continue
+			if (listing == True):
+				test.list()
 				continue
 			test.run()
 			suite.assert_test_result(test)
@@ -2389,7 +2419,7 @@ def validate_args(progname, suite,
 
 def main(argc, argv):
 	ovs_path, hostname, os_release, logfile, br, vlan_id = ovs_helper.set_defaults(home, progname)
-	global testcase_id
+	global testcase_id, listing
 	vm_name = None
 	aux_vm_name = None
 	mirror_dst_ip = None
@@ -2401,13 +2431,15 @@ def main(argc, argv):
 	suite_list = [ "all" ]
 	test_subset = []
 	try:
-		opts, args = getopt.getopt(argv, "hv:i:es:p:r:t:")
+		opts, args = getopt.getopt(argv, "hv:i:es:p:r:t:l")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
 	for opt, arg in opts:
 		if opt == "-h":
 			usage()
+		elif opt == "-l":
+			listing = True
 		elif opt == "-v":
 			vm_list = arg
 			if (arg.find(",") > 0):
@@ -2472,5 +2504,6 @@ if __name__ == "__main__":
 	progfile = os.path.basename(sys.argv[0])
 	progname = progfile.split(".")[0]
 	testcase_id = 1
+	listing = False
 	home = os.environ['HOME']
 	main(argc, sys.argv[1:])
