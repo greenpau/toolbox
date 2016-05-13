@@ -55,6 +55,8 @@ class SUITE(object):
 		n_passed = 0
 		n_failed = 0
 		for test in self.tests:
+			if (test.listing == True):
+				return
 			self.n_sub_tests = self.n_sub_tests + test.n_sub_tests
 			if (test.passed == True):
 				n_passed = n_passed + 1
@@ -78,6 +80,11 @@ class TEST(object):
 		self.param = param
 		self.passed = True
 		self.n_sub_tests = 0
+		self.listing = False
+
+	def list(self):
+		self.listing = True
+		print self.test_desc + ":: " + self.handler.__name__
 
 	def run(self):
 		print "Testcase ID #" + str(self.test_id) + ": " + self.test_desc
