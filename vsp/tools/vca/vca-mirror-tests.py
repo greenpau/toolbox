@@ -1341,8 +1341,8 @@ def dyn_traffic_pkt_out_onward__(param):
 
 	n_sub_tests = n_sub_tests + 1
 	n_flows_t, n_pkts_t, n_bytes_t, flow_t = dyn.get_flow_pkt_counters_template("Egress", vrf_id)
-	if (n_pkts_t != 0):
-		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(0) + "), " + flow_t
+	if (n_pkts_t != n_pkts_sent):
+		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(n_pkts_sent) + "), " + flow_t
 	else:
 		print "Onward - Egress create_dyn_mirror packet count sanity test: passed"
 
@@ -1512,7 +1512,7 @@ def dyn_traffic_pkt_out_return__(param):
 	if (n_pkts_t != 0):
 		print "Return - Ingress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(0) + "), " + flow_t
 	else:
-		print "Return - Egress create_dyn_mirror packet count sanity test: passed"
+		print "Return - Ingress create_dyn_mirror packet count sanity test: passed"
 
 	actions, flow = dyn.get_flow_mirror_actions("Egress", vrf_id)
 	n_sub_tests = n_sub_tests + 1
