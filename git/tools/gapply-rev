@@ -1,0 +1,56 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage() {
+	echo "usage: ${progname} <rev> start^..end"
+	echo "       ${progname} <rev> revision"
+	echo "equivalent to running git-cherry-pick on each commit in the range"
+	echo ""
+	exit 1
+}
+
+applyrevsb() {
+	local check_repo rev_list rev
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	echo "${range}" | grep -e "\.\." > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		rev_list="`git rev-list --reverse --topo-order ${range}`"
+	else
+		rev_list=${range}
+	fi
+	for rev in ${rev_list}; do
+		printf "Applying revision: ${rev} ... "
+		git cherry-pick ${rev} > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			echo "done"
+		else
+			echo "failed"
+			break 
+		fi
+		revision=`glog -l | grep ^commit | head -1 | awk '{print $2}'`
+		logfile=${logpath}/${revision}.txt
+		mkdir -p ${logpath}
+		printf "Saving checkin data to ${logfile} ... "
+		glog ${revision} >  ${logfile}
+		echo "done"
+	done
+}
+
+progname=`basename $0`
+RELEASE=$1
+shift
+loghead=~/Linux/docs/PR-Notes/Submittals
+logpath=${loghead}/${RELEASE}
+cd ${SANDBOX}
+get_options $*
+range=${ARGLIST}
+if [ -z ${range} ]; then
+	usage
+fi
+git_iterate applyrevsb

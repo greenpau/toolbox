@@ -1,0 +1,58 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} -c | --component <comp_name>|all"
+	exit $*
+}
+
+pullsb()
+{
+	local this_branch
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	if [ -z "${BRANCH}" ]; then
+		this_branch=`git_branch`
+	else
+		this_branch=${BRANCH}
+	fi
+	echo "Repository: ${project}"
+	echo "Branch: ${this_branch}"
+	git pull official ${this_branch}
+#	if [ "${this_branch}" != "master" ]; then
+#		git checkout master
+#	fi
+#	git pull --rebase #origin
+#	if [ "${this_branch}" != "master" ]; then
+#		git checkout ${this_branch}
+#		git merge origin
+#	fi
+}
+
+get_options $*
+if [ -z "${COMP}" ]; then
+	echo "${progname}: missing component name"
+	usage 1
+elif [ "${COMP}" = "all" -a -n "${BRANCH}" ]; then
+	echo "${progname}: branch cannot be specified with 'all' components"
+	exit 1
+fi
+
+eval `ssh-agent`
+ssh-add ${sshkey}
+cd ${SANDBOX}
+# refresh the build infra of the sandbox
+pullsb
+
+# pull all the repositories
+git_iterate pullsb
+
+sudo kill -9 $SSH_AGENT_PID
+

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>] <srcfile> <destfile>"
+	echo "       Note: srcfile and destfile are relative to component head"
+	exit $*
+}
+
+mvsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	git add . && git mv ${srcfile} ${destfile} && git add .
+}
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${COMP}" ]; then
+	echo "${progname}: missing component name"
+	usage 1
+fi
+if [ -z "${ARGLIST}" ]; then
+	echo "${progname}: wrong number of arguments specified"
+	usage 1
+fi
+srcfile=`echo "${ARGLIST}" | awk '{print $1}'`
+destfile=`echo "${ARGLIST}" | awk '{print $2}'`
+if [ -z "${srcfile}" -o -z "${destfile}" ]; then
+	echo "${progname}: missing source or destination file"
+	usage 1
+fi
+git_iterate mvsb

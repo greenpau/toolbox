@@ -1,0 +1,27 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all|main]"
+	exit $*
+}
+
+lsbr()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	echo "Repository: ${project}"
+	git branch
+	echo
+}
+
+cd ${SANDBOX}
+get_options $*
+git_iterate lsbr

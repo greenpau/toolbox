@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] -f <file> [-l]"
+	echo "       ${progname} [-c | --component <comp_name>|all] [revision]"
+	exit $*
+}
+
+logsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	if [ ${local_flag} -eq 1 ]; then
+		git log --branches --not --remotes 
+	elif [ -n "${ARGLIST}" ]; then
+		git show ${ARGLIST}
+	else
+		git log --stat ${FILE}
+	fi
+}
+
+local_flag=0
+cd ${SANDBOX}
+get_options $*
+if [ "$ARGLIST" = "-l" ]; then
+	local_flag=1
+fi
+if [ -z "${FILE}" ]; then
+	FILE="."
+fi
+git_iterate logsb

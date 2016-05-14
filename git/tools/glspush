@@ -1,0 +1,33 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all]"
+	exit $*
+}
+
+lspushsb()
+{
+	local this_component=$1
+	local this_branch flist logfile
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+	echo "List of unpushed commits in repository ${this_component}:"
+	if [ "${DETAIL}" = "1" ]; then
+		git log --branches --not --remotes | less
+	else
+		git log --branches --not --remotes --format='%h %ae %s'
+	fi
+	echo
+}
+
+cd ${SANDBOX}
+get_options $*
+
+git_iterate lspushsb

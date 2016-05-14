@@ -1,0 +1,8 @@
+#!/bin/bash
+commits="f8b6d7b5c3acdbed7847c9929164191d1edf30b5 01cfd1e75e8f240171917c3951b856892b77a5e4 5e6fbe98684f0c830634f7965619e53f6e691e88 ff64a0630258ee59e28b1424c0352c865be049ed 72c45e1d9bdd18e9a7c2cbd16edb69e38863283d"
+
+for c in $commits; do
+	git cherry-pick $c
+	echo "press return to continue"
+	read
+done

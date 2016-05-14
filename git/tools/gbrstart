@@ -1,0 +1,22 @@
+#!/bin/bash
+
+progname=`basename $0`
+child=$1
+if [ -z "${child}" ]; then
+	echo "usage: ${progname} <branch-name> [master]"
+	exit 1
+fi
+master=$2
+child_branch_dir=`git branch -a | grep ${child} | xargs dirname`
+if [ -z "${child_branch_dir}" ]; then
+	echo "${progname}: ${child} branch not found"
+	exit 1
+fi
+if [ -z "${master}" ]; then
+	master=`git branch -a | grep ${child_branch_dir} | grep master`
+fi
+if [ -z "${master}" ]; then
+	echo "${progname}: master branch not found"
+	exit 1
+fi
+diff -u <(git rev-list --first-parent $child) <(git rev-list --first-parent $master) | sed -ne 's/^ //p' | head -1

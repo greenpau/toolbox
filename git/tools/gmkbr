@@ -1,0 +1,45 @@
+#!/bin/sh
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} -b <branch_name> -p <parent-branch> [-c <comp_name>|all]"
+	exit $1;
+}
+
+mkbr()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	if [ -z "${BRANCH}" ]; then
+		usage
+		return
+	fi
+
+	parent_path="`git branch -a | grep ${PARENT_BRANCH}`"
+	if [ -z "${parent_path}" ]; then
+		echo "${progname}: ${PARENT_BRANCH} does not map to a valid branch in this repo"
+		return
+	fi
+	git branch ${BRANCH} --track ${PARENT_BRANCH}
+	if [ -f .gitmodules ]; then
+		sed -i 's/VCA/sabyasse/g' .gitmodules
+		sed -i "s/branch = .*/branch = ${BRANCH}/g" .gitmodules
+	fi
+}
+
+get_options $*
+if [ -z "${PARENT_BRANCH}" ]; then
+	echo "Missing parent branch name"
+	usage
+	exit 1
+fi
+cd ${SANDBOX}
+git_iterate mkbr
+exit 0

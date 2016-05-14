@@ -1,0 +1,38 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all]"
+	exit $*
+}
+
+showsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+	if [ -n "${commit}" ]; then
+		git log ${commit} > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			return
+		fi
+	fi
+	echo "Repository: $PROJECT"
+	if [ -n "${commit}" ]; then
+		git show ${commit} | less
+	else
+		git show | less
+	fi
+}
+
+cd ${SANDBOX}
+get_options $*
+commit=${ARGLIST}
+
+git_iterate showsb
+

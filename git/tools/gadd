@@ -1,0 +1,47 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all|main]"
+	exit $*
+}
+
+addsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	local flist="`git status -s | grep -ve ^? | grep -v datapath_old | awk '{print $2}'`"
+	local f
+
+	for f in ${flist}; do
+		echo "Adding ${f} to ${project} repository"
+		git add ${f}
+	done
+}
+
+addsb_main()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+	git add build
+}
+
+cd ${SANDBOX}
+get_options $*
+git_iterate addsb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main addsb_main
+fi

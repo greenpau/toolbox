@@ -1,0 +1,36 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+glssb_info()
+{
+	local repodirs repo_list repodir r repo mtime
+
+	mtime=`stat . | grep Modify: | awk '{print $2}'`
+	repodirs="`find . -name .git`"
+	repo_list=
+	for r in ${repodirs}; do
+		repodir=`dirname ${r}`
+		cd ${repodir}
+		repo=`get_repo_name $repodir`
+		repo_list="${repo},${repo_list}"
+		cd - > /dev/null
+	done
+	if [ -z "${repo_list}" ]; then
+		repo_list="-n/a-"
+	fi
+	printf "%-20s%-16s%-s\n" ${sb} ${mtime} ${repo_list}
+}
+
+sblist="`ls -1 ${linux_sbhead}`"
+
+echo "------------------------------------------------------------------------"
+printf "%-20s%-16s%-s\n" "Sandbox" "Last modified" "Repositories"
+echo "------------------------------------------------------------------------"
+
+for sb in ${sblist}; do
+	cd ${linux_sbhead}/${sb}
+	project=$sb
+	glssb_info
+done
+echo "------------------------------------------------------------------------"

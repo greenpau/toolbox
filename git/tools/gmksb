@@ -1,0 +1,65 @@
+#!/bin/sh
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [ -n|--name <sandbox_name> ] [--no-converged-repos] [-c|--component <name>]"
+	exit $1;
+}
+
+mksb()
+{
+	cd ${SB}
+	# create all constituent repositories
+	git_iterate mksb_repo 1
+
+	# create the git environment file
+	printf "Setting up git environment ... "
+	gitenv_file=${linux_sbhead}/${SB}/.git-env
+	echo "CONVERGED_REPOS=${CONVERGED_REPOS}" > ${gitenv_file}
+	echo "ALT_REPO=VCA/VCA:sabyasse/VCA" >> ${gitenv_file}
+	echo "done"
+}
+
+mksb_get_remotes() {
+	local dir=`basename $PWD`
+	local repo=$1
+	printf "Setting up remotes for ${dir} ..."
+	git remote rename origin official >> ${log}
+	git remote add origin git@github.mv.usa.alcatel.com:sabyasse/${repo}.git >> ${log}
+	git fetch origin >> ${log}
+	echo "done"
+}
+
+mksb_repo()
+{
+	if [ "${project}" = "VCA/VCA" ]; then
+		git_clone ${project} ${COMP} || exit 1
+		(cd VCA;
+		 echo "Initializing OVS sub-module ..."
+		 git submodule init >> ${log}
+		 git submodule update >> ${log}
+		 mksb_get_remotes "VCA"
+		)
+	elif [ "${project}" = "VCA/ovs" ]; then
+		(cd ovs; mksb_get_remotes "ovs"; touch datapath/linux/openvswitch.ko.unsigned)
+	fi
+}
+
+get_options $*
+if [ -z "${SB}" ]; then
+	echo "${progname}: missing sandbox name"
+	usage 1
+fi
+if [ -z "${SANDBOX}" ]; then
+	SANDBOX=${SB}
+fi
+eval `ssh-agent`
+ssh-add ${sshkey}
+
+cd ${linux_sbhead}
+mkdir -p ${SANDBOX}
+mksb
+gentersb ${SB}
+sudo kill -9 $SSH_AGENT_PID

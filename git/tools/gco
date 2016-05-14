@@ -1,0 +1,28 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] -b <branch>"
+	exit $*
+}
+
+checkoutsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	git checkout ${BRANCH}
+}
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${BRANCH}" ]; then
+	usage
+fi
+git_iterate checkoutsb

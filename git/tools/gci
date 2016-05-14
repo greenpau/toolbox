@@ -1,0 +1,78 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} <rel> [-c | --component <comp_name>|all] -f | --file <commit_logfile>"
+	exit $*
+}
+
+cisb()
+{
+	local this_component=$1
+	local this_branch flist logfile
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	this_branch=`git_branch`
+	flist="`gstat -c ${this_component} | grep -v Repository | awk '{print $2}'`"
+	echo "Committing to ${this_branch}: ${flist}"
+	git commit -F ${FILE}
+
+	revision=`git log -1 | grep commit | awk '{print $2}' | head -1`
+	if [ -z "${revision}" ]; then
+		echo "Unable to retrieve checkin revision information, commit log not saved"
+		return
+	fi
+	mkdir -p ${logpath}
+	logfile=${logpath}/${revision}.txt
+	echo "Saving checkin data to ${logfile}"
+	git show ${revision} > ${logfile}
+
+	if [ ${this_branch} != "master" ]; then
+		git checkout ${this_branch}
+	fi
+}
+
+cisb_main()
+{
+	cisb ${COMP}
+}
+
+progname=`basename $0`
+loghead=~/Linux/docs/PR-Notes/Submittals
+RELEASE=$1
+if [ "${RELEASE}" = "-c" ]; then
+	echo "${progname}: invalid syntax"
+	usage
+fi
+logpath=${loghead}/${RELEASE}
+shift
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${FILE}" ]; then
+	echo "${progname}: missing commit log message file"
+	usage 1
+fi
+
+if [ ! -e "${FILE}" ]; then
+	echo "${progname}: commit log message file does not exist"
+	usage 1
+fi
+
+eval `ssh-agent`
+ssh-add ${sshkey}
+git_iterate cisb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main cisb_main
+fi
+sudo kill -9 $SSH_AGENT_PID
+

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|main|all] -f | --file <filename>"
+	exit $*
+}
+
+revertsb()
+{
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	if [ ! -e "${FILE}" ]; then
+		echo "${progname}: ${FILE} does not exist"
+		return 1
+	fi
+	git rm -rf ${FILE}
+}
+
+revertsb_main()
+{
+	if [ ! -d .git ]; then
+		return
+	fi
+
+	if [ ! -e "${FILE}" ]; then
+		echo "${progname}: file does not exist"
+		return 1
+	fi
+	git stash > /dev/null 2>&1
+	git rm -rf ${FILE}
+}
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${FILE}" ]; then
+	echo "${progname}: missing file name"
+	usage 1
+fi
+if [ -z "${COMP}" ]; then
+	echo "${progname}: missing component name"
+	usage 1
+fi
+if [ "${COMP}" = "all" ]; then
+	echo "${progname}: bad component name"
+	exit 1
+fi
+git_iterate revertsb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main revertsb_main
+fi

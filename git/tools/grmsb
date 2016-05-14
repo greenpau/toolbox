@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+progname=`basename $0`
+sb=$1
+
+if [ -z "${sb}" ]
+then
+	echo "${progname}: missing sandbox name"
+	echo "usage: ${progname} <sandbox_name>"
+	exit
+fi
+
+sbhead=${linux_sbhead}/${sb}
+if [ ! -d ${sbhead} ]
+then
+	echo "${progname}: sandbox ${sb} does not exist"
+	exit
+fi
+printf "Removing ${sbhead} ... "
+rm -rf ${sbhead} > /dev/null 2>&1
+echo "done"

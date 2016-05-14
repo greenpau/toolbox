@@ -1,0 +1,84 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] [-d|-p|-a <oldrepo>|<newrepo>]"
+	echo "options:"
+	echo "   -c: component name, example: VCA"
+	echo "   -d: delta flag, displays delta of files since last add"
+	echo "   -p: private flag, displays sandbox private files"
+	echo "   -a: specify alternative repository"
+	exit $*
+}
+
+statsb()
+{
+	local nfiles check_repo
+	local branch
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	nfiles=`git status --porcelain | grep -v .swp | wc -l`
+	if [ ${nfiles} -gt 0 ]; then
+		branch=`git_branch`
+		echo "Repository: ${project}"
+		echo "Branch: ${branch}"
+		if [ ${delta_flag} -eq 1 ]; then
+			git status -suno | grep -v datapath_old | grep -ve "\.ko" | grep -e "^[A-Z ][MU]" | grep -ve "^??"
+			echo
+			return
+		fi
+		if [ ${private_flag} -eq 1 ]; then
+			git status -suno | grep -v datapath_old | grep -ve "\.ko" | grep -e "^??"
+			echo
+			return
+		fi
+		git status -suno | grep -v datapath_old | grep -ve "\.ko" | grep -ve "^??"
+		echo
+		return
+	fi
+}
+
+statsb_main()
+{
+	local nfiles check_repo branch
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	nfiles=`git status --porcelain |grep "build"| grep -v .swp | wc -l`
+	if [ ${nfiles} -gt 0 ]; then
+		branch=`git_branch`
+		echo "Repository: `basename ${project}`"
+		echo "Branch: ${branch}"
+		git status -suno  | grep "build"
+		echo
+	fi
+}
+
+delta_flag=0
+private_flag=0
+get_options $*
+if [ "$ARGLIST" = "-d" ]; then
+	delta_flag=1
+fi
+if [ "${ARGLIST}" = "-p" ]; then
+	private_flag=1
+fi
+if [ "${ARGLIST}" = "-h" ]; then
+	usage 0
+fi
+cd ${SANDBOX}
+git_iterate statsb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main statsb_main
+fi

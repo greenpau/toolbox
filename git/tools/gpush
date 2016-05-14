@@ -1,0 +1,50 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] [-F]"
+	exit $*
+}
+
+pushsb()
+{
+	local this_component=$1
+	local this_branch
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	export this_branch=`git_branch`
+
+	echo "Pushing code from ${this_component}:${this_branch} to origin .."
+	git push origin ${this_branch} ${FORCE}
+}
+
+cisb_main()
+{
+	pushsb ${COMP}
+}
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${COMP}" ]; then
+	echo "${progname}: missing component name"
+	usage 1
+fi
+
+eval `ssh-agent`
+ssh-add ${sshkey}
+#sudo service network restart >> /dev/null
+git_iterate pushsb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main cisb_main
+fi
+sudo kill -9 $SSH_AGENT_PID
+

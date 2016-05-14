@@ -1,0 +1,78 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] -A|--add <comment>"
+	echo "usage: ${progname} [-c | --component <comp_name>|all] -R|--remove"
+	echo "usage: ${progname} [-c | --component <comp_name>|all] -L|--list"
+	exit $*
+}
+
+stash_save_sb()
+{
+	local this_component=$1
+	local this_branch
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	echo "Stashing code in ${this_component} .."
+	git stash save "${ADD}"
+}
+
+stash_pop_sb()
+{
+	local this_component=$1
+	local this_branch
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	echo "Removing stashed code from ${this_component} .."
+	git stash pop
+}
+
+stash_ls_sb()
+{
+	local this_component=$1
+	local this_branch
+	local check_repo
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+
+	echo "Listing stashed code from ${this_component} .."
+	git stash list
+	echo
+}
+
+cd ${SANDBOX}
+get_options $*
+if [ -z "${COMP}" ]; then
+	COMP=all
+fi
+
+eval `ssh-agent`
+ssh-add ${sshkey}
+if [ -n "${ADD}" ]; then
+	git_iterate stash_save_sb
+elif [ -n "${REMOVE}" ]; then
+	git_iterate stash_pop_sb
+elif [ -n "${LIST}" ]; then
+	git_iterate stash_ls_sb
+else
+	echo "${progname}: bad option(s)"
+	usage
+fi
+sudo kill -9 $SSH_AGENT_PID
+

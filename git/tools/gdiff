@@ -1,0 +1,52 @@
+#!/bin/bash
+
+. ~sabyasse/bin/git-tools/libgit.sh
+
+usage()
+{
+	echo "usage: ${progname} [-c | --component <comp_name>|all] [-f | --file <outfile>] [-d]"
+	exit $*
+}
+
+diffsb()
+{
+	local check_repo dir
+
+	check_repo=`is_valid_repo`
+	if [ ${check_repo} -eq 0 ]; then
+		return
+	fi
+	if [ -n "${FILE}" ]; then
+		dir=`dirname ${FILE}`
+		mkdir -p ${dir}
+		echo "Repository: ${project}" >> ${FILE}
+		if [ ${delta_flag} -eq 1 ]; then
+			git diff -M -C --ignore-submodules >> ${FILE}
+		else
+			git diff -M -C --ignore-submodules --cached >> ${FILE}
+		fi
+	else
+		echo "Repository: ${project}"
+		if [ ${delta_flag} -eq 1 ]; then
+			git diff -M -C --ignore-submodules | less
+		else
+			git diff -M -C --ignore-submodules --cached | less
+		fi
+	fi
+}
+
+delta_flag=0
+cd ${SANDBOX}
+get_options $*
+if [ "$ARGLIST" = "-d" ]; then
+	delta_flag=1
+fi
+if [ -n "${FILE}" -a -f "${FILE}" ]; then
+	rm -rf ${FILE}
+fi
+git_iterate diffsb
+
+if [ "${COMP}" = "all" -o "${COMP}" = "main" ]; then
+	COMP="main"
+	apply_main diffsb
+fi

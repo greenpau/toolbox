@@ -1,0 +1,15 @@
+#!/bin/sh
+
+progname=`basename $0`
+if [ -z "${SANDBOX}" ]
+then
+	echo "${progname}: not inside a sandbox"
+else
+	echo "Current working sandbox: $SANDBOX"
+	in_git="`/usr/bin/git rev-parse --git-dir 2> /dev/null`"
+	if [ -n "${in_git}" ]; then
+		b=`git branch | grep -e '*' | awk '{print $2}'`
+		echo "Current working branch: ${b}"
+	fi
+fi
+
