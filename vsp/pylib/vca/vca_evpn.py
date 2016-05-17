@@ -5,8 +5,10 @@ sys.path.append("/usr/local/openvswitch/pylib/system")
 sys.path.append("/usr/local/openvswitch/pylib/vca")
 import time
 import shell
+import net
 import vca_vrf
 import vca_flows
+import ovs_vport_tnl
 
 class EVPN(vca_vrf.VRF):
 	def __init__(self, ovs_path, br, logfd,
@@ -17,6 +19,9 @@ class EVPN(vca_vrf.VRF):
 		self.appctl_path = ovs_path + "/ovs-appctl"
 		self.logfd = logfd
 		self.br = br
+		self.tnl = ovs_vport_tnl.Tunnel(self.ovs_path, self.br,
+						None, None, "0.0.0.0", None,
+						self.logfd, False)
 		self.evpn_flows = vca_flows.Flows(self.ovs_path, self.br,
 						  self.logfd)
 		if (vrf_id != 0):
@@ -132,3 +137,68 @@ class EVPN(vca_vrf.VRF):
 						      self.evpn_gw_ip,
 						      self.evpn_flow_subnet)
 		time.sleep(2)
+
+	def __parse_evpn_show(self, match_pattern, field):
+		cmd = [ self.appctl_path, "evpn/show", self.br ]
+		evpn_show_out = shell.execute(cmd).splitlines()
+		process_this_block = True
+		toks = []
+		for line in evpn_show_out:
+			line_tok = line.split()
+			if (line_tok == None) or (line_tok == []):
+				continue
+			if (line.find("evpn_id") >= 0):
+				evpn_id = line_tok[1]
+			if (line.find(match_pattern) < 0):
+				continue
+			out = line_tok[field]
+			toks.append([evpn_id, out])
+		return toks
+
+	def list_evpn_ids_by_mode(self, mode):
+		evpn_list = self.__parse_evpn_show("mode:", 1)
+		out_list = []
+		for entry in evpn_list:
+			this_evpn = entry[0]
+			this_mode = entry[1]
+			if (mode != None):
+				if (mode == this_mode):
+					out_list.append(this_evpn)
+			else:
+				out_list.append(this_evpn)
+		return out_list
+
+	def list_vni_ids_by_mode(self, mode):
+		mode_list = self.list_evpn_ids_by_mode(mode)
+		evpn_list = self.__parse_evpn_show("vni_id:", 5)
+		out_list = []
+		for entry in evpn_list:
+			this_evpn = entry[0]
+			this_vni = entry[1]
+			if (mode != None):
+				for evpn in mode_list:
+					if (this_evpn == evpn):
+						out_list.append(this_vni)
+			else:
+				out_list.append(this_vni)
+		return out_list
+
+	def list_rteps_by_mode(self, mode, ip):
+		vni_list = self.list_vni_ids_by_mode(mode)
+		out_list = []
+		for this_vni in vni_list:
+			for this_tnl in self.tnl.list():
+				if (this_tnl.find("ltep") >= 0):
+					continue
+				this_vni_val = this_vni.replace("0x", "")
+				if this_tnl.find(this_vni_val) < 0:
+					continue
+				this_dst_ip_hex = this_tnl.replace("t", "").replace(this_vni_val, "")
+				if (ip != None):
+					ip_hex = net.ipaddr2hex(ip)
+					if (ip_hex != this_dst_ip_hex):
+						continue
+					out_list.append([this_tnl, this_vni, ip])
+				else:
+					out_list.append([this_tnl, this_vni, None])
+		return out_list
