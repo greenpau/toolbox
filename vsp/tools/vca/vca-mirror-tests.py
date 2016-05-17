@@ -24,6 +24,7 @@ import vca_pbm
 import vca_vpm
 import vca_dyn
 import vca_vm
+import vca_evpn
 
 def usage():
 	print "usage: " + progname + " [options]"
@@ -2450,12 +2451,12 @@ def main(argc, argv):
 		elif opt == "-i":
 			mirror_dst_ip = arg
 		elif opt == "-r":
-			if (arg.find(":") < 0):
-				print progname + ": format <ip>:<key>"
-				exit(1)
-			ip_key_list = arg.split(":")
-			remote_ovs_ip = ip_key_list[0]
-			tun_key = ip_key_list[1]
+			if (arg.find(":") >= 0):
+				ip_key_list = arg.split(":")
+				remote_ovs_ip = ip_key_list[0]
+				tun_key = ip_key_list[1]
+			else:
+				remote_ovs_ip = arg
 		elif opt == "-p":
 			mirror_dst_port = arg
 		elif opt == "-e":
@@ -2467,6 +2468,11 @@ def main(argc, argv):
 		else:
 			usage()
 	logfd = logger.open_log(logfile)
+	evpn = vca_evpn.EVPN(ovs_path, br, logfd, 0, 0, 0, 0, 0, 0, 0)
+	rtep_info_list = evpn.list_rteps_by_mode("L3_MODE", remote_ovs_ip)
+	for rtep_info in rtep_info_list:
+		tun_key = int(rtep_info[1], 16)
+	print tun_key, remote_ovs_ip
 	for suite in suite_list:
 		if (validate_args(progname, suite,
 				  vm_name, aux_vm_name, mirror_dst_ip,
