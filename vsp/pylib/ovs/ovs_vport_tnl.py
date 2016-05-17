@@ -111,3 +111,7 @@ class Tunnel(object):
 		       		iface ]
 			shell.run_cmd("Deleting tunnel port " + iface +
 				      " on bridge " + self.br, cmd, self.logfd)
+
+	def list(self):
+		return self.__get_ifaces()
+
