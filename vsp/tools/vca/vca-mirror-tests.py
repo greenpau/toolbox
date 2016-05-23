@@ -2470,9 +2470,17 @@ def main(argc, argv):
 	logfd = logger.open_log(logfile)
 	evpn = vca_evpn.EVPN(ovs_path, br, logfd, 0, 0, 0, 0, 0, 0, 0)
 	rtep_info_list = evpn.list_rteps_by_mode("L3_MODE", remote_ovs_ip)
+	tun_key = None
+	tun_name = None
 	for rtep_info in rtep_info_list:
 		tun_key = int(rtep_info[1], 16)
-	print tun_key, remote_ovs_ip
+		tun_name = rtep_info[0]
+	print "Test Configuration:"
+	print "Suite: " + str(suite_list)
+	print "Mirror Destination IP:" + str(mirror_dst_ip)
+	print "Mirror Destination Port:" + str(mirror_dst_port)
+	print "Remote OVS IP: " + str(remote_ovs_ip)
+	print "Remote OVS Tunnel: " + str(tun_name) + ", Key: " + str(tun_key)
 	for suite in suite_list:
 		if (validate_args(progname, suite,
 				  vm_name, aux_vm_name, mirror_dst_ip,
