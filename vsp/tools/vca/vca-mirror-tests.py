@@ -1448,10 +1448,11 @@ def dyn_traffic_pkt_out_onward__(param):
 
 	n_sub_tests = n_sub_tests + 1
 	n_flows_t, n_pkts_t, n_bytes_t, flow_t = dyn.get_flow_pkt_counters_template("Egress", vrf_id)
-	if (n_pkts_t != n_pkts_sent):
+	if (n_pkts_t != 0):
 		print "Onward - Egress create_dyn_mirror packet count (" + str(n_pkts_t) + "), != expected (" + str(n_pkts_sent) + "), " + flow_t
-	else:
-		print "Onward - Egress create_dyn_mirror packet count sanity test: passed"
+		passed = False
+		return passed, n_sub_tests
+	print "Onward - Egress create_dyn_mirror packet count sanity test: passed"
 
 	actions, flow = dyn.get_flow_mirror_actions("Ingress", ofp_port)
 	n_sub_tests = n_sub_tests + 1
