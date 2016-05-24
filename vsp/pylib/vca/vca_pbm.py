@@ -214,7 +214,7 @@ class PBM(object):
 		mirror_ofp_port = None
 		mirror_odp_port = None
 		if (self.mirror != None):
-			mirror_vport, mirror_port_nos = self.mirror.get_mirror_vport(dir)
+			mirror_vport, mirror_port_nos = self.mirror.get_mirror_vport(dir, 2)
 			mirror_ofp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[0]
 			mirror_odp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[1]
 		return mirror_vport, mirror_ofp_port, mirror_odp_port

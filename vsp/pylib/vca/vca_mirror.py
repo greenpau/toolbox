@@ -80,8 +80,8 @@ class Mirror(object):
 			mirror_ports = None
 		return mirror_iface, mirror_ports
 
-	def get_mirror_vport(self, type):
-		port_name = self.__parse_show_mirror(type, 2)
+	def get_mirror_vport(self, type, col):
+		port_name = self.__parse_show_mirror(type, col)
 		ofproto = ovs_ofproto.OFProto(self.ovs_path)
 		ofp_port = ofproto.ofp_port(self.br, port_name)
 		odp_port = ofproto.odp_port(port_name)

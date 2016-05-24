@@ -141,6 +141,16 @@ class DYN(object):
 			agent = self.mirror.get_dyn_agent()
 		return agent
 
+	def get_mirror_vport(self):
+		mirror_vport = None
+		mirror_ofp_port = None
+		mirror_odp_port = None
+		if (self.mirror != None):
+			mirror_vport, mirror_port_nos = self.mirror.get_mirror_vport("Dyn", 6)
+			mirror_ofp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[0]
+			mirror_odp_port = mirror_port_nos.replace("(", "").replace(")", "").split("/")[1]
+		return mirror_vport, mirror_ofp_port, mirror_odp_port
+
 	def __parse_dump_flows(self, type, pv_val, field,
 			       get_template, prio_check, in_prio):
 		cmd = [ self.appctl_path, "bridge/dump-flows", self.br ]
