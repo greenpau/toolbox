@@ -1779,6 +1779,67 @@ def dyn_traffic_cleanup__(dyn):
 	print "Flow cleanup check - Egress Mirror Table (" + str(exp_n_flows_tbl6_total) + "), passed"
 	return passed, n_sub_tests
 
+def dyn_mirror_traffic_ofproto_trace__(dyn, param):
+	passed = True
+	n_sub_tests = 0
+	ovs_path = param['ovs_path']
+	br = param['br']
+	logfd = param['logfd']
+	src_mac = param['src_mac']
+	src_ip = param['src_ip']
+	dst_mac = param['dst_mac']
+	dst_ip = param['dst_ip']
+	ofp_port = param['ofp_port']
+	dyn_agent = param['dyn_agent']
+
+	pkt = "in_port=" + ofp_port + ",dl_src=" + src_mac + ",dl_dst=" + dst_mac + ",dl_type=0x0800,nw_src=" + src_ip + ",nw_dst=" + dst_ip + ",nw_proto=17,nw_tos=0xff,nw_ttl=64"
+	cmd = [ ovs_path + "/ovs-appctl", "ofproto/trace", br, pkt ]
+	out = shell.execute(cmd).splitlines()
+	for l in out:
+		if (l.find("Datapath actions:") < 0):
+			continue
+		n_sub_tests = n_sub_tests + 1
+		if (l.find("drop") >= 0):
+			print "ofproto/trace datapath actions contain drop - failed"
+			return passed, n_sub_tests
+		print "ofproto/trace (" + l + "), passed"
+		action_list = l.split(":")
+		n_sub_tests = n_sub_tests + 1
+		if (len(action_list) < 2):
+			print "ofproto/trace datapath actions incorrect len - failed"
+			return passed, n_sub_tests
+		print "ofproto/trace datapath actions len check - passed"
+		action_str = action_list[1].replace(" ", "")
+		if (dyn_agent == "dpi"):
+			passed, n_this_sub_tests = dpi_trace_mirror_out_validate(dyn, action_str)
+		else:
+			passed, n_this_sub_tests = dyn_trace_mirror_out_validate(dyn, action_str)
+		n_sub_tests = n_sub_tests + n_this_sub_tests
+		break
+	return passed, n_sub_tests
+
+def dyn_trace_mirror_out_validate__(dyn, action_str, midx):
+	passed = True
+	n_sub_tests = 1
+	port_list = action_str.split(",")
+	if (len(port_list) < 2):
+		passed = False
+		print "ofproto/trace action does not have right entries"
+		return passed, n_sub_tests
+	print "ofproto/trace action list has right entries"
+	mirror_port = port_list[midx]
+	mobj_vport, mobj_ofp_port, mobj_odp_port = dyn.get_mirror_vport()
+	n_sub_tests = n_sub_tests + 1
+	if (mirror_port != str(mobj_odp_port)):
+		passed = False
+		print "ofproto/trace mirror odp_port (" + mirror_port + ") != mobj_odp_port: (" + mobj_odp_port + "), failed"
+		return passed, n_sub_tests
+	print "ofproto/trace mirror output odp_port (" + mirror_port + ") validation passed"
+	return passed, n_sub_tests
+
+def dyn_trace_mirror_out_validate(dyn, action_str):
+	return dyn_trace_mirror_out_validate__(dyn, action_str, 0)
+
 def dyn_mirror_single_traffic__(param):
 	passed = True
 	n_sub_tests = 0
@@ -1792,6 +1853,7 @@ def dyn_mirror_single_traffic__(param):
 	src_vm_name = param['vm_name']
 	dst_vm_name = param['aux_vm_name']
 	remote_ovs_ip = param['remote_ovs_ip']
+	ovs_vers = param['ovs_vers']
 	tun_key = param['tun_key']
 
 	print "Dyn Mirror Traffic Test - " + dyn_agent
@@ -1811,6 +1873,28 @@ def dyn_mirror_single_traffic__(param):
 
 	passed, n_this_sub_tests = dyn_mirror_single_traffic_return__(dyn,
 								      param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
+
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, dst_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
+	st_param = {
+		'ovs_path' : ovs_path,
+		'ovs_vers' : ovs_vers,
+		'dyn_agent': dyn_agent,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': src_mac,
+		'src_ip': src_ip,
+		'dst_mac': dst_mac,
+		'dst_ip': dst_ip,
+		'ofp_port': src_ofp_port,
+	}
+	passed, n_this_sub_tests = dyn_mirror_traffic_ofproto_trace__(dyn, st_param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
@@ -2075,6 +2159,7 @@ def dyn_single_mirror(test_args):
 	mirror_dst_port = test_args["mirror_dst_port"]
 	remote_ovs_ip = test_args["remote_ovs_ip"]
 	tun_key = test_args['tun_key']
+	ovs_vers = test_args['ovs_vers']
 	mirror_dst_ip = "0.0.0.0"
 	pbm_dir = "n/a"
 	vpm_dir = "n/a"
@@ -2117,6 +2202,7 @@ def dyn_single_mirror(test_args):
 			  'aux_vm_name': aux_vm_name,
 			  'dyn_agent' : dyn_agent,
 			  'tun_key' : tun_key,
+			  'ovs_vers': ovs_vers,
 		}
 		for dsm_test in dyn_single_mirror_tests:
 			this_desc = dsm_test['desc']
@@ -2385,6 +2471,9 @@ def dpi_flow_mod_onward__(dyn, actions, param):
 		print "Onward - mod-flows " + op + " has DPI agent custom action (" + a + "), passed"
 
 	return passed, n_sub_tests
+
+def dpi_trace_mirror_out_validate(dyn, action_str):
+	return dyn_trace_mirror_out_validate__(dyn, action_str, 2)
 
 ############################### MAIN #########################################
 def validate_args(progname, suite,
