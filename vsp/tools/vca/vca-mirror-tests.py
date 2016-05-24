@@ -1807,6 +1807,47 @@ def dyn_mirror_traffic_ofproto_trace_onward__(dyn, param):
 	}
 	return dyn_mirror_traffic_ofproto_trace__(dyn, st_param)
 
+def dyn_mirror_traffic_ofproto_trace_return__(dyn, param):
+	ovs_path = param['ovs_path']
+	ovs_vers = param['ovs_vers']
+	dyn_agent = param['dyn_agent']
+	br = param['br']
+	logfd = param['logfd']
+	src_vm_name = param['vm_name']
+	dst_vm_name = param['aux_vm_name']
+	remote_ovs_ip = param['remote_ovs_ip']
+	tun_key = param['tun_key']
+	passed = True
+	n_sub_tests = 0
+
+	if (remote_ovs_ip == None):
+		print "Remote ovs_ip is not specified, return traffic tests not ran"
+		return passed, n_sub_tests
+
+	tunnel_port, tnl_mac, tnl_ip, tnl_ofp_port = get_tunnel_attr__(ovs_path, br, logfd, remote_ovs_ip, tun_key)
+	dst_port_name, dst_mac, dst_ip, dst_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
+	src_port_name, src_mac, src_ip, src_ofp_port, vrf_id = get_vm_attr__(
+			ovs_path, br, logfd, src_vm_name)
+	if (tunnel_port == None):
+		print "Tunnel port not found for " + remote_ovs_ip
+		return passed, n_sub_tests
+
+	st_param = {
+		'ovs_path' : ovs_path,
+		'ovs_vers' : ovs_vers,
+		'dyn_agent': dyn_agent,
+		'br': br,
+		'logfd': logfd,
+		'src_mac': dst_mac,
+		'src_ip': dst_ip,
+		'dst_mac': src_mac,
+		'dst_ip': src_ip,
+		'ofp_port': tnl_ofp_port,
+		'dir': 'Return',
+	}
+	return dyn_mirror_traffic_ofproto_trace__(dyn, st_param)
+
 def dyn_mirror_traffic_ofproto_trace__(dyn, param):
 	passed = True
 	n_sub_tests = 0
@@ -1908,6 +1949,12 @@ def dyn_mirror_single_traffic__(param):
 		return passed, n_sub_tests
 
 	passed, n_this_sub_tests = dyn_mirror_traffic_ofproto_trace_onward__(dyn, param)
+	n_sub_tests = n_sub_tests + n_this_sub_tests
+	if (passed == False):
+		dyn.local_destroy()
+		return passed, n_sub_tests
+
+	passed, n_this_sub_tests = dyn_mirror_traffic_ofproto_trace_return__(dyn, param)
 	n_sub_tests = n_sub_tests + n_this_sub_tests
 	if (passed == False):
 		dyn.local_destroy()
