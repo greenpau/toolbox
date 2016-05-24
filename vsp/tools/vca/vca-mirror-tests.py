@@ -1851,7 +1851,7 @@ def dyn_trace_mirror_out_validate__(dyn, action_str, midx, dir):
 	passed = True
 	n_sub_tests = 1
 	port_list = action_str.split(",")
-	if (len(port_list) < 2):
+	if (len(port_list) < midx):
 		passed = False
 		print dir + " ofproto/trace action does not have right entries"
 		return passed, n_sub_tests
