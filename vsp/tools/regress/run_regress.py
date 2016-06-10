@@ -20,7 +20,7 @@ import logger
 import net
 
 def usage():
-	print "usage: " + progname + " -t -b -r [-e|-s|-p|-P|-S|-T|-R|-d|-A]"
+	print "usage: " + progname + " -t -b -r [-e|-s|-p|-P|-S|-T|-R|-d|-D|-K|-A]"
 	print "required parameters:"
 	print "    -t <runtype>: type of run (express, regular, quick)"
 	print "    -b <bed>: name of bed (mvcdcdev18, mvdcdev20)"
@@ -33,7 +33,9 @@ def usage():
 	print "    -T <test>: name of testcase (NsgRgDbSyncMultipleSubnetsSameMac etc)"
 	print "    -R <repeat-num>: number of times to repeat the test/suite"
 	print "    -p <path>: absolute path of VRS private image"
-	print "    -d <path>: relative path of VRS global image"
+	print "    -d <path>: relative path of Device global image"
+	print "    -K <path>: relative path of Kontroller global image"
+	print "    -D <path>: relative path of Director global image"
 	print "    -C: cnaSim will be set to true (only for quick)"
 	print "    -P <phystopo>: dctorOvs, nsg"
 	print "    -S <subtopo>: default, dcExpress, dctorOvs, dctorOvsVxlan, rh7Vxlan, ubuntu1404, ubuntu1404Vxlan"
@@ -44,6 +46,8 @@ def main(argc, argv):
 	testbed = ""
 	pkg_path = ""
 	vrs_image_path = ""
+	vsd_image_path = ""
+	vsc_image_path = ""
 	suite = ""
 	type = ""
 	subtopo = ""
@@ -57,7 +61,7 @@ def main(argc, argv):
 	custom_gash = ""
 	addl_params = ""
 	try:
-		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:A:")
+		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:A:D:K:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -70,6 +74,10 @@ def main(argc, argv):
 			pkg_path = arg
 		elif opt == "-d":
 			vrs_image_path = arg
+		elif opt == "-D":
+			vsd_image_path = arg
+		elif opt == "-K":
+			vsc_image_path = arg
 		elif opt == "-s":
 			suite = arg
 		elif opt == "-T":
@@ -118,16 +126,19 @@ def main(argc, argv):
 				subtopo = "dcExpress"
 		regression = express.Express(testbed, pkg_path, vrs_image_path,
 					     phystopo, subtopo, rel,
-					     platform, is_iso, eof)
+					     platform, is_iso, eof,
+					     vsd_image_path, vsc_image_path)
 	elif (type == "quick"):
 		regression = quick.Quick(testbed, pkg_path, vrs_image_path,
 					 phystopo, subtopo, rel, platform,
-					 is_iso, eof)
+					 is_iso, eof,
+					 vsd_image_path, vsc_image_path)
 		regression.set_cnaSim(cnaSim)
 	elif (type == "regular"):
 		regression = regular.Regular(testbed, pkg_path, vrs_image_path,
 					     phystopo, subtopo, rel, platform,
-					     is_iso, eof)
+					     is_iso, eof,
+					     vsd_image_path, vsc_image_path)
 	else:
 		usage()
 	regression.set_suite(suite)

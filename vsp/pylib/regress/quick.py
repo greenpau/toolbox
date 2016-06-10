@@ -24,10 +24,13 @@ class Quick(object):
 	addl_params = ""
 
 	def __init__(self, testbed, pkg_path, vrs_image_path,
-		     phys_topo, sub_topo, rel, platform, is_iso, eof):
+		     phys_topo, sub_topo, rel, platform, is_iso, eof,
+		     vsd_image_path, vsc_image_path):
 		self.testbed = testbed
 		self.pkg_path = pkg_path
 		self.vrs_image_path = vrs_image_path
+		self.vsd_image_path = vsd_image_path
+		self.vsc_image_path = vsc_image_path
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.rel = rel
@@ -59,7 +62,8 @@ class Quick(object):
 				    self.platform, self.is_iso, self.eof,
 				    self.pkg_path, self.vrs_image_path,
 				    self.rel, self.suite_name, self.test_name,
-				    self.repeat, self.custom_gash)
+				    self.repeat, self.custom_gash,
+				    self.vsd_image_path, self.vsc_image_path)
 		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gashStr = r.getParams()
 		if (self.cnaSim == True):
 			cnaSimStr = " -cnaSim true -vsdInternal false"

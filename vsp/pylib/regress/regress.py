@@ -11,7 +11,7 @@ import shell
 class Regress(object):
 	def __init__(self, phys_topo, sub_topo, platform, is_iso, eof,
 		     pkg_path, vrs_image_path, rel, suite_name, test_name,
-		     repeat, custom_gash):
+		     repeat, custom_gash, vsd_image_path, vsc_image_path):
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.platform = platform
@@ -20,8 +20,14 @@ class Regress(object):
 		self.pkg_path = pkg_path
 		self.rel = rel
 		self.vrs_image_path = vrs_image_path
-		self.vsc_image_path = " -useimages dctor/" + rel + "/current"
-		self.vsd_image_path = " -vsd " + rel + "/current"
+		if (vsc_image_path == ""):
+			self.vsc_image_path = " -useimages dctor/" + rel + "/current"
+		else:
+			self.vsc_image_path = " -useimages dctor/" + vsc_image_path
+		if (vsd_image_path == ""):
+			self.vsd_image_path = " -vsd " + rel + "/current"
+		else:
+			self.vsd_image_path = " -vsd " + vsd_image_path
 		self.suite_name = suite_name
 		self.test_name = test_name
 		self.repeat = repeat
