@@ -162,8 +162,12 @@ git_iterate()
 			continue
 		fi
 		(
-			if [ ${this_component} = "ovs" ]; then
-				if [ ! -d "VCA/ovs" ]; then
+			if [ ${this_component} = "ovs" -o \
+			     ${this_component} = "ovs-2.3" -o \
+			     ${this_component} = "ovs-2.5" ]; then
+				if [ ! -d "VCA/ovs" -a \
+				     ! -d "VCA/ovs-2.3" -a \
+				     ! -d "VCA/ovs-2.5" ]; then
 					continue
 				fi
 				this_component=${base_project}
@@ -237,7 +241,9 @@ is_valid_repo()
 		return
 	fi
 	repo=`get_repo_name ${project}`
-	if [ "${project}" = "VCA/ovs" ]; then
+	if [ "${project}" = "VCA/ovs" -o \
+	     "${project}" = "VCA/ovs-2.3" -o \
+	     "${project}" = "VCA/ovs-2.5" ]; then
 		echo 1
 	elif [ "${repo}" != "${project}" ]; then
 		echo 0
@@ -267,8 +273,12 @@ REPOS=( \
 	sabyasse/toolbox \
 	VCA/VCA \
 	VCA/ovs \
+	VCA/ovs-2.3 \
+	VCA/ovs-2.5 \
 	SROS/TiMOS \
 	SDVPN/NSG \
+	Juniper/contrail-vrouter \
+	Juniper/contrail-controller \
 )
 
 user=git
