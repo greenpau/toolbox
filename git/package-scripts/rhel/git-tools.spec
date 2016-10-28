@@ -43,6 +43,7 @@ install__ 0755 gdiff
 install__ 0755 glsbr
 install__ 0755 glspush
 install__ 0755 gco
+install__ 0755 govsrev
 install__ 0755 gadd
 install__ 0755 gpwsb
 install__ 0755 gbrstart
@@ -74,6 +75,7 @@ install__ 0755 libgit.sh
 /usr/local/git-tools/glsbr
 /usr/local/git-tools/glspush
 /usr/local/git-tools/gco
+/usr/local/git-tools/govsrev
 /usr/local/git-tools/gadd
 /usr/local/git-tools/gpwsb
 /usr/local/git-tools/gbrstart
