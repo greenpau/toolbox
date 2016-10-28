@@ -164,10 +164,12 @@ git_iterate()
 		(
 			if [ ${this_component} = "ovs" -o \
 			     ${this_component} = "ovs-2.3" -o \
-			     ${this_component} = "ovs-2.5" ]; then
+			     ${this_component} = "ovs-2.5" -o \
+			     ${this_component} = "ovs-2.6" ]; then
 				if [ ! -d "VCA/ovs" -a \
 				     ! -d "VCA/ovs-2.3" -a \
-				     ! -d "VCA/ovs-2.5" ]; then
+				     ! -d "VCA/ovs-2.5" -a \
+				     ! -d "VCA/ovs-2.6" ]; then
 					continue
 				fi
 				this_component=${base_project}
@@ -243,7 +245,8 @@ is_valid_repo()
 	repo=`get_repo_name ${project}`
 	if [ "${project}" = "VCA/ovs" -o \
 	     "${project}" = "VCA/ovs-2.3" -o \
-	     "${project}" = "VCA/ovs-2.5" ]; then
+	     "${project}" = "VCA/ovs-2.5" -o \
+	     "${project}" = "VCA/ovs-2.6" ]; then
 		echo 1
 	elif [ "${repo}" != "${project}" ]; then
 		echo 0
@@ -275,6 +278,7 @@ REPOS=( \
 	VCA/ovs \
 	VCA/ovs-2.3 \
 	VCA/ovs-2.5 \
+	VCA/ovs-2.6 \
 	SROS/TiMOS \
 	SDVPN/NSG \
 	Juniper/contrail-vrouter \
