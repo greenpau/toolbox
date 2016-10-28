@@ -1,0 +1,21 @@
+#!/bin/bash
+
+progname=`basename $0`
+ovs_sub_module=$1
+ovs_symlink=ovs
+if [ -z "${ovs_sub_module}" ]; then
+	echo "usage: ${progname} <ovs-sub-module>"
+	exit 1
+fi
+gpwsb | grep "not inside a sandbox" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+	echo "${progname}: not inside a sandbox"
+	exit 1
+fi
+sbpath=${linux_sbhead}/${SANDBOX}
+vcapath=${sbpath}/VCA
+cd ${vcapath}
+git rm -f ${ovs_symlink}
+ln -s ${ovs_sub_module} ${ovs_symlink}
+git add ${ovs_symlink}
+git reset ${ovs_symlink}
