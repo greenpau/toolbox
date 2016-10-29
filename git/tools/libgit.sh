@@ -165,11 +165,13 @@ git_iterate()
 			if [ ${this_component} = "ovs" -o \
 			     ${this_component} = "ovs-2.3" -o \
 			     ${this_component} = "ovs-2.5" -o \
-			     ${this_component} = "ovs-2.6" ]; then
+			     ${this_component} = "ovs-2.6" -o \
+			     ${this_component} = "dpdk" ]; then
 				if [ ! -d "VCA/ovs" -a \
 				     ! -d "VCA/ovs-2.3" -a \
 				     ! -d "VCA/ovs-2.5" -a \
-				     ! -d "VCA/ovs-2.6" ]; then
+				     ! -d "VCA/ovs-2.6" -a \
+				     ! -d "VCA/vrs/third-party/dpdk" ]; then
 					continue
 				fi
 				this_component=${base_project}
@@ -246,7 +248,8 @@ is_valid_repo()
 	if [ "${project}" = "VCA/ovs" -o \
 	     "${project}" = "VCA/ovs-2.3" -o \
 	     "${project}" = "VCA/ovs-2.5" -o \
-	     "${project}" = "VCA/ovs-2.6" ]; then
+	     "${project}" = "VCA/ovs-2.6" -o \
+	     "${project}" = "VCA/vrs/third-party/dpdk" ]; then
 		echo 1
 	elif [ "${repo}" != "${project}" ]; then
 		echo 0
@@ -275,6 +278,7 @@ gitenv_file=${linux_sbhead}/${SANDBOX}/.git-env
 REPOS=( \
 	sabyasse/toolbox \
 	VCA/VCA \
+	VCA/vrs/third-party/dpdk \
 	VCA/ovs \
 	VCA/ovs-2.3 \
 	VCA/ovs-2.5 \
