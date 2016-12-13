@@ -36,6 +36,7 @@ def usage():
 	print "    -d <path>: relative path of Device global image"
 	print "    -K <path>: relative path of Kontroller global image"
 	print "    -D <path>: relative path of Director global image"
+	print "    -l <path>: local path of VRS private image"
 	print "    -C: cnaSim will be set to true (only for quick)"
 	print "    -P <phystopo>: dctorOvs, nsg"
 	print "    -S <subtopo>: default, dcExpress, dctorOvs, dctorOvsVxlan, rh7Vxlan, ubuntu1404, ubuntu1404Vxlan"
@@ -46,6 +47,7 @@ def main(argc, argv):
 	testbed = ""
 	pkg_path = ""
 	vrs_image_path = ""
+	vrs_local_path = ""
 	vsd_image_path = ""
 	vsc_image_path = ""
 	suite = ""
@@ -61,7 +63,7 @@ def main(argc, argv):
 	custom_gash = ""
 	addl_params = ""
 	try:
-		opts, args = getopt.getopt(argv, "het:b:s:p:r:S:P:CT:R:c:d:A:D:K:")
+		opts, args = getopt.getopt(argv, "l:het:b:s:p:r:S:P:CT:R:c:d:A:D:K:")
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -74,6 +76,8 @@ def main(argc, argv):
 			pkg_path = arg
 		elif opt == "-d":
 			vrs_image_path = arg
+		elif opt == "-l":
+			vrs_local_path = arg
 		elif opt == "-D":
 			vsd_image_path = arg
 		elif opt == "-K":
@@ -146,6 +150,7 @@ def main(argc, argv):
 	regression.set_repeat(repeat)
 	regression.set_custom_gash(custom_gash)
 	regression.set_addl_params(addl_params)
+	regression.set_vrs_local_path(vrs_local_path)
 	regression.run_private()
 
 

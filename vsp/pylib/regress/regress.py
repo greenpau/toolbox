@@ -9,9 +9,11 @@ sys.path.append("/usr/local/openvswitch/pylib/system")
 import shell
 
 class Regress(object):
+	usr_global_machine = "strato.us.alcatel-lucent.com"
 	def __init__(self, phys_topo, sub_topo, platform, is_iso, eof,
 		     pkg_path, vrs_image_path, rel, suite_name, test_name,
-		     repeat, custom_gash, vsd_image_path, vsc_image_path):
+		     repeat, custom_gash, vsd_image_path, vsc_image_path,
+		     vrs_local_path):
 		self.phys_topo = phys_topo
 		self.sub_topo = sub_topo
 		self.platform = platform
@@ -20,6 +22,11 @@ class Regress(object):
 		self.pkg_path = pkg_path
 		self.rel = rel
 		self.vrs_image_path = vrs_image_path
+		self.vrs_local_path = vrs_local_path
+		self.ncpe_files = [ "ncpe_centos7.qcow2",
+				    "ncpeimg_" + self.rel + ".0-priv.md5",
+				    "ncpeimg_" + self.rel + ".0-priv.tar",
+		]
 		if (vsc_image_path == ""):
 			self.vsc_image_path = " -useimages dctor/" + rel + "/current"
 		else:
@@ -113,6 +120,15 @@ class Regress(object):
 		custom_gash_str = self.__get_customGashStr()
 		return topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gash_str
 
+	def __sync_usr_global(self):
+		if (self.platform != "nsg") or (self.vrs_local_path == "") or (self.pkg_path == ""):
+			return
+		for file in self.ncpe_files:
+			cmdstr = 'scp ' + self.vrs_local_path + '/' + file + ' ' + self.usr_global_machine + ':' + self.pkg_path
+			cmd = cmdstr.split()
+			shell.execute_hdr("Sync " + self.vrs_local_path + " to " + self.pkg_path, cmd)
+
 	def exec__(self, cmdstr):
+		self.__sync_usr_global()
 		cmd = cmdstr.split();
 		shell.execute_hdr("Running regression cmd", cmd)

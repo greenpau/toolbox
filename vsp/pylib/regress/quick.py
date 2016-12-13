@@ -22,6 +22,7 @@ class Quick(object):
 	repeat = ""
 	custom_gash = ""
 	addl_params = ""
+	vrs_local_path = ""
 
 	def __init__(self, testbed, pkg_path, vrs_image_path,
 		     phys_topo, sub_topo, rel, platform, is_iso, eof,
@@ -57,13 +58,17 @@ class Quick(object):
 	def set_addl_params(self, addl_params):
 		self.addl_params = addl_params
 
+	def set_vrs_local_path(self, vrs_local_path):
+		self.vrs_local_path = vrs_local_path
+
 	def run_private(self):
 		r = regress.Regress(self.phys_topo, self.sub_topo,
 				    self.platform, self.is_iso, self.eof,
 				    self.pkg_path, self.vrs_image_path,
 				    self.rel, self.suite_name, self.test_name,
 				    self.repeat, self.custom_gash,
-				    self.vsd_image_path, self.vsc_image_path)
+				    self.vsd_image_path, self.vsc_image_path,
+				    self.vrs_local_path)
 		topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gashStr = r.getParams()
 		if (self.cnaSim == True):
 			cnaSimStr = " -cnaSim true -vsdInternal false"
