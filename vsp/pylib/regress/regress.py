@@ -123,10 +123,14 @@ class Regress(object):
 	def __sync_usr_global(self):
 		if (self.platform != "nsg") or (self.vrs_local_path == "") or (self.pkg_path == ""):
 			return
+		pkg_path_ncpe = self.pkg_path + '/ncpe'
+		cmdstr = 'mkdir -p ' + pkg_path_ncpe
+		cmd = cmdstr.split()
+		shell.execute_hdr("Creating directory " + pkg_path_ncpe, cmd)
 		for file in self.ncpe_files:
-			cmdstr = 'scp ' + self.vrs_local_path + '/' + file + ' ' + self.usr_global_machine + ':' + self.pkg_path
+			cmdstr = 'scp ' + self.vrs_local_path + '/' + file + ' ' + self.usr_global_machine + ':' + pkg_path_ncpe
 			cmd = cmdstr.split()
-			shell.execute_hdr("Sync " + self.vrs_local_path + " to " + self.pkg_path, cmd)
+			shell.execute_hdr("Sync " + self.vrs_local_path + " to " + pkg_path_ncpe, cmd)
 
 	def exec__(self, cmdstr):
 		self.__sync_usr_global()
