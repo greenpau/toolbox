@@ -1,4 +1,4 @@
-#!/usr/bin/pytho
+#!/usr/bin/python
 
 import os
 import sys
