@@ -1,0 +1,28 @@
+#!/bin/sh
+
+usage() {
+	echo "usage: ${progname} <dst-ip-addr> <count>"
+	exit 1
+}
+
+progname=`basename $0`
+dst_ip=$1
+n=$2
+if [ -z "$n" ]; then
+	usage
+fi
+i=0
+iperf_out=/var/log/iperf.${dst_ip}.out
+echo "iperf results file: ${iperf_out}"
+while [ $i -lt $n ]; do
+	iperf3 -c ${dst_ip} -V -P 50 -t 60 -i 5 >> ${iperf_out} 2>&1
+	val="`grep SUM ${iperf_out} | tail -2 | awk '{print $6}'`"
+	unit="`grep SUM ${iperf_out} | tail -1 | awk '{print $7}'`"
+	sum=0
+	for v in $val; do sum=`expr $sum + $v`; done
+	tp_div=`expr $sum / 2`
+	tp_mod=`expr $sum % 2`
+	tp=${tp_div}.${tp_mod}
+	i=`expr $i + 1`
+	echo "iperf iteration #$i completed with full duplex throughput $tp $unit"
+done
