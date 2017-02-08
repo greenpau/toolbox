@@ -1,28 +1,49 @@
 #!/bin/sh
 
 usage() {
-	echo "usage: ${progname} <dst-ip-addr> <count>"
+	echo "usage: ${progname} <dst-ip-addr> <mins> [rate]"
 	exit 1
 }
 
 progname=`basename $0`
 dst_ip=$1
-n=$2
-if [ -z "$n" ]; then
+duration_mins=$2
+rate=$3
+n_parallel_flows=50
+interval_secs=5
+report_interval_secs=60
+if [ -z "$duration_mins" ]; then
 	usage
 fi
+rate_opt=
+parallel_opt=
 i=0
 iperf_out=/var/log/iperf.${dst_ip}.out
 echo "iperf results file: ${iperf_out}"
-while [ $i -lt $n ]; do
-	iperf3 -c ${dst_ip} -V -P 50 -t 60 -i 5 >> ${iperf_out} 2>&1
-	val="`grep SUM ${iperf_out} | tail -2 | awk '{print $6}'`"
-	unit="`grep SUM ${iperf_out} | tail -1 | awk '{print $7}'`"
+if [ -n "${rate}" ]; then
+	rate_opt="-b ${rate}" 
+	parallel_opt=
+	n_parallel_flows=0
+else
+	parallel_opt="-P ${n_parallel_flows}"
+	rate="default"
+fi
+echo "Rate of transfer: ${rate}"
+echo "Number of parallel flows: ${n_parallel_flows}"
+echo "Report Interval (secs): ${report_interval_secs}"
+echo "Duration (mins): ${duration_mins}"
+while [ $i -lt ${duration_mins} ]; do
+	iperf3 -c ${dst_ip} -V ${parallel_opt} -t ${report_interval_secs} -i ${interval_secs} ${rate_opt} >> ${iperf_out} 2>&1
+	if [ "${rate}" != "default" ]; then
+		val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $7}'`"
+		unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $8}'`"
+	else
+		val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $6}'`"
+		unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $7}'`"
+	fi
 	sum=0
-	for v in $val; do sum=`expr $sum + $v`; done
-	tp_div=`expr $sum / 2`
-	tp_mod=`expr $sum % 2`
-	tp=${tp_div}.${tp_mod}
+	for v in $val; do sum=`echo - | awk -v v1=${sum} -v v2=${v} '{print v1 + v2}'`; done
+	tp=`echo - | awk -v v1=${sum} '{print v1 / 2}'`
 	i=`expr $i + 1`
 	echo "iperf iteration #$i completed with full duplex throughput $tp $unit"
 done
