@@ -1,20 +1,34 @@
 #!/bin/sh
 
 usage() {
-	echo "usage: ${progname} <dst-ip-addr> <mins> [rate]"
+	echo "usage: ${progname} <udp|tcp> <dst-ip-addr> <mins> <mtu> [rate]"
 	exit 1
 }
 
 progname=`basename $0`
-dst_ip=$1
-duration_mins=$2
-rate=$3
+proto=$1
+dst_ip=$2
+duration_mins=$3
+mtu=$4
+if [ -z "${mtu}" ]; then
+	mtu=1450
+	rate=$4
+else
+	rate=$5
+fi
 n_parallel_flows=50
 interval_secs=5
 report_interval_secs=60
 if [ -z "$duration_mins" ]; then
 	usage
 fi
+proto_opt=
+mtu_opt="-l ${mtu}"
+case ${proto} in
+"udp")	proto_opt=-u
+	;;
+"tcp")	;;
+esac
 rate_opt=
 parallel_opt=
 i=0
@@ -31,19 +45,35 @@ fi
 echo "Rate of transfer: ${rate}"
 echo "Number of parallel flows: ${n_parallel_flows}"
 echo "Report Interval (secs): ${report_interval_secs}"
+echo "Protocol: ${proto}"
+echo "MTU: ${mtu}"
 echo "Duration (mins): ${duration_mins}"
 while [ $i -lt ${duration_mins} ]; do
-	iperf3 -c ${dst_ip} -V ${parallel_opt} -t ${report_interval_secs} -i ${interval_secs} ${rate_opt} >> ${iperf_out} 2>&1
+	iperf3 -c ${dst_ip} -V ${parallel_opt} -t ${report_interval_secs} -i ${interval_secs} ${proto_opt} ${rate_opt} ${mtu_opt} >> ${iperf_out} 2>&1
 	if [ "${rate}" != "default" ]; then
-		val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $7}'`"
-		unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $8}'`"
+		if [ ${proto} = "udp" ]; then
+			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
+			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $8}'`"
+		else
+			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $7}'`"
+			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $8}'`"
+		fi
 	else
-		val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $6}'`"
-		unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $7}'`"
+		if [ ${proto} = "udp" ]; then
+			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $6}'`"
+			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
+		else
+			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $6}'`"
+			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $7}'`"
+		fi
 	fi
 	sum=0
-	for v in $val; do sum=`echo - | awk -v v1=${sum} -v v2=${v} '{print v1 + v2}'`; done
-	tp=`echo - | awk -v v1=${sum} '{print v1 / 2}'`
+	n_vals=0
+	for v in $val; do
+		n_vals=`expr $n_vals + 1`
+		sum=`echo - | awk -v v1=${sum} -v v2=${v} '{print v1 + v2}'`
+	done
+	tp=`echo - | awk -v v1=${sum} -v v2=${n_vals} '{print v1 / v2}'`
 	i=`expr $i + 1`
-	echo "iperf iteration #$i completed with full duplex throughput $tp $unit"
+	echo "iperf iteration #$i completed with throughput $tp $unit"
 done
