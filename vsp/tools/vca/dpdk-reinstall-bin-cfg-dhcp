@@ -1,0 +1,41 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <port> [bond_type]"
+	exit 1
+}
+progname=`basename $0`
+if [ $# -lt 1 ]; then
+	usage
+fi
+port=$1
+if [ -z "${port}" ]; then
+	usage
+fi
+bond_type=$2
+bond_arg=
+if [ -n "${bond_type}" ]; then
+	bond_arg="--bond-mode ${bond_type}"
+fi
+new_binary_path=/var/tmp
+new_dp_path=${new_binary_path}/vrs-dpdk-datapath
+new_tool_path=${new_binary_path}/vrs_dpdk_sys.py
+
+echo "Stopping current binaries ..."
+vrs-dpdkctl sys/deconfig '--dpdk --stop-datapath'
+if [ -s ${new_dp_path} ]; then
+	printf "Copying ${new_dp_path} to /usr/sbin ... "
+	cp /var/tmp/vrs-dpdk-datapath /usr/sbin
+	echo "done"
+fi
+if [ -s "${new_tool_path}" ]; then
+	printf "Copying ${new_tool_path} to /usr/share ... "
+	cp /var/tmp/*dpdk*py /usr/share/openvswitch/python/ovs/nuage
+	echo "done"
+fi
+echo ""
+
+echo "Starting new datapath ..."
+vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--no-hw-crypto'
+vrs-dpdkctl port/add "--dpdk --device ${port} ${bond_arg}"
+echo ""

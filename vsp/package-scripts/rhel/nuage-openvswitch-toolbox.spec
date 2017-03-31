@@ -88,6 +88,8 @@ install__ 0755 tools/vca/vca-switch-status.py
 install__ 0755 tools/vca/vca-mirror-tests.py
 install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
 install__ 0755 tools/vca/vca-vm-start.sh
+install__ 0755 tools/vca/dpdk-reinstall-bin-cfg-static
+install__ 0755 tools/vca/dpdk-reinstall-bin-cfg-dhcp
 install__ 0755 tools/vca/iperf-run
 install__ 0755 tools/regress/run_regress.py
 install__ 0755 tools/system/reinstall-packages
@@ -151,6 +153,8 @@ install__ 0755 tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/tools/vca/vca-vport-tap-vrf-tnl-create.py
 /usr/local/openvswitch/tools/vca/vca-mirror-tests.py
 /usr/local/openvswitch/tools/vca/vca-vm-start.sh
+/usr/local/openvswitch/tools/vca/dpdk-reinstall-bin-cfg-static
+/usr/local/openvswitch/tools/vca/dpdk-reinstall-bin-cfg-dhcp
 /usr/local/openvswitch/tools/vca/iperf-run
 /usr/local/openvswitch/tools/regress/run_regress.py
 /usr/local/openvswitch/tools/system/reinstall-packages
