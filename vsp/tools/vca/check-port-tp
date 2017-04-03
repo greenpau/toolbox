@@ -1,0 +1,89 @@
+#!/bin/bash
+	
+usage() {
+	echo "usage: ${progname} <RX|TX|RXTX> <port> <secs>"
+	exit 1
+}
+
+print_header() {
+	echo "============================================================================="
+	echo "Type| Pkts Fwd        | Pkts Drops   | Fwd Diff      | Drops Diff | TP (Gbps)|"
+	echo "============================================================================="
+}
+
+print_tp() {
+	tp_type=$1
+	prev_pktcnt=0
+	prev_dropcnt=0
+	n=0
+	sum=0
+	print_header
+	while [ ${n} -lt ${secs} ]; do
+		curr_pktcnt=`ifconfig ${ifname} | grep "${tp_type} packets" | awk '{print $3}'`
+		curr_dropcnt=`ifconfig ${ifname} | grep "${tp_type} " | grep "drop" | awk '{print $5}'`
+		pkts_diff=$(($curr_pktcnt - $prev_pktcnt))
+		drops_diff=$(($curr_dropcnt - $prev_dropcnt))
+		tp=`echo - | awk -v v=${pkts_diff} '{print v * 1300 * 8 / (1024 * 1024 * 1024)}'`
+		if [ ${n} -ne 0 ]; then
+			sum=`echo - | awk -v v1=${sum} -v v2=${tp} '{print v1 + v2}'`
+		fi
+		printf "%4s|%17d|%14d|%15d|%12d| " ${tp_type} $curr_pktcnt $curr_dropcnt $pkts_diff $drops_diff
+		echo ${tp}
+		prev_pktcnt=$((curr_pktcnt))
+		prev_dropcnt=$((curr_dropcnt))
+		n=`expr ${n} + 1`
+		sleep 1
+	done
+	n=$(($n - 1))
+	avg_tp=`echo - | awk -v v1=${sum} -v v2=${n} '{print v1 / v2}'`
+	echo "Average Throughput ("${tp_type}"): ${avg_tp} Gbps"
+	echo
+}
+
+progname=`basename $0`
+tp_type=$1
+ifname=$2
+secs=$3
+
+if [ $# -ne 3 ]
+then
+	usage
+fi
+
+if [ -z "${secs}" ]; then
+	echo "${progname}: missing portname"
+	usage
+fi
+if [ "${tp_type}" != "TX" ] && [ "${tp_type}" != "RX" ] && [ "${tp_type}" != "RXTX" ]; then
+	echo "${progname}: throughput type must be \"RX\" or \"TX\" or \"RXTX\""
+	exit 1
+fi
+
+ifconfig ${ifname} >/dev/null 2>&1
+if [ $? -ne 0 ]
+then
+	echo "${progname}: interface ${ifname} not available via ifconfig command"
+	exit 1
+fi
+
+vermatched=`ifconfig --version 2>&1 | head -n 1 | egrep -c "2.10"`
+if [ ${vermatched} -eq 0 ]
+then
+	echo ""
+	echo "========================================================="
+	echo "This script is designed for version 2.10 of 'ifconfig'"
+	echo "Current version = `ifconfig --version 2>&1 | head -n 1`"
+	echo "The script may not work as intended"
+	echo "========================================================="
+	echo ""
+fi
+
+case ${tp_type} in
+"RX")	print_tp "RX"
+	;;
+"TX")	print_tp "TX"
+	;;
+"RXTX")	print_tp "TX"
+	print_tp "RX"
+	;;
+esac
