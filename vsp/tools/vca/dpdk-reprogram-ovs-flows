@@ -1,0 +1,75 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <access_port> <vxlan_local_ip> <vxlan_remote_ip> <num_vports>"
+	exit 1
+}
+
+if [ $# -ne 4 ]; then
+	usage
+fi
+
+vxlan_ofp_port=65101
+vxlan_key=1
+new_vswitchd=/var/tmp/ovs-vswitchd
+vxlan_iface=vxlan1
+default_bridge=alubr0
+
+progname=`basename $0`
+access_port=$1
+vxlan_local_ip=$2
+vxlan_remote_ip=$3
+n_vports=$4
+
+if [ -s ${new_vswitchd} ]; then
+	service openvswitch stop
+	cp ${new_vswitchd} /usr/sbin
+	service openvswitch start
+else
+	systemctl start openvswitch
+fi
+
+printf "Adding ${vxlan_iface} ... "
+ovs-vsctl add-port ${default_bridge} ${vxlan_iface} -- set interface ${vxlan_iface} type=vxlan ofport_request=${vxlan_ofp_port} options:local_ip=${vxlan_local_ip} options:remote_ip=${vxlan_remote_ip} options:key=${vxlan_key}
+echo "done"
+
+for i in $(seq 1 ${n_vports})
+do
+	vlan=${access_port}.$i
+	printf "Adding ${vlan} on access port ${access_port} ... "
+	ip link add link ${access_port} name ${vlan} type vlan id $i
+	ip link set dev ${vlan} up
+	echo "done"
+        sleep 1
+
+	# Add access side vlan port to alubr0 bridge
+        vlan_ofp_port=$(( 65000 + $i ))
+	printf "Adding access vlan ${vlan} to ${default_bridge} ... "
+	ovs-vsctl add-port ${default_bridge} ${vlan} -- set interface ${vlan} ofport_request=${vlan_ofp_port}
+	echo "done"
+	sleep 1
+
+        # Create flows
+	printf "Creating flows ${vxlan_ofp_port} -> ${vlan_ofp_port} ... "
+	ovs-ofctl add-flow ${default_bridge} "cookie=$i priority=$(( 100 + $i )),in_port=${vxlan_ofp_port},actions=output:${vlan_ofp_port}"
+	print "done"
+
+	printf "Creating flows ${vlan_ofp_port} -> ${vxlan_ofp_port} ... "
+	ovs-ofctl add-flow ${default_bridge} "cookie=$i priority=$(( 99 + $i )),in_port=${vlan_ofp_port},actions=output:${vxlan_ofp_port}"
+	print "done"
+	sleep 1
+done
+
+printf "Bringing up ${default_bridge} ... "
+ip link set ${default_bridge} up
+echo "done"
+
+ovs-ofctl dump-flows ${default_bridge}
+
+echo "Adding IPSEC SA ... "
+ovs-ofctl add-ipsec-sa ${default_bridge} 20023 "spi=1939,enc_alg=cbc(aes),enc_key_len=16,enc_key=1234567891234567,auth_alg=hmac(sha1),auth_key_len=20,auth_key=12345678912345678912,hard_life=100000,soft_life=95000"
+echo "done"
+
+echo "Adding IPSEC Policy ... "
+ovs-ofctl add-ipsec-policy ${default_bridge} 20023 "remote_datapath_id=${vxlan_remote_ip},local_datapath_id=${vxlan_local_ip},dst_ip=${vxlan_remote_ip},src_ip=${vxlan_local_ip}"
+echo "done"
