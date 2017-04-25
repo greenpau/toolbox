@@ -98,6 +98,8 @@ install__ 0755 tools/system/reinstall-packages
 install__ 0755 tools/system/update-ovs-vswitchd
 install__ 0755 tools/system/scattach
 
+install__ 0755 third-party/bin/iperf
+
 
 %clean
 
@@ -165,6 +167,8 @@ install__ 0755 tools/system/scattach
 /usr/local/openvswitch/tools/system/reinstall-packages
 /usr/local/openvswitch/tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/tools/system/scattach
+
+/usr/local/openvswitch/third-party/bin/iperf
 
 %pre
 
