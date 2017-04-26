@@ -1,18 +1,22 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} <port> [bond_type]"
+	echo "usage: ${progname} <profile> <port> [bond_type]"
 	exit 1
 }
 progname=`basename $0`
-if [ $# -lt 1 ]; then
+if [ $# -lt 2 ]; then
 	usage
 fi
-port=$1
+profile=$1
+if [ -z "${profile}" ]; then
+	usage
+fi
+port=$2
 if [ -z "${port}" ]; then
 	usage
 fi
-bond_type=$2
+bond_type=$3
 bond_arg=
 if [ -n "${bond_type}" ]; then
 	bond_arg="--bond-mode ${bond_type}"
@@ -36,6 +40,11 @@ fi
 echo ""
 
 echo "Starting new datapath ..."
-vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--no-hw-crypto'
+if [ -n "${profile}" ]; then
+	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --hw-crypto on" #--pdump --skip-plugins ipsec"
+else
+	vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--hw-crypto on --skip-plugins ipsec'
+fi
+sleep 3
 vrs-dpdkctl port/add "--dpdk --device ${port} ${bond_arg}"
 echo ""

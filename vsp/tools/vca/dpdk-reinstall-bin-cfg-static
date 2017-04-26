@@ -1,22 +1,26 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} <port> <ipaddr> [bond_type]"
+	echo "usage: ${progname} <profile_type> <port> <ipaddr> [bond_type]"
 	exit 1
 }
 progname=`basename $0`
-if [ $# -lt 2 ]; then
+if [ $# -lt 3 ]; then
 	usage
 fi
-port=$1
+profile=$1
+if [ -z "${profile}" ]; then
+	usage
+fi
+port=$2
 if [ -z "${port}" ]; then
 	usage
 fi
-ipaddr=$2
+ipaddr=$3
 if [ -z "${ipaddr}" ]; then
 	usage
 fi
-bond_type=$3
+bond_type=$4
 bond_arg=
 if [ -n "${bond_type}" ]; then
 	bond_arg="--bond-mode ${bond_type}"
@@ -24,6 +28,7 @@ fi
 new_binary_path=/var/tmp
 new_dp_path=${new_binary_path}/vrs-dpdk-datapath
 new_tool_path=${new_binary_path}/vrs_dpdk_sys.py
+new_rte_kni_path=${new_binary_path}/rte_kni.ko
 
 echo "Starting Network manager ... "
 service NetworkManager start
@@ -31,6 +36,7 @@ echo ""
 
 echo "Stopping current binaries ..."
 vrs-dpdkctl sys/deconfig '--dpdk --stop-datapath'
+
 if [ -s ${new_dp_path} ]; then
 	printf "Copying ${new_dp_path} to /usr/sbin ... "
 	cp /var/tmp/vrs-dpdk-datapath /usr/sbin
@@ -41,10 +47,20 @@ if [ -s "${new_tool_path}" ]; then
 	cp /var/tmp/*dpdk*py /usr/share/openvswitch/python/ovs/nuage
 	echo "done"
 fi
+if [ -s "${new_rte_kni_path}" ]; then
+	printf "Copying ${new_rte_kni_path} to /usr/share ... "
+	cp ${new_rte_kni_path} /usr/share/openvswitch/dpdk/kmod
+	echo "done"
+fi
 echo ""
 
 echo "Starting new datapath ..."
-vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--no-hw-crypto'
+if [ -n "${profile}" ]; then
+	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --hw-crypto on" #--pdump --skip-plugins ipsec"
+else
+	vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--hw-crypto on --skip-plugins ipsec'
+fi
+sleep 3
 vrs-dpdkctl port/add "--dpdk --device ${port} ${bond_arg}"
 echo ""
 
