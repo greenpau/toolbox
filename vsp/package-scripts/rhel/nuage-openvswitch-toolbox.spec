@@ -77,6 +77,9 @@ install__ 0755 pylib/regress/quick.py
 install__ 0755 templates/vm.xml
 
 install__ 0755 tools/dpdk/dpdk.py
+install__ 0755 tools/dpdk/reinstall-bin-cfg-static
+install__ 0755 tools/dpdk/reinstall-bin-cfg-dhcp
+install__ 0755 tools/dpdk/reprogram-ovs-flows
 install__ 0755 tools/ovs/ovs-flow-create.py
 install__ 0755 tools/ovs/ovs-vport-tap-create.py
 install__ 0755 tools/ovs/ovs-tnl-create-many.py
@@ -88,9 +91,6 @@ install__ 0755 tools/vca/vca-switch-status.py
 install__ 0755 tools/vca/vca-mirror-tests.py
 install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
 install__ 0755 tools/vca/vca-vm-start.sh
-install__ 0755 tools/vca/dpdk-reinstall-bin-cfg-static
-install__ 0755 tools/vca/dpdk-reinstall-bin-cfg-dhcp
-install__ 0755 tools/vca/dpdk-reprogram-ovs-flows
 install__ 0755 tools/vca/check-port-tp
 install__ 0755 tools/vca/iperf-run
 install__ 0755 tools/regress/run_regress.py
@@ -147,6 +147,9 @@ install__ 0755 third-party/bin/iperf
 /usr/local/openvswitch/templates/vm.xml
 
 /usr/local/openvswitch/tools/dpdk/dpdk.py
+/usr/local/openvswitch/tools/dpdk/reinstall-bin-cfg-static
+/usr/local/openvswitch/tools/dpdk/reinstall-bin-cfg-dhcp
+/usr/local/openvswitch/tools/dpdk/reprogram-ovs-flows
 /usr/local/openvswitch/tools/ovs/ovs-flow-create.py
 /usr/local/openvswitch/tools/ovs/ovs-vport-tap-create.py
 /usr/local/openvswitch/tools/ovs/ovs-tnl-create-many.py
@@ -158,9 +161,6 @@ install__ 0755 third-party/bin/iperf
 /usr/local/openvswitch/tools/vca/vca-vport-tap-vrf-tnl-create.py
 /usr/local/openvswitch/tools/vca/vca-mirror-tests.py
 /usr/local/openvswitch/tools/vca/vca-vm-start.sh
-/usr/local/openvswitch/tools/vca/dpdk-reinstall-bin-cfg-static
-/usr/local/openvswitch/tools/vca/dpdk-reinstall-bin-cfg-dhcp
-/usr/local/openvswitch/tools/vca/dpdk-reprogram-ovs-flows
 /usr/local/openvswitch/tools/vca/check-port-tp
 /usr/local/openvswitch/tools/vca/iperf-run
 /usr/local/openvswitch/tools/regress/run_regress.py
