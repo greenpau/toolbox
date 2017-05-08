@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "usage: ${progname} <udp|tcp> <dst-ip-addr> <mins> <mtu> [rate]"
+	echo "usage: ${progname} <udp|tcp> <dst-ip-addr> <mins> <mtu> <rate> [taskset-mask]"
 	exit 1
 }
 
@@ -10,18 +10,35 @@ proto=$1
 dst_ip=$2
 duration_mins=$3
 mtu=$4
-if [ -z "${mtu}" ]; then
-	mtu=1450
-	rate=$4
-else
-	rate=$5
+rate=$5
+taskset_mask=$6
+taskset_param=
+if [ -n "${taskset_mask}" ]; then
+	taskset_param="taskset ${taskset_mask}"
 fi
-n_parallel_flows=50
 interval_secs=5
 report_interval_secs=60
-if [ -z "$duration_mins" ]; then
+if [ -z "${mtu}" ]; then
 	usage
 fi
+if [ -e /usr/local/openvswitch/third-party/bin/iperf ]; then
+	iperf=/usr/local/openvswitch/third-party/bin/iperf
+elif [ -e /bin/iperf3 ]; then 
+	iperf=/bin/iperf3
+else
+	iperf=`which iperf`
+fi
+if [ -z "${iperf}" ]; then
+	echo "${progname}: missing iperf"
+	exit 1
+fi
+echo ${iperf} | grep iperf3 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+	iperf_vers="iperf-3"
+else
+	iperf_vers="iperf-2"
+fi
+
 proto_opt=
 mtu_opt="-l ${mtu}"
 case ${proto} in
@@ -33,15 +50,23 @@ rate_opt=
 parallel_opt=
 i=0
 iperf_out=/var/log/iperf.${dst_ip}.out
+echo "iperf: ${iperf} (${iperf_vers})"
 echo "iperf results file: ${iperf_out}"
 if [ -n "${rate}" ]; then
 	rate_opt="-b ${rate}" 
-	parallel_opt=
-	n_parallel_flows=0
+	if [ ${iperf_vers} = "iperf-3" ]; then
+		parallel_opt=
+		n_parallel_flows=0
+	else
+		n_parallel_flows=10
+		parallel_opt="-P ${n_parallel_flows}"
+	fi
 else
+	n_parallel_flows=50
 	parallel_opt="-P ${n_parallel_flows}"
 	rate="default"
 fi
+echo "Taskset Mask: " ${taskset_mask}
 echo "Rate of transfer: ${rate}"
 echo "Number of parallel flows: ${n_parallel_flows}"
 echo "Report Interval (secs): ${report_interval_secs}"
@@ -49,22 +74,32 @@ echo "Protocol: ${proto}"
 echo "MTU: ${mtu}"
 echo "Duration (mins): ${duration_mins}"
 while [ $i -lt ${duration_mins} ]; do
-	iperf3 -c ${dst_ip} -V ${parallel_opt} -t ${report_interval_secs} -i ${interval_secs} ${proto_opt} ${rate_opt} ${mtu_opt} >> ${iperf_out} 2>&1
-	if [ "${rate}" != "default" ]; then
+	${taskset_param} ${iperf} -c ${dst_ip} -V ${parallel_opt} -t ${report_interval_secs} -i ${interval_secs} ${proto_opt} ${rate_opt} ${mtu_opt} >> ${iperf_out} 2>&1
+	if [ ${iperf_vers} = "iperf-2" ]; then
 		if [ ${proto} = "udp" ]; then
-			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
-			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $8}'`"
+			val="`grep -e "\[SUM\]" ${iperf_out} | grep -v ID | grep -v WARNING | grep -v datagrams | tail -1 | awk '{print $6}'`"
+			unit="`grep -e "\[SUM\]" ${iperf_out} | grep -v ID | grep -v datagrams | grep -v WARNING | tail -1 | awk '{print $7}'`"
 		else
-			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $7}'`"
-			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $8}'`"
-		fi
-	else
-		if [ ${proto} = "udp" ]; then
-			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $6}'`"
-			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
-		else
-			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $6}'`"
+			val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $6}'`"
 			unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $7}'`"
+		fi
+	elif [ ${iperf_vers} = "iperf-3" ]; then
+		if [ "${rate}" != "default" ]; then
+			if [ ${proto} = "udp" ]; then
+				val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
+				unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $8}'`"
+			else
+				val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $7}'`"
+				unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $8}'`"
+			fi
+		else
+			if [ ${proto} = "udp" ]; then
+				val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $6}'`"
+				unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | grep -v datagrams | tail -1 | awk '{print $7}'`"
+			else
+				val="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -2 | awk '{print $6}'`"
+				unit="`grep -e "\[.*\]" ${iperf_out} | grep -v ID | tail -1 | awk '{print $7}'`"
+			fi
 		fi
 	fi
 	sum=0
