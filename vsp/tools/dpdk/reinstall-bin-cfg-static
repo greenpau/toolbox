@@ -29,6 +29,7 @@ new_binary_path=/var/tmp
 new_dp_path=${new_binary_path}/vrs-dpdk-datapath
 new_tool_path=${new_binary_path}/vrs_dpdk_sys.py
 new_rte_kni_path=${new_binary_path}/rte_kni.ko
+new_igb_uio_path=${new_binary_path}/igb_uio.ko
 
 echo "Starting Network manager ... "
 service NetworkManager start
@@ -50,6 +51,12 @@ fi
 if [ -s "${new_rte_kni_path}" ]; then
 	printf "Copying ${new_rte_kni_path} to /usr/share ... "
 	cp ${new_rte_kni_path} /usr/share/openvswitch/dpdk/kmod
+	echo "done"
+fi
+echo ""
+if [ -s "${new_igb_uio_path}" ]; then
+	printf "Copying ${new_igb_uio_path} to /usr/share ... "
+	cp ${new_igb_uio_path} /usr/share/openvswitch/dpdk/kmod
 	echo "done"
 fi
 echo ""
