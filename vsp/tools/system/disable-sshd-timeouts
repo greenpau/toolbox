@@ -1,0 +1,37 @@
+#!/bin/bash
+
+progname=`basename $0`
+sshd_config=/etc/ssh/sshd_config
+
+printf "Changing TCPKeepAlive setting ... "
+sed -i 's/#TCPKeepAlive yes/TCPKeepAlive no/g' ${sshd_config}
+if [ $? -eq 0 ]; then
+	echo "done"
+else
+	echo "failed"
+	exit 1
+fi
+printf "Changing ClientAliveInterval setting ... "
+sed -i 's/ClientAliveInterval 300/ClientAliveInterval 30/g' ${sshd_config}
+if [ $? -eq 0 ]; then
+	echo "done"
+else
+	echo "failed"
+	exit 1
+fi
+printf "Changing ClientAliveCountMax setting ... "
+sed -i 's/ClientAliveCountMax 0/ClientAliveCountMax 100/g' ${sshd_config}
+if [ $? -eq 0 ]; then
+	echo "done"
+else
+	echo "failed"
+	exit 1
+fi
+printf "Restarting sshd service ... "
+service sshd restart
+if [ $? -eq 0 ]; then
+	echo "done"
+else
+	echo "failed"
+	exit 1
+fi
