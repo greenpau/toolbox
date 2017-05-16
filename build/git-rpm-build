@@ -35,7 +35,7 @@ tar zxf ${rpm_srcdir}/${package_name}.tgz
 echo "done"
 
 printf "${progname}: building RPM ... "
-rpmbuild -ba git/package-scripts/rhel/git-tools.spec --define "version ${version}" > ${logfile} 2>&1
+rpmbuild -ba git/package-scripts/rhel/git-tools.spec --define "version ${version}" >> ${logfile} 2>&1
 echo "done"
 rpm_outfile=`ls ${rpm_outdir}/${package_name}*.rpm`
 echo "RPM location: ${rpm_outfile}"

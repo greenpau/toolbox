@@ -100,6 +100,8 @@ install__ 0755 tools/system/scattach
 install__ 0755 tools/system/disable-sshd-timeouts
 
 install__ 0755 third-party/bin/iperf
+install__ 0755 third-party/bin/valgrind
+install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar.gz
 
 
 %clean
@@ -168,13 +170,16 @@ install__ 0755 third-party/bin/iperf
 /usr/local/openvswitch/tools/system/reinstall-packages
 /usr/local/openvswitch/tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/tools/system/scattach
-/usr/local/openvswitch/tools/system/tools/system/disable-sshd-timeouts
+/usr/local/openvswitch/tools/system/disable-sshd-timeouts
 
 /usr/local/openvswitch/third-party/bin/iperf
+/usr/local/openvswitch/third-party/bin/valgrind
+/usr/local/openvswitch/third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar.gz
 
 %pre
 
 %post
+(cd /; tar xzf /usr/local/openvswitch/third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar.gz)
 
 %preun
 rm -rf /usr/local/openvswitch
