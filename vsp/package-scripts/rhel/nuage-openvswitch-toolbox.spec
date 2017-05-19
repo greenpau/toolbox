@@ -97,6 +97,7 @@ install__ 0755 tools/regress/run_regress.py
 install__ 0755 tools/system/reinstall-packages
 install__ 0755 tools/system/update-ovs-vswitchd
 install__ 0755 tools/system/scattach
+install__ 0755 tools/system/nsg-iso-upgrade
 install__ 0755 tools/system/disable-sshd-timeouts
 
 install__ 0755 third-party/bin/iperf
@@ -170,6 +171,7 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/tools/system/reinstall-packages
 /usr/local/openvswitch/tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/tools/system/scattach
+/usr/local/openvswitch/tools/system/nsg-iso-upgrade
 /usr/local/openvswitch/tools/system/disable-sshd-timeouts
 
 /usr/local/openvswitch/third-party/bin/iperf

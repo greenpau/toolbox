@@ -1,0 +1,22 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <host> <path>"
+	exit 1
+}
+progname=`basename $0`
+hostname=$1
+path=$2
+
+if [ -z "${path}" ]; then
+	usage
+fi
+host=${hostname}.mv.nuagenetworks.net
+image=/var/tmp/`basename ${path}`
+live_upgrade_path=/run/initramfs/live/upgrade
+
+mkdir -p ${live_upgrade_path}
+cd ${live_upgrade_path}
+scp root@${host}:${path} ${image}
+tar xf ${image}
+./upgrimg.sh
