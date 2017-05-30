@@ -2,6 +2,7 @@
 
 usage() {
 	echo "usage: ${progname} <profile_type> <port> <ipaddr> [bond_type]"
+	echo "usage: ${progname} <profile_type> <port>[,<port>] <ipaddr>[,<ipaddr>] <single|dual> [bond_type]"
 	exit 1
 }
 progname=`basename $0`
@@ -12,15 +13,27 @@ profile=$1
 if [ -z "${profile}" ]; then
 	usage
 fi
-port=$2
-if [ -z "${port}" ]; then
+port_list=$2
+if [ -z "${port_list}" ]; then
 	usage
 fi
-ipaddr=$3
-if [ -z "${ipaddr}" ]; then
+ipaddr_list=$3
+if [ -z "${ipaddr_list}" ]; then
 	usage
 fi
-bond_type=$4
+uplink_type=$4
+n_ports=0
+if [ -z "${uplink_type}" ]; then
+	usage
+elif [ "${uplink_type}" = "single" ]; then
+	n_ports=1
+elif [ "${uplink_type}" = "dual" ]; then
+	n_ports=2
+else
+	echo "${progname}: uplink_type can be \'single\' or \'dual\'"
+	usage
+fi
+bond_type=$5
 bond_arg=
 if [ -n "${bond_type}" ]; then
 	bond_arg="--bond-mode ${bond_type}"
@@ -37,6 +50,9 @@ echo ""
 
 echo "Stopping current binaries ..."
 vrs-dpdkctl sys/deconfig '--dpdk --stop-datapath'
+
+sed -i -e "s/^UPLINK1_PORT_MASTER_SLAVE=.*/#UPLINK1_PORT_MASTER_SLAVE=/g" /etc/default/openvswitch
+sed -i -e "s/^UPLINK2_PORT_MASTER_SLAVE=.*/#UPLINK2_PORT_MASTER_SLAVE=/g" /etc/default/openvswitch
 
 if [ -s ${new_dp_path} ]; then
 	printf "Copying ${new_dp_path} to /usr/sbin ... "
@@ -63,20 +79,46 @@ echo ""
 
 echo "Starting new datapath ..."
 if [ -n "${profile}" ]; then
-	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --hw-crypto on" #--pdump --skip-plugins ipsec"
+	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --ports ${n_ports}"
 else
-	vrs-dpdkctl sys/config '--dpdk --pages 1024 --ports 1 --start-datapath' #--hw-crypto on --skip-plugins ipsec'
+	vrs-dpdkctl sys/config "--dpdk --pages 1024 --ports ${n_ports} --start-datapath"
 fi
 sleep 3
-vrs-dpdkctl port/add "--dpdk --device ${port} ${bond_arg}"
+port1=`echo ${port_list} | awk -F, '{print $1}'`
+echo "modifying /etc/default/openvswitch for ${port1}"
+#sed -i -e "s/#UPLINK1_PORT_MASTER_SLAVE=/UPLINK1_PORT_MASTER_SLAVE=${port1}:dpdk_bond0/g" /etc/default/openvswitch
+sleep 1
+vrs-dpdkctl port/add "--dpdk --device ${port1} ${bond_arg}"
 echo ""
+if [ ${n_ports} -eq 2 ]; then
+	sleep 3
+	port2=`echo ${port_list} | awk -F, '{print $2}'`
+	if [ -z "${port2}" ]; then
+		echo "${progname}: no value specified for second port"
+	fi
+	echo "modifying /etc/default/openvswitch for ${port2}"
+	#sed -i -e "s/#UPLINK2_PORT_MASTER_SLAVE=/UPLINK2_PORT_MASTER_SLAVE=${port2}:dpdk_bond1/g" /etc/default/openvswitch
+	sleep 1
+	vrs-dpdkctl port/add "--dpdk --device ${port2} ${bond_arg}"
+fi
 
 echo "Stopping Network manager ... "
 sleep 5
 service NetworkManager stop
 echo ""
 
-echo "Reprogramming ${ipaddr} to dpdk_bond0 ... "
+ipaddr1=`echo ${ipaddr_list} | awk -F, '{print $1}'`
+echo "Reprogramming ${ipaddr1} to dpdk_bond0 ... "
 sleep 1
-ifconfig dpdk_bond0 ${ipaddr}/24
+ifconfig dpdk_bond0 ${ipaddr1}/24
 echo ""
+
+ipaddr2=`echo ${ipaddr_list} | awk -F, '{print $2}'`
+if [ -z "${ipaddr2}" ]; then
+	echo "${progname}: ipaddr2 not specified"
+else
+	echo "Reprogramming ${ipaddr2} to dpdk_bond1 ... "
+	sleep 1
+	ifconfig dpdk_bond1 ${ipaddr2}/24
+	echo ""
+fi
