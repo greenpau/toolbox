@@ -1,22 +1,24 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} <host> <path>"
+	echo "usage: ${progname} <path> [host]"
 	exit 1
 }
 progname=`basename $0`
-hostname=$1
-path=$2
+path=$1
+hostname=$2
 
 if [ -z "${path}" ]; then
 	usage
 fi
-host=${hostname}.mv.nuagenetworks.net
 image=/var/tmp/`basename ${path}`
-live_upgrade_path=/run/initramfs/live/upgrade
 
+live_upgrade_path=/run/initramfs/live/upgrade
 mkdir -p ${live_upgrade_path}
 cd ${live_upgrade_path}
-scp root@${host}:${path} ${image}
+if [ -n "${hostname}" ]; then
+	host=${hostname}
+	scp root@${host}:${path} ${image}
+fi
 tar xf ${image}
 ./upgrimg.sh
