@@ -139,6 +139,13 @@ class VM(object):
 		shell.run_cmd("Adding mac route to VM " + self.name,
 			      cmd, self.logfd)
 
+	def add_dhcp(self):
+		cmd = [ self.ofctl_path, "add-flow", self.br,
+			"flow_type=dhcp,interface=" + self.iface +
+			",vm_uuid=" + self.uuid + ",ip=" + self.ip ]
+		shell.run_cmd("Enabling DHCP flow for VM " + self.name,
+			      cmd, self.logfd)
+
 	def add_qos(self,
 		    ingress_rate, ingress_peak_rate, ingress_burst,
 		    ingress_bum_rate, ingress_bum_peak_rate, ingress_bum_burst,

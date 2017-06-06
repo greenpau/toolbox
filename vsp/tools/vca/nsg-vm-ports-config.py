@@ -136,7 +136,7 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 		print "\tEVPN: " + evpn_id + ", tnl_type: " + tnl_type + ", tnl_key: " + evpn_tnl_key + ", subnet: " + evpn_subnet + ", mask: " + evpn_netmask + ", gw_ip: " + evpn_gw_ip + ", gw_mac: " + evpn_gw_mac
 		print "\tVRF: " + vrf_id + ", vrf_tnl_key: " + vrf_tnl_key
 		ns_list.set_mac(vm_name, vm_mac)
-		ns_list.set_ip(vm_name, vm_ip, vm_netmask)
+		#ns_list.set_ip(vm_name, vm_ip, vm_netmask)
 		evpn = vca_evpn.EVPN(ovs_path, br, logfd, vrf_id, tnl_type,
 				     vrf_tnl_key, evpn_id, evpn_tnl_key,
 				     evpn_subnet, evpn_netmask, evpn_gw_ip,
@@ -148,6 +148,7 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 		vm.add_membership(evpn_id)
 		vm.add_acls()
 		vm.add_routes(vrf_id, evpn_id)
+		vm.add_dhcp()
 		vm.enable_mac_learning()
 		#vm.add_qos(ingress_rate, ingress_peak_rate, ingress_burst,
 		#	    ingress_bum_rate, ingress_bum_peak_rate,
@@ -157,6 +158,7 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 		#	    egress_class,
 		#	    egress_fip_rate, egress_fip_peak_rate, egress_fip_burst)
 		time.sleep(1)
+		ns_list.get_ip(vm_name)
 		print
 	return 0
 
