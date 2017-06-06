@@ -156,6 +156,7 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 		print "\tEVPN: " + evpn_id + ", tnl_type: " + tnl_type + ", tnl_key: " + evpn_tnl_key + ", subnet: " + evpn_subnet + ", mask: " + evpn_netmask + ", gw_ip: " + evpn_gw_ip + ", gw_mac: " + evpn_gw_mac
 		print "\tVRF: " + vrf_id + ", vrf_tnl_key: " + vrf_tnl_key
 		ns_list.set_mac(vm_name, vm_mac)
+		ns_list.release_ip(vm_name)
 		#ns_list.set_ip(vm_name, vm_ip, vm_netmask)
 		evpn = vca_evpn.EVPN(ovs_path, br, logfd, vrf_id, tnl_type,
 				     vrf_tnl_key, evpn_id, evpn_tnl_key,

@@ -120,8 +120,14 @@ class namespaces(object):
 			if (p != port_name):
 				continue
 			ns_device = p + "-" + self.vport_ns_suffix
-			print "Releasing ip for " + p + "::" + ns_device
-			shell.execute_cmdstr("ip netns exec " + p + " dhclient -v -r " + ns_device)
 			print "Getting ip for " + p + "::" + ns_device
 			shell.execute_cmdstr("ip netns exec " + p + " dhclient -v " + ns_device)
+
+	def release_ip(self, port_name):
+		for p in self.ports:
+			if (p != port_name):
+				continue
+			ns_device = p + "-" + self.vport_ns_suffix
+			print "Releasing ip for " + p + "::" + ns_device
+			shell.execute_cmdstr("ip netns exec " + p + " dhclient -r " + ns_device)
 
