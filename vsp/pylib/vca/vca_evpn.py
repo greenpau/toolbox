@@ -12,8 +12,9 @@ import ovs_vport_tnl
 
 class EVPN(vca_vrf.VRF):
 	def __init__(self, ovs_path, br, logfd,
-		     vrf_id, vrf_tnl_type, vrf_tnl_key,
-		     evpn_id, evpn_tnl_key, local_ip, vm_ip_local):
+		     vrf_id, tnl_type, tnl_key,
+		     evpn_id, evpn_tnl_key, evpn_subnet, evpn_netmask,
+		     evpn_gw_ip, evpn_gw_mac, uplink_ip, vm_ip_local):
 		self.ovs_path = ovs_path
 		self.ofctl_path = ovs_path + "/ovs-ofctl"
 		self.appctl_path = ovs_path + "/ovs-appctl"
@@ -26,23 +27,38 @@ class EVPN(vca_vrf.VRF):
 						  self.logfd)
 		if (vrf_id != 0):
 			vca_vrf.VRF.__init__(self, ovs_path, br, vrf_id,
-					     vrf_tnl_type, vrf_tnl_key,
-					     local_ip, logfd)
+					     tnl_type, tnl_key,
+					     uplink_ip, logfd)
 		if (evpn_id != 0):
-			self.__init(evpn_id, evpn_tnl_key, vm_ip_local)
+			self.__init(evpn_id, evpn_tnl_key, tnl_type,
+				    evpn_subnet, evpn_netmask,
+				    evpn_gw_ip, evpn_gw_mac,
+				    vm_ip_local)
 			self.__add_evpn()
 
-	def __init(self, evpn_id, evpn_tnl_key, vm_ip_local):
+	def __init(self, evpn_id, evpn_tnl_key, tnl_type, evpn_subnet,
+		   evpn_netmask, evpn_gw_ip, evpn_gw_mac, vm_ip_local):
 		self.evpn_id = evpn_id
-		val = vm_ip_local.split(".")
-		self.evpn_gw_ip = val[0] + "." + val[1] + "." + val[2] + "." + "1"
-		val = self.evpn_gw_ip.split(".")
-		self.evpn_subnet = val[0] + "." + val[1] + "." + val[2] + "." + "0"
-		self.evpn_gw_mac = "00:11:22:33:44:55"
-		self.evpn_netmask = "255.255.255.0"
-		self.evpn_flow_subnet = "255.255.255.0"
+		if (vm_ip_local == None) or (vm_ip_local == ""):
+			if (evpn_gw_ip != ""):
+				val = evpn_gw_ip.split(".")
+			self.evpn_subnet = evpn_subnet
+			self.evpn_netmask = evpn_netmask
+			self.evpn_gw_ip = evpn_gw_ip
+			self.evpn_gw_mac = evpn_gw_mac
+		else:
+			val = vm_ip_local.split(".")
+			self.evpn_gw_ip = val[0] + "." + val[1] + "." + val[2] + "." + "1"
+			val = self.evpn_gw_ip.split(".")
+			self.evpn_subnet = val[0] + "." + val[1] + "." + val[2] + "." + "0"
+			self.evpn_gw_mac = "00:11:22:33:44:55"
+			self.evpn_netmask = "255.255.255.0"
+			self.evpn_flow_subnet = "255.255.255.0"
+		if (tnl_type != ""):
+			self.evpn_tnl_type = tnl_type
+		else:
+			self.evpn_tnl_type = "vxlan"
 		self.evpn_tnl_key = evpn_tnl_key
-		self.evpn_tnl_type = "vxlan"
 		self.evpn_dhcp_range_lo = val[0] + "." + val[1] + "." + val[2] + ".91" 
 		self.evpn_dhcp_range_hi = val[0] + "." + val[1] + "." + val[2] + ".93" 
 		#self.evpn_dhcp_cfg = "dhcp_pool_enable,dhcp_pool_range=\"10.65.68.91-10.65.68.93\",dhcp_static_entry=\"00:00:00:00:00:11-10.65.68.93_00:00:00:00:00:22-10.65.68.92\""

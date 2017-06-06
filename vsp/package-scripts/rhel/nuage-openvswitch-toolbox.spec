@@ -41,6 +41,8 @@ install__ 0755 pylib/system/cpu.py
 install__ 0755 pylib/system/net.py
 install__ 0755 pylib/system/process.py
 install__ 0755 pylib/system/shell.py
+install__ 0755 pylib/system/json_config.py
+install__ 0755 pylib/system/ns.py
 
 install__ 0755 pylib/vca/vca_helper.py
 install__ 0755 pylib/vca/vca_vrf.py
@@ -53,6 +55,7 @@ install__ 0755 pylib/vca/vca_vpm.py
 install__ 0755 pylib/vca/vca_dyn.py
 install__ 0755 pylib/vca/vca_mirror.py
 install__ 0755 pylib/vca/vca_test.py
+install__ 0755 pylib/vca/vca_json_config.py
 
 install__ 0755 pylib/ovs/ovs_flows.py
 install__ 0755 pylib/ovs/ovs_dpdk_vendor_nicira.py
@@ -75,6 +78,7 @@ install__ 0755 pylib/regress/express.py
 install__ 0755 pylib/regress/quick.py
 
 install__ 0755 templates/vm.xml
+install__ 0755 templates/vm_ports_default_config.json
 
 install__ 0755 tools/dpdk/dpdk.py
 install__ 0755 tools/dpdk/reinstall-bin-cfg-static
@@ -93,6 +97,7 @@ install__ 0755 tools/vca/vca-vport-tap-vrf-tnl-create.py
 install__ 0755 tools/vca/vca-vm-start.sh
 install__ 0755 tools/vca/check-port-tp
 install__ 0755 tools/vca/iperf-run
+install__ 0755 tools/vca/nsg-vm-ports-config.py
 install__ 0755 tools/regress/run_regress.py
 install__ 0755 tools/system/reinstall-packages
 install__ 0755 tools/system/update-ovs-vswitchd
@@ -115,6 +120,8 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/pylib/system/net.py
 /usr/local/openvswitch/pylib/system/process.py
 /usr/local/openvswitch/pylib/system/shell.py
+/usr/local/openvswitch/pylib/system/json_config.py
+/usr/local/openvswitch/pylib/system/ns.py
 
 /usr/local/openvswitch/pylib/vca/vca_helper.py
 /usr/local/openvswitch/pylib/vca/vca_vrf.py
@@ -127,6 +134,7 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/pylib/vca/vca_dyn.py
 /usr/local/openvswitch/pylib/vca/vca_mirror.py
 /usr/local/openvswitch/pylib/vca/vca_test.py
+/usr/local/openvswitch/pylib/vca/vca_json_config.py
 
 /usr/local/openvswitch/pylib/ovs/ovs_flows.py
 /usr/local/openvswitch/pylib/ovs/ovs_dpdk_vendor_nicira.py
@@ -149,6 +157,7 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/pylib/regress/quick.py
 
 /usr/local/openvswitch/templates/vm.xml
+/usr/local/openvswitch/templates/vm_ports_default_config.json
 
 /usr/local/openvswitch/tools/dpdk/dpdk.py
 /usr/local/openvswitch/tools/dpdk/reinstall-bin-cfg-static
@@ -167,6 +176,7 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/tools/vca/vca-vm-start.sh
 /usr/local/openvswitch/tools/vca/check-port-tp
 /usr/local/openvswitch/tools/vca/iperf-run
+/usr/local/openvswitch/tools/vca/nsg-vm-ports-config.py
 /usr/local/openvswitch/tools/regress/run_regress.py
 /usr/local/openvswitch/tools/system/reinstall-packages
 /usr/local/openvswitch/tools/system/update-ovs-vswitchd

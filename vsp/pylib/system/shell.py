@@ -13,6 +13,10 @@ def execute(args):
 	child = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None)
 	return child.communicate()[0]
 
+def execute_cmdstr(cmdstr):
+	cmd = cmdstr.split(" ")
+	return execute(cmd)
+
 def execute_hdr(header, args):
 	print(header)
 	cmdstr = "# " + ' '.join(args)
