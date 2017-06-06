@@ -124,6 +124,26 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 	print "Number of VMs: " + str(n_vms)
 	print
 
+	ingress_rate = 4294967295
+	ingress_peak_rate = 4294967295
+	ingress_burst = 4294967295
+	ingress_bum_rate = 4294967295
+	ingress_bum_peak_rate = 4294967295
+	ingress_bum_burst = 4294967295
+	ingress_fip_rate = 0
+	ingress_fip_peak_rate = 0
+	ingress_fip_burst = 0
+	ingress_fip_rate = 4294967295
+	ingress_fip_peak_rate = 4294967295
+	ingress_fip_burst = 4294967295
+	egress_fip_rate = 0
+	egress_fip_peak_rate = 0
+	egress_fip_burst = 0
+	egress_fip_rate = 6000
+	egress_fip_peak_rate = 6000
+	egress_fip_burst = 100
+	egress_class = 3
+
 	ns_list = ns.namespaces(n_vms, 0)
 	ns_list.setup()
 
@@ -150,13 +170,13 @@ def do_configure(progname, ovs_path, br, config_file, uplink_iface, logfd):
 		vm.add_routes(vrf_id, evpn_id)
 		vm.add_dhcp()
 		vm.enable_mac_learning()
-		#vm.add_qos(ingress_rate, ingress_peak_rate, ingress_burst,
-		#	    ingress_bum_rate, ingress_bum_peak_rate,
-		#	    ingress_bum_burst,
-		#	    ingress_fip_rate, ingress_fip_peak_rate,
-		#	    ingress_fip_burst,
-		#	    egress_class,
-		#	    egress_fip_rate, egress_fip_peak_rate, egress_fip_burst)
+		vm.add_qos(ingress_rate, ingress_peak_rate, ingress_burst,
+			   ingress_bum_rate, ingress_bum_peak_rate,
+			   ingress_bum_burst,
+			   ingress_fip_rate, ingress_fip_peak_rate,
+			   ingress_fip_burst,
+			   egress_class,
+			   egress_fip_rate, egress_fip_peak_rate, egress_fip_burst)
 		time.sleep(1)
 		ns_list.get_ip(vm_name)
 		print
