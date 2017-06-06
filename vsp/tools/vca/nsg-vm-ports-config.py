@@ -29,7 +29,7 @@ import vca_json_config
 def usage():
 	print "usage: " + progname + " -c -u <uplink> -V <vm-type> [-C <json-config-file>]"
 	print "       " + progname + " -d [-C <json-config-file>]"
-	print "       " + progname + " -s"
+	print "       " + progname + " -s all|vport_name"
 	print ""
 	print "options:"
 	print "-u: uplink interface to be used"
@@ -37,7 +37,7 @@ def usage():
 	print "-C: configuration file (in json)"
 	print "-c: configure NSG vports"
 	print "-d: deconfigure NSG vports"
-	print "-s: status of NSG vports"
+	print "-s: status of NSG vport(s) - 'all' or CSV vm1,vm2"
 	sys.exit(1)
 
 def main(argc, argv):
@@ -48,7 +48,7 @@ def main(argc, argv):
 	ovs_helper.print_defaults(ovs_path, os_release, hostname, logfile)
 
 	try:
-		opts, args = getopt.getopt(argv, "hu:C:V:cds");
+		opts, args = getopt.getopt(argv, "hu:C:V:cds:");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -58,6 +58,7 @@ def main(argc, argv):
 	configure = False
 	deconfigure = False
 	status = False
+	status_arg = ""
 	rc = 0
 	for opt, arg in opts:
 		if opt == "-c":
@@ -66,6 +67,7 @@ def main(argc, argv):
 			deconfigure = True
 		elif opt == "-s":
 			status = True
+			status_arg = arg
 		elif opt == "-u":
 			uplink_iface = arg
 		elif opt == "-C":
@@ -83,7 +85,8 @@ def main(argc, argv):
 	elif (deconfigure == True):
 		rc = do_deconfigure(config_file, logfd)
 	elif (status == True):
-		rc = do_status(config_file, logfd)
+		rc = do_status(progname, ovs_path, br, config_file,
+			       status_arg, logfd)
 	sys.exit(rc)
 
 def read_configuration(config_file, logfd):
@@ -176,8 +179,9 @@ def do_deconfigure(config_file, logfd):
 
 	return 0
 
-def do_status(config_file, logfd):
+def do_status(progname, ovs_path, br, config_file, status_arg, logfd):
 	vrfs_cfg_obj, all_vrfs_cfg, n_vrfs, evpns_cfg_obj, all_evpns_cfg, n_evpns, vms_cfg_obj, all_vms_cfg, n_vms = read_configuration(config_file, logfd)
+	vm_type = "vm"
 
 	print
 	print "Parameters:"
@@ -187,8 +191,28 @@ def do_status(config_file, logfd):
 	print "Number of VMs: " + str(n_vms)
 	print
 
+	if (status_arg != ""):
+		vm_list = status_arg.split(",")
+	else:
+		vm_list = [ "all" ]
 	ns_list = ns.namespaces(n_vms, 0)
-	ns_list.show()
+	for this_vm_name in vm_list:
+		ns_list.show(this_vm_name)
+		found = False
+		for this_vm_cfg in all_vms_cfg:
+			valid, vm_name, vm_iface, vm_uuid, vm_ip, vm_mac, evpn_id, evpn_tnl_key, tnl_type, evpn_subnet, evpn_netmask, evpn_gw_ip, evpn_gw_mac, vrf_id, vrf_tnl_key = vms_cfg_obj.vm_attrs(this_vm_cfg)
+			if (valid == False) or (vm_name == ""):
+				continue
+			if (this_vm_name == vm_name):
+				found = True
+				break
+		if (found == False):
+			continue
+		vm = vca_vm.VM(ovs_path, br, vm_name, vm_uuid, vm_iface, vm_ip,
+			       evpn_subnet, evpn_netmask, evpn_gw_ip, vm_mac,
+			       None, vm_type, logfd)
+		vm.show()
+		vm.dump_flows()
 
 	return 0
 

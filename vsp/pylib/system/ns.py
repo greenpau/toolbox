@@ -69,7 +69,6 @@ class namespaces(object):
 			ovs_device = p + "-" + self.vport_ovs_suffix
 			ns_device = p + "-" + self.vport_ns_suffix
 			print "Setting up " + ovs_device + " and namespace " + ns_device
-			shell.execute_cmdstr("ip netns del " + p)
 			shell.execute_cmdstr("ip netns add " + p)
 			shell.execute_cmdstr("ip link add " + ns_device + " type veth peer name " + ovs_device)
 			shell.execute_cmdstr("ip link set " + ns_device + " netns " + p)
@@ -91,8 +90,10 @@ class namespaces(object):
 		self.destroy()
 		self.setup()
 
-	def show(self):
+	def show(self, vm_name):
 		for p in self.ports:
+			if (vm_name != "all") and (vm_name != p):
+				continue
 			print "List of network interfaces in namespace " + p + ":"
 			output = shell.execute_cmdstr("ip netns exec " + p + " ifconfig")
 			print output

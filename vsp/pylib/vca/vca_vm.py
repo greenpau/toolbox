@@ -201,8 +201,18 @@ class VM(object):
 		shell.run_cmd("Sending fake-VM undefine event", cmd, self.logfd)
 
 	def show(self):
-		cmd = [ self.appctl_path, "vm/port-show" ]
-		shell.execute_hdr("VM status", cmd)
+		if (self.uuid != None) and (self.uuid != ""):
+			cmd = [ self.appctl_path, "vm/port-show", self.uuid ]
+		else:
+			cmd = [ self.appctl_path, "vm/port-show" ]
+		shell.execute_hdr("VM " + self.name + " port-show", cmd)
+
+	def dump_flows(self):
+		if (self.uuid != None) and (self.uuid != ""):
+			cmd = [ self.appctl_path, "vm/dump-flows", self.uuid ]
+		else:
+			cmd = [ self.appctl_path, "vm/dump-flows" ]
+		shell.execute_hdr("VM " + self.name + " dump-flows", cmd)
 
 	def vm_port(self):
 		vm_port_no = 0
