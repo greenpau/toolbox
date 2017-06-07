@@ -115,3 +115,27 @@ class Tunnel(object):
 	def list(self):
 		return self.__get_ifaces()
 
+	def get_attrs(self, tnl_name):
+		cmd = [ self.appctl_path, "dpif/show" ]
+		appctl_out = shell.execute(cmd).splitlines()
+		attrs = []
+		for line in appctl_out:
+			if ((line.find("(vxlan:") < 0) and
+			    (line.find("(gre:") < 0) and
+			    (line.find("(mpls-gre:") < 0)):
+				continue
+			line_tok = line.split()
+			if (line_tok[0] != tnl_name):
+				continue
+			attr = { }
+			attr['name'] = line_tok[0]
+			local_ip_index = line.find("local_ip")
+			if (local_ip_index > 0):
+				local_ip = line[local_ip_index:].split("=")[1].replace(")", "")
+				attr['local_ip'] = local_ip
+			remote_ip_index = line.find("remote_ip")
+			if (remote_ip_index > 0):
+				remote_ip = line[remote_ip_index:].split("=")[1].replace(")", "")
+				attr['remote_ip'] = remote_ip
+			attrs.append(attr)
+		return attrs
