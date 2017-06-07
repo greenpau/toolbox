@@ -90,9 +90,14 @@ class EVPN(vca_vrf.VRF):
 			evpn_list.append(evpn_id)
 		return evpn_list
 
-	def show(self):
-		cmd = [ self.appctl_path, "evpn/show", self.br ]
-		shell.execute_hdr("EVPN configuration", cmd)
+	def show(self, evpn_id):
+		if (evpn_id == None) or (evpn_id == ""):
+			cmd = [ self.appctl_path, "evpn/show", self.br ]
+			header = "EVPN configuration:"
+		else:
+			cmd = [ self.appctl_path, "evpn/show", self.br, str(evpn_id) ]
+			header = "EVPN configuration for evpn_id " + str(evpn_id) + ":"
+		shell.execute_hdr(header, cmd)
 
 	def reset(self):
 		vrf_list = self.list_vrfs()
