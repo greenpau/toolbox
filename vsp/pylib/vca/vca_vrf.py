@@ -27,9 +27,14 @@ class VRF(object):
 			",local_ip=" + self.local_ip ]
 		shell.run_cmd("Creating VRF ID " + self.vrf_id, cmd, self.logfd)
 
-	def show(self):
-		cmd = [ self.appctl_path, "vrf/show", self.br ]
-		shell.execute_hdr("VRF configuration", cmd)
+	def show(self, vrf_id):
+		if (vrf_id == None) or (vrf_id == ""):
+			cmd = [ self.appctl_path, "vrf/show", self.br ]
+			header = "VRF configuration:"
+		else:
+			cmd = [ self.appctl_path, "vrf/show", self.br, str(vrf_id) ]
+			header = "VRF configuration for vrf_id " + str(vrf_id) + ":"
+		shell.execute_hdr(header, cmd)
 
 	def list_vrfs(self):
 		cmd = [ self.appctl_path, "vrf/show", self.br ]
@@ -39,7 +44,7 @@ class VRF(object):
 			if (line.find("vrf_id") < 0):
 				continue
 			line_tok = line.split()
-			vrf_id = line_tok[1]
+			vrf_id = line_tok[1].replace("0x", "")
 			vrf_list.append(vrf_id)
 		return vrf_list
 
