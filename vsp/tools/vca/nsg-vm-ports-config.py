@@ -15,14 +15,13 @@ import ns
 # OVS classes
 sys.path.append("/usr/local/openvswitch/pylib/ovs")
 import ovs_helper
-import ovs_vport_tap
 import ovs_vport_tnl
-import ovs_flows
 
 # VCA classes
 sys.path.append("/usr/local/openvswitch/pylib/vca")
 import vca_helper
 import vca_evpn
+import vca_vrf
 import vca_vm
 import vca_json_config
 
@@ -30,6 +29,7 @@ def usage():
 	print "usage: " + progname + " -c -u <uplink> -V <vm-type> [-C <json-config-file>]"
 	print "       " + progname + " -d [-C <json-config-file>]"
 	print "       " + progname + " -s all|vport_name"
+	print "       " + progname + " -S"
 	print ""
 	print "options:"
 	print "-u: uplink interface to be used"
@@ -38,6 +38,7 @@ def usage():
 	print "-c: configure NSG vports"
 	print "-d: deconfigure NSG vports"
 	print "-s: status of NSG vport(s) - 'all' or CSV vm1,vm2"
+	print "-S: status of virtual switch"
 	sys.exit(1)
 
 def main(argc, argv):
@@ -48,7 +49,7 @@ def main(argc, argv):
 	ovs_helper.print_defaults(ovs_path, os_release, hostname, logfile)
 
 	try:
-		opts, args = getopt.getopt(argv, "hu:C:V:cds:");
+		opts, args = getopt.getopt(argv, "hu:C:V:cds:S");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -59,6 +60,7 @@ def main(argc, argv):
 	deconfigure = False
 	status = False
 	status_arg = ""
+	vstatus = False
 	rc = 0
 	for opt, arg in opts:
 		if opt == "-c":
@@ -68,6 +70,8 @@ def main(argc, argv):
 		elif opt == "-s":
 			status = True
 			status_arg = arg
+		elif opt == "-S":
+			vstatus = True
 		elif opt == "-u":
 			uplink_iface = arg
 		elif opt == "-C":
@@ -75,7 +79,7 @@ def main(argc, argv):
 		elif opt == "-h":
 			usage()
 
-	if (configure == False and deconfigure == False and status == False):
+	if (configure == False and deconfigure == False and status == False and vstatus == False):
 		print progname + ": invalid usage"
 		usage
 
@@ -87,6 +91,9 @@ def main(argc, argv):
 	elif (status == True):
 		rc = do_status(progname, ovs_path, br, config_file,
 			       status_arg, logfd)
+	elif (vstatus == True):
+		rc = do_vstatus(progname, ovs_path, br, config_file,
+				logfd)
 	sys.exit(rc)
 
 def read_configuration(config_file, logfd):
@@ -238,6 +245,47 @@ def do_status(progname, ovs_path, br, config_file, status_arg, logfd):
 		vm.dump_flows()
 
 	return 0
+
+def do_vstatus(progname, ovs_path, br, config_file, logfd):
+	vrfs_cfg_obj, all_vrfs_cfg, n_vrfs, evpns_cfg_obj, all_evpns_cfg, n_evpns, vms_cfg_obj, all_vms_cfg, n_vms = read_configuration(config_file, logfd)
+
+	print
+	print "Parameters:"
+	print "Config File: " + config_file
+	print "Number of VRFs: " + str(n_vrfs)
+	print "Number of EVPNs: " + str(n_evpns)
+	print "Number of VMs: " + str(n_vms)
+
+	vrf = vca_vrf.VRF(ovs_path, br, 0, None, None, None, logfd)
+	all_vrfs = vrf.list_vrfs()
+	for v in all_vrfs:
+		vrf.show(v)
+
+	evpn = vca_evpn.EVPN(ovs_path, br, logfd, 0, None, None, 0, None,
+			     None, None, None, None, None, None)
+	all_evpns = evpn.list_evpns()
+	for e in all_evpns:
+		evpn.show(e)
+
+	tnl = ovs_vport_tnl.Tunnel(ovs_path, br, None, None, "0.0.0.0", None,
+				   logfd, False)
+	all_tunnels = tnl.list()
+	print "List of tunnels:"
+	print "Tunnel\t\tLocal IP\tRemote IP"
+	for t in all_tunnels:
+		attrs = tnl.get_attrs(t)
+		for a in attrs:
+			tnl_name = "n/a"
+			local_ip = "0.0.0.0"
+			remote_ip = "0.0.0.0"
+			for (k,v) in a.items():
+				if (k == 'name'):
+					tnl_name = v
+				if (k == 'local_ip'):
+					local_ip = v
+				if (k == 'remote_ip'):
+					remote_ip = v
+			print tnl_name + "\t" + local_ip + "\t" + remote_ip
 
 if __name__ == "__main__":
 	argc = len(sys.argv)
