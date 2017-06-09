@@ -2,7 +2,7 @@
 
 usage() {
 	echo "usage: ${progname} <profile_type> <port> <ipaddr> [bond_type]"
-	echo "usage: ${progname} <profile_type> <port>[,<port>] <ipaddr>[,<ipaddr>] <single|dual> [bond_type]"
+	echo "usage: ${progname} <profile_type> <port>[,<port>] <ipaddr>[,<ipaddr>] <single|dual> <qat|aesni> [bond_type]"
 	exit 1
 }
 progname=`basename $0`
@@ -33,7 +33,18 @@ else
 	echo "${progname}: uplink_type can be \'single\' or \'dual\'"
 	usage
 fi
-bond_type=$5
+encmode=$5
+if [ -z "${encmode}" ]; then
+	echo "${progname}: need encryption mode 'qat' or 'aesni'"
+	usage
+fi
+encopt=
+if [ "${encmode}" = "aesni" ]; then
+	encopt="--hw-crypto off"
+else
+	encopt="--hw-crypto on"
+fi
+bond_type=$6
 bond_arg=
 if [ -n "${bond_type}" ]; then
 	bond_arg="--bond-mode ${bond_type}"
@@ -79,9 +90,9 @@ echo ""
 
 echo "Starting new datapath ..."
 if [ -n "${profile}" ]; then
-	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --ports ${n_ports}"
+	vrs-dpdkctl sys/config "--dpdk --profile ${profile} --ports ${n_ports} ${encopt}"
 else
-	vrs-dpdkctl sys/config "--dpdk --pages 1024 --ports ${n_ports} --start-datapath"
+	vrs-dpdkctl sys/config "--dpdk --pages 1024 --ports ${n_ports} --start-datapath ${encopt}"
 fi
 sleep 3
 port1=`echo ${port_list} | awk -F, '{print $1}'`
