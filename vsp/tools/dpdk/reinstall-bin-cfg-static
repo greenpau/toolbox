@@ -96,21 +96,36 @@ else
 fi
 sleep 3
 port1=`echo ${port_list} | awk -F, '{print $1}'`
+port1_iface=`echo ${port1} | awk -F. '{print $1}'`
+port1_vid=`echo ${port1} | awk -F. '{print $2}'`
+if [ -n "${port1_vid}" ]; then
+	dpdk_bond0_iface=dpdk_bond0.${port1_vid}
+else
+	dpdk_bond0_iface=dpdk_bond0
+fi
 echo "modifying /etc/default/openvswitch for ${port1}"
-#sed -i -e "s/#UPLINK1_PORT_MASTER_SLAVE=/UPLINK1_PORT_MASTER_SLAVE=${port1}:dpdk_bond0/g" /etc/default/openvswitch
+#sed -i -e "s/#UPLINK1_PORT_MASTER_SLAVE=/UPLINK1_PORT_MASTER_SLAVE=${port1}:${dpdk_bond0_iface}/g" /etc/default/openvswitch
 sleep 1
-vrs-dpdkctl port/add "--dpdk --device ${port1} ${bond_arg}"
+vrs-dpdkctl port/add "--dpdk --device ${port1_iface} ${bond_arg}"
 echo ""
 if [ ${n_ports} -eq 2 ]; then
 	sleep 3
 	port2=`echo ${port_list} | awk -F, '{print $2}'`
+	port2_iface=`echo ${port2} | awk -F. '{print $1}'`
+	port2_vid=`echo ${port2} | awk -F. '{print $2}'`
 	if [ -z "${port2}" ]; then
 		echo "${progname}: no value specified for second port"
+	else
+		if [ -n "${port2_vid}" ]; then
+			dpdk_bond1_iface=dpdk_bond1.${port2_vid}
+		else
+			dpdk_bond1_iface=dpdk_bond1
+		fi
+		echo "modifying /etc/default/openvswitch for ${port2}"
+		#sed -i -e "s/#UPLINK2_PORT_MASTER_SLAVE=/UPLINK2_PORT_MASTER_SLAVE=${port2}:${dpdk_bond1_iface}/g" /etc/default/openvswitch
+		sleep 1
+		vrs-dpdkctl port/add "--dpdk --device ${port2_iface} ${bond_arg}"
 	fi
-	echo "modifying /etc/default/openvswitch for ${port2}"
-	#sed -i -e "s/#UPLINK2_PORT_MASTER_SLAVE=/UPLINK2_PORT_MASTER_SLAVE=${port2}:dpdk_bond1/g" /etc/default/openvswitch
-	sleep 1
-	vrs-dpdkctl port/add "--dpdk --device ${port2} ${bond_arg}"
 fi
 
 echo "Stopping Network manager ... "
@@ -119,17 +134,17 @@ service NetworkManager stop
 echo ""
 
 ipaddr1=`echo ${ipaddr_list} | awk -F, '{print $1}'`
-echo "Reprogramming ${ipaddr1} to dpdk_bond0 ... "
+echo "Reprogramming ${ipaddr1} to ${dpdk_bond0_iface} ... "
 sleep 1
-ifconfig dpdk_bond0 ${ipaddr1}/24
+ifconfig ${dpdk_bond0_iface} ${ipaddr1}/24
 echo ""
 
 ipaddr2=`echo ${ipaddr_list} | awk -F, '{print $2}'`
 if [ -z "${ipaddr2}" ]; then
 	echo "${progname}: ipaddr2 not specified"
 else
-	echo "Reprogramming ${ipaddr2} to dpdk_bond1 ... "
+	echo "Reprogramming ${ipaddr2} to ${dpdk_bond1_iface} ... "
 	sleep 1
-	ifconfig dpdk_bond1 ${ipaddr2}/24
+	ifconfig ${dpdk_bond1_iface} ${ipaddr2}/24
 	echo ""
 fi
