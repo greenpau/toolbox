@@ -100,13 +100,14 @@ port1_iface=`echo ${port1} | awk -F. '{print $1}'`
 port1_vid=`echo ${port1} | awk -F. '{print $2}'`
 if [ -n "${port1_vid}" ]; then
 	dpdk_bond0_iface=dpdk_bond0.${port1_vid}
+	vlan_arg="--vlan ${port1_iface}.${port1_vid}"
 else
 	dpdk_bond0_iface=dpdk_bond0
 fi
 echo "modifying /etc/default/openvswitch for ${port1}"
 #sed -i -e "s/#UPLINK1_PORT_MASTER_SLAVE=/UPLINK1_PORT_MASTER_SLAVE=${port1}:${dpdk_bond0_iface}/g" /etc/default/openvswitch
 sleep 1
-vrs-dpdkctl port/add "--dpdk --device ${port1_iface} ${bond_arg}"
+vrs-dpdkctl port/add "--dpdk --device ${port1_iface} ${vlan_arg} ${bond_arg}"
 echo ""
 if [ ${n_ports} -eq 2 ]; then
 	sleep 3
@@ -118,13 +119,14 @@ if [ ${n_ports} -eq 2 ]; then
 	else
 		if [ -n "${port2_vid}" ]; then
 			dpdk_bond1_iface=dpdk_bond1.${port2_vid}
+			vlan_arg="--vlan ${port2_iface}.${port2_vid}"
 		else
 			dpdk_bond1_iface=dpdk_bond1
 		fi
 		echo "modifying /etc/default/openvswitch for ${port2}"
 		#sed -i -e "s/#UPLINK2_PORT_MASTER_SLAVE=/UPLINK2_PORT_MASTER_SLAVE=${port2}:${dpdk_bond1_iface}/g" /etc/default/openvswitch
 		sleep 1
-		vrs-dpdkctl port/add "--dpdk --device ${port2_iface} ${bond_arg}"
+		vrs-dpdkctl port/add "--dpdk --device ${port2_iface} ${vlan_arg} ${bond_arg}"
 	fi
 fi
 
