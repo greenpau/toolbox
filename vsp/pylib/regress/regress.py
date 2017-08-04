@@ -54,7 +54,7 @@ class Regress(object):
 		return topoStr
 
 	def __get_platformStr(self):
-		if (self.platform == "nsg"):
+		if (self.platform == "nsg") or (self.platform == "nsgDpdk"):
 			platformStr = " -physTopology " + self.platform
 		else:
 			#platformStr = " -physTopology stdSixDut -platform " + self.platform
@@ -121,7 +121,7 @@ class Regress(object):
 		return topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gash_str
 
 	def __sync_usr_global(self):
-		if (self.platform != "nsg") or (self.vrs_local_path == "") or (self.pkg_path == ""):
+		if ((self.platform != "nsg") and (self.platform != "nsgDpdk")) or (self.vrs_local_path == "") or (self.pkg_path == ""):
 			return
 		pkg_path_ncpe = self.pkg_path + '/ncpe'
 		cmdstr = 'mkdir -p ' + pkg_path_ncpe

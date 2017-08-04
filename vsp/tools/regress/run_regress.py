@@ -38,7 +38,7 @@ def usage():
 	print "    -D <path>: relative path of Director global image"
 	print "    -l <path>: local path of VRS private image"
 	print "    -C: cnaSim will be set to true (only for quick)"
-	print "    -P <phystopo>: dctorOvs, nsg"
+	print "    -P <phystopo>: dctorOvs, nsg, nsgDpdk"
 	print "    -S <subtopo>: default, dcExpress, dctorOvs, dctorOvsVxlan, rh7Vxlan, ubuntu1404, ubuntu1404Vxlan"
 	print "    -A <addl-params>: additional non-std regression params if any"
 	sys.exit(1)
@@ -117,14 +117,14 @@ def main(argc, argv):
 		usage
 	if (phystopo == ""):
 		phystopo = "dctorOvs"
-	if (phystopo == "nsg"):
+	if (phystopo == "nsg") or (phystopo == "nsgDpdk"):
 		platform = phystopo
 		is_iso = True
 	else :
 		platform = "dctor"
 	if (type == "express") :
 		if (subtopo == ""):
-			if (phystopo == "nsg"):
+			if (phystopo == "nsg") or (phystopo == "nsgDpdk"):
 				subtopo = None
 			else:
 				subtopo = "dcExpress"
