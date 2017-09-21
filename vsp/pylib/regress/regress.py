@@ -24,8 +24,10 @@ class Regress(object):
 		self.vrs_image_path = vrs_image_path
 		self.vrs_local_path = vrs_local_path
 		self.ncpe_files = [ "ncpe_centos7.qcow2",
-				    "ncpeimg_" + self.rel + ".0-priv.md5",
-				    "ncpeimg_" + self.rel + ".0-priv.tar",
+				    "ncpeimg_" + self.rel + ".0priv.md5",
+				    "ncpeimg_" + self.rel + ".0priv.tar",
+				    "ncpeimg_" + "USE..md5",
+				    "ncpeimg_" + "USE..tar",
 		]
 		if (vsc_image_path == ""):
 			self.vsc_image_path = " -useimages dctor/" + rel + "/current"
@@ -127,10 +129,21 @@ class Regress(object):
 		cmdstr = 'mkdir -p ' + pkg_path_ncpe
 		cmd = cmdstr.split()
 		shell.execute_hdr("Creating directory " + pkg_path_ncpe, cmd)
+		pkg_path_ncpe_i = self.pkg_path + '/ncpe-i'
+		cmdstr = 'mkdir -p ' + pkg_path_ncpe_i
+		cmd = cmdstr.split()
+		shell.execute_hdr("Creating directory " + pkg_path_ncpe_i, cmd)
 		for file in self.ncpe_files:
-			cmdstr = 'scp ' + self.vrs_local_path + '/' + file + ' ' + self.usr_global_machine + ':' + pkg_path_ncpe
+		 	src_path = self.vrs_local_path + '/' + file
+			if os.path.exists(src_path) == False:
+				continue
+			if (file.find("USE") != -1):
+		 		dst_path = pkg_path_ncpe_i
+			else:
+				dst_path = pkg_path_ncpe
+			cmdstr = 'scp ' + src_path + ' ' + self.usr_global_machine + ':' + dst_path
 			cmd = cmdstr.split()
-			shell.execute_hdr("Sync " + self.vrs_local_path + " to " + pkg_path_ncpe, cmd)
+			shell.execute_hdr("Sync " + src_path + " to " + dst_path, cmd)
 
 	def exec__(self, cmdstr):
 		self.__sync_usr_global()
