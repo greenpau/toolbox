@@ -137,6 +137,16 @@ class Regress(object):
 		 	src_path = self.vrs_local_path + '/' + file
 			if os.path.exists(src_path) == False:
 				continue
+			if (file.find("qcow2") != -1):
+		 		dst_path = pkg_path_ncpe
+				cmdstr = 'scp ' + src_path + ' ' + self.usr_global_machine + ':' + dst_path
+				cmd = cmdstr.split()
+				shell.execute_hdr("Sync " + src_path + " to " + dst_path, cmd)
+		 		dst_path = pkg_path_ncpe_i
+				cmdstr = 'scp ' + src_path + ' ' + self.usr_global_machine + ':' + dst_path
+				cmd = cmdstr.split()
+				shell.execute_hdr("Sync " + src_path + " to " + dst_path, cmd)
+				continue
 			if (file.find("USE") != -1):
 		 		dst_path = pkg_path_ncpe_i
 			else:
