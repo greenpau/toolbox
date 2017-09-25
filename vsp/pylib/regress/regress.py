@@ -69,7 +69,8 @@ class Regress(object):
 		elif (self.is_iso == True):
 			pkgStr = self.vsc_image_path + self.vsd_image_path + " -vrs " + self.pkg_path + " -checkKernel false"
 		else :
-			pkgStr = self.vsc_image_path + self.vsd_image_path + " -altpackages ovs=" + self.pkg_path
+			#pkgStr = self.vsc_image_path + self.vsd_image_path + " -altpackages ovs=" + self.pkg_path
+			pkgStr = self.vsc_image_path + self.vsd_image_path + " -vrs " + self.pkg_path
 		return pkgStr
 
 	def __get_eofStr(self):
@@ -123,8 +124,31 @@ class Regress(object):
 		return topoStr, platformStr, pkgStr, eofStr, suiteStr, testStr, repeatStr, custom_gash_str
 
 	def __sync_usr_global(self):
-		if ((self.platform != "nsg") and (self.platform != "nsgDpdk")) or (self.vrs_local_path == "") or (self.pkg_path == ""):
+		if (self.vrs_local_path == "") or (self.pkg_path == ""):
 			return
+		elif ((self.platform != "nsg") and (self.platform != "nsgDpdk")):
+			if self.sub_topo == "rh7Vxlan":
+				self.__sync_usr_global_el7()
+		else:
+			self.__sync_usr_global_nsg()
+		return
+
+	def __sync_usr_global_el7(self):
+		pkg_path_el7 = self.pkg_path + "/el7"
+		cmdstr = 'mkdir -p ' + pkg_path_el7
+		cmd = cmdstr.split()
+		shell.execute_hdr("Creating directory " + pkg_path_el7, cmd)
+		for path,dirs,files in os.walk(self.vrs_local_path):
+			for f in files:
+				src_path = os.path.join(path,f)
+				if os.path.exists(src_path) == False:
+					continue
+		 		dst_path = pkg_path_el7
+				cmdstr = 'scp ' + src_path + ' ' + self.usr_global_machine + ':' + dst_path
+				cmd = cmdstr.split()
+				shell.execute_hdr("Sync " + src_path + " to " + dst_path, cmd)
+
+	def __sync_usr_global_nsg(self):
 		pkg_path_ncpe = self.pkg_path + '/ncpe'
 		cmdstr = 'mkdir -p ' + pkg_path_ncpe
 		cmd = cmdstr.split()
