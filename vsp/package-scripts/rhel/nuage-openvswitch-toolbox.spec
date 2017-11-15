@@ -10,6 +10,7 @@ Version: %{version}
 Release: %{release}
 Vendor: Nuage Networks
 Requires: bash
+AutoReqProv: no
 
 License: GPL
 Source: %{pkg_name}.tgz
