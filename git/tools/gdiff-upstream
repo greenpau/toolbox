@@ -1,0 +1,78 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <git-rev> <commit-logs-diff-dir-from-commit-logs-vca>"
+	exit 1
+}
+
+#rev=ba88d4
+#commit_logs_diff_dir=20140907
+progname=`basename $0`
+rev=$1
+diff_dir_arg=$2
+diff_dir_year=`dirname $diff_dir_arg`
+commit_logs_diff_dir=`basename $diff_dir_arg`
+if [ -z "${commit_logs_diff_dir}" ]; then
+	usage
+fi
+if [ -z "${SANDBOX}" ]; then
+	echo "${progname}: must be executed from inside a sandbox"
+	usage
+fi
+rootdir=~/commit-logs/vca/${diff_dir_year}/${commit_logs_diff_dir}
+diff_file=${rootdir}/${commit_logs_diff_dir}.ovs-vca.diff
+diff_basedir=${rootdir}/${rev}
+cd ${linux_sbhead}/${SANDBOX}/VCA/ovs
+mkdir -p ${rootdir}
+git diff ${rev} > ${diff_file}
+echo "Diff from ${rev} at ${diff_file}"
+#flist="`grep "^diff --git" ${diff_file} | sed 's/diff --git a\///g' | awk '{print $1}' | grep -v vrs | grep -v datapath`"
+flist="`grep "^diff --git" ${diff_file} | sed 's/diff --git a\///g' | awk '{print $1}' | grep -v vrs`"
+rm -rf ${diff_basedir}
+mkdir -p ${diff_basedir}
+
+printf "Creating diff for all upstream files ... "
+for f in ${flist}; do
+	if [ ! -f ${f} ]; then
+		continue
+	fi
+	outfile=${diff_basedir}/${f}.diff
+	outdir=`dirname ${outfile}`
+	mkdir -p ${outdir}
+	#echo "Creating diff for ${f} from ${rev}"
+	git diff ${rev} $f > ${outfile} 2> /dev/null
+done
+echo "done"
+echo "Diff output directory: ${diff_basedir}"
+
+printf "Obtaining diff statistics ... "
+diff_stats_file=${rootdir}/${commit_logs_diff_dir}.ovs-vca-diff-wc-l
+cd ${rootdir}
+echo "Diff stats summary:" > ${diff_stats_file}
+find ${rev} -type f | xargs wc -l | sort -n >> ${diff_stats_file}
+
+i=0
+while [ $i -lt 80 ]; do
+	printf "-" >> ${diff_stats_file}
+	i=`expr $i + 1`
+done
+echo >> ${diff_stats_file}
+echo "Diffs from each sub-directory" >> ${diff_stats_file}
+echo >> ${diff_stats_file}
+dirlist="lib ofproto include vswitchd utilities debian rhel xenserver python build-aux tests ovsdb datapath"
+for dir in ${dirlist}; do
+	echo "Diff stats for ${rootdir}/${rev}/${dir}:" >> ${diff_stats_file}
+	find ${rev} -type f | grep ${rev}/${dir}/ | xargs wc -l | sort -n >> ${diff_stats_file}
+	echo >> ${diff_stats_file}
+done
+
+echo "Diff stats for ${rootdir}/${rev}/* files:" >> ${diff_stats_file}
+exec_str="find ${rev} -type f"
+for dir in ${dirlist}; do
+	exec_str="${exec_str} | grep -v ${rev}/${dir}/"
+done
+exec_str="${exec_str} | xargs wc -l | sort -n"
+eval ${exec_str} >> ${diff_stats_file}
+echo "done"
+
+echo "Statistics: ${diff_stats_file}"

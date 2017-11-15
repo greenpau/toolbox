@@ -40,6 +40,7 @@ install__ 0755 gmv
 install__ 0755 gpull
 install__ 0755 gshow
 install__ 0755 gdiff
+install__ 0755 gdiff-upstream
 install__ 0755 glsbr
 install__ 0755 glspush
 install__ 0755 gco
@@ -72,6 +73,7 @@ install__ 0755 libgit.sh
 /usr/local/git-tools/gpull
 /usr/local/git-tools/gshow
 /usr/local/git-tools/gdiff
+/usr/local/git-tools/gdiff-upstream
 /usr/local/git-tools/glsbr
 /usr/local/git-tools/glspush
 /usr/local/git-tools/gco
