@@ -1,0 +1,24 @@
+#!/usr/bin/expect
+
+set nsg [lindex $argv 0]
+set testbed [lindex $argv 1]
+if { $nsg == "" || $testbed == ""} {
+	puts "usage: nsg-setup <ipaddr> <testbed>"
+	exit 1
+}
+spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$nsg
+expect "yes/no" { 
+	send "yes\r"
+	expect "*?assword" { send "UFXCr4733F\r" }
+} "*?assword" { send "UFXCr4733F\r" }
+expect "*?# " { send "mkdir -p .ssh; chmod 700 .ssh; exit\r" }
+expect "*?$ "
+
+spawn scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/$testbed/.ssh/id_rsa.pub root@$nsg:/root/.ssh/authorized_keys
+expect "*?assword:" {
+	send -- "UFXCr4733F\r"
+	expect "100%"
+}
+spawn scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /var/tmp/reinstall.sh root@$nsg:/var/tmp/
+expect "100%"
+sleep 1

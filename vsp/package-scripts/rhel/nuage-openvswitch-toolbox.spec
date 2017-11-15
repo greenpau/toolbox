@@ -35,6 +35,11 @@ rm -rf $RPM_BUILD_ROOT $basedir
 mkdir -p $RPM_BUILD_ROOT $basedir
 
 cd %{pkg_name}/vsp
+install__ 0755 build/nsgisob
+install__ 0755 build/ovs-build
+install__ 0755 build/vcab
+install__ 0755 build/vcai
+
 install__ 0755 pylib/system/logger.py 
 install__ 0755 pylib/system/cd.py
 install__ 0755 pylib/system/cpu.py
@@ -103,6 +108,7 @@ install__ 0755 tools/system/reinstall-packages
 install__ 0755 tools/system/update-ovs-vswitchd
 install__ 0755 tools/system/scattach
 install__ 0755 tools/system/nsg-iso-upgrade
+install__ 0755 tools/system/nsg-setup
 install__ 0755 tools/system/disable-sshd-timeouts
 
 install__ 0755 third-party/bin/iperf
@@ -114,6 +120,11 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 
 %files
 %defattr(-,root,root)
+/usr/local/openvswitch/build/nsgisob
+/usr/local/openvswitch/build/ovs-build
+/usr/local/openvswitch/build/vcab
+/usr/local/openvswitch/build/vcai
+
 /usr/local/openvswitch/pylib/system/logger.py
 /usr/local/openvswitch/pylib/system/cd.py
 /usr/local/openvswitch/pylib/system/cpu.py
@@ -182,6 +193,7 @@ install__ 0755 third-party/archives/valgrind-libs-3.10.0-229.48.1.el7.x86_64.tar
 /usr/local/openvswitch/tools/system/update-ovs-vswitchd
 /usr/local/openvswitch/tools/system/scattach
 /usr/local/openvswitch/tools/system/nsg-iso-upgrade
+/usr/local/openvswitch/tools/system/nsg-setup
 /usr/local/openvswitch/tools/system/disable-sshd-timeouts
 
 /usr/local/openvswitch/third-party/bin/iperf

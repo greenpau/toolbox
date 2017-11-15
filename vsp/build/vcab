@@ -1,0 +1,441 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} [-nc|-C|-p|-i] no-kern | native | 2.6.32-431.3.1.el6.x86_64 | 7.X"
+	echo "options:"
+	echo "  -nc: no configure flag, configure will NOT be ran before build"
+	echo "  -C: do a clean build"
+	echo "  -p: create VCA packages"
+	echo "  -i: create an NSG iso image"
+	echo "  -h: this help"
+	exit
+}
+
+progname=`basename $0`
+if [ $# -lt 1 ]; then
+	usage
+fi
+configure=yes
+clean=no
+package=no
+iso=no
+opts_processed=0
+nsg=no
+
+#sync-host-date
+
+while [ ${opts_processed} -eq 0 ]; do
+	case "$1" in
+	"-nc")	configure=no
+		shift
+		;;
+	"-C")	clean=yes
+		shift
+		;;
+	"-p")	package=yes
+		configure=yes
+		shift
+		;;
+	"-nsg")	nsg=yes
+		shift
+		;;
+	"-h")	usage
+		;;
+	"-i")	iso=yes
+		shift
+		;;
+	*)	opts_processed=1
+		;;
+	esac
+done
+gpwsb | grep "not inside a sandbox" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+	echo "${progname}: not inside a sandbox"
+	exit 1
+fi
+kern_version=$1
+os_version=${kern_version}
+machine=`uname -m`
+rpmbuild_path=/root/rpmbuild
+rpmbuild_src_path=${rpmbuild_path}/SOURCES
+root_rpm_pkg_path=/root/rpmbuild/RPMS/${machine}
+sbpath=${linux_sbhead}/${SANDBOX}
+vcapath=${sbpath}/VCA
+hostname=`uname -n`
+distro=`lsb_release -a 2> /dev/null | grep Distributor | awk -F: '{print $2}'`
+redhat_release=/etc/redhat-release
+if [ -h ${redhat_release} ]; then
+	# non Ubuntu, non-legacy centos
+	os_release=`awk '{print $4}' ${redhat_release} | awk -F. '{printf $1"."$2"\n"}'`
+else
+	os_release=`lsb_release -a 2> /dev/null | grep Release | awk -F: '{print $2}' | awk '{print $1}'`
+fi
+os_release_tag=${distro}-${os_release}
+builder=`whoami`
+tag=${os_release_tag}-${builder}
+branch="$(git rev-parse --abbrev-ref HEAD)"
+release=99
+priv_tag=".0"
+nuage_prefix="nuage-openvswitch"
+nuage_rel_regex_master="[0-9]*.[0-9]*"
+#nuage_rel_regex_branch="[a-z]*"
+#nuage_rel_regex_branch="[0-9].[0-9].[0-9]"
+nuage_rel_regex_branch="${branch}${priv_tag}"
+master_branch="master"
+nuage_tag_regex="*"
+success=0
+
+#KERNEL_VERSION_7_1="3.10.0-229.20.1.el7.x86_64"
+#KERNEL_VERSION_7_1="3.10.0-229.44.1.el7.x86_64"
+KERNEL_VERSION_7_1="3.10.0-229.48.1.el7.x86_64"
+KERNEL_VERSION_7_3="3.10.0-514.el7.x86_64"
+KERNEL_VERSION_7_4="3.10.0-693.5.2.el7.x86_64"
+
+if [ -d ${vcapath}/ovs ]; then
+	cd ${vcapath}/ovs
+else
+	cd ${vcapath}
+fi
+logdir=~/Downloads/logs
+logfile=${logdir}/${progname}.log.${hostname}
+
+mkdir -p ${logdir}
+if [ "${kern_version}" = "native" ]; then
+	kern_version=`uname -r`
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+elif [ "${kern_version}" = "no-kern" ]; then
+	kern_option=
+elif [ "${kern_version}" = "7.1" ]; then
+	kern_version=${KERNEL_VERSION_7_1}
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+elif [ "${kern_version}" = "7.2" ]; then
+	kern_version=${KERNEL_VERSION_7_2}
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+elif [ "${kern_version}" = "7.3" ]; then
+	kern_version=${KERNEL_VERSION_7_3}
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+elif [ "${kern_version}" = "7.4" ]; then
+	kern_version=${KERNEL_VERSION_7_4}
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+elif [ -n "${kern_version}" ]; then
+	kern_option="--with-linux=/lib/modules/${kern_version}/build"
+fi
+KERNEL_VERSION=${kern_version}
+is_ubuntu=`uname -v | grep -i ubuntu`
+echo ${branch} | grep -w "master" > /dev/null 2>&1
+non_master_branch=$?
+stats_pkg_name=
+with_nsg=
+mounted=
+
+echo "Starting VCA build - `date`"
+echo "Branch: ${branch}"
+if [ ${non_master_branch} -eq 1 ]; then
+	nuage_rel_regex=${nuage_rel_regex_branch}
+	echo "Master branch: no"
+else
+	nuage_rel_regex=${nuage_rel_regex_master}
+	echo "Master branch: yes"
+fi
+if [ -n "${is_ubuntu}" ]; then
+	echo "Distribution: Ubuntu"
+	home_deb_pkg_path=${HOME}/debbuild/dpkgs/${machine}/${os_release}
+else
+	echo "Distribution: Centos"
+	toolbox_rpm=nuage-openvswitch-toolbox-master-0.1.x86_64.rpm
+	toolbox_rpm_path=~/rpmbuild/RPMS/x86_64/6.5/${toolbox_rpm}
+	debuginfo_spec=${nuage_prefix}-debuginfo
+	debuginfo_rpm=${debuginfo_spec}-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+	if [ "${os_release}" = "6.5" -o "${os_release}" = "6.6" -o "${os_release}" = "6.7" ]; then
+		#kmod_spec=${nuage_prefix}-kmod-rhel6
+		kmod_rpm=
+		main_spec=${nuage_prefix}
+		main_rpm=${main_spec}-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+		dist_param="dist .el6"
+	else
+		#stats_pkg_name="nuage-openvswitch-stats-forwarder"
+		if [ "${nsg}" = "yes" ]; then
+			dpi_pkg_name="nuage-dpi"
+			dpi_rpm_name=${dpi_pkg_name}-${branch}${priv_tag}
+			dpi_rpm=${dpi_rpm_name}-${release}.${machine}
+			dpi_am=vrs/sbin/nuage-dpi/automake.mk
+			probed_pkg_name="nuage-probed"
+			probed_rpm_name=${probed_pkg_name}-${branch}${priv_tag}
+			probed_rpm=${probed_rpm_name}-${release}.${machine}
+			probed_am=vrs/sbin/nuage-probed/automake.mk
+			nsg_ams="${dpi_am} ${probed_am}"
+		fi
+		kmod_spec=${nuage_prefix}-kmod-rhel7
+		if [ ${nsg} = "yes" ]; then
+			with_nsg="--with nsg"
+		fi
+		main_spec=${nuage_prefix}-rhel7
+		main_rpm=`echo ${main_spec} | sed 's/-rhel7//g'`-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+		kmod_rpm=kmod-nuage-openvswitch-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+		dist_param="dist .el7"
+		#kernel_for_kmod=$(rpm -qa | grep kernel-devel | head -1 | sed -e 's/kernel-devel-//')
+		export RTE_KERNELDIR=/lib/modules/${KERNEL_VERSION}/build
+	fi
+	stats_pkg_name="nuage-stats-forwarder"
+	stats_rpm_name=${stats_pkg_name}-${branch}${priv_tag}
+	stats_rpm=${stats_rpm_name}-${release}.${machine}
+	stats_spec=vrs/rhel/${stats_pkg_name}.spec
+	dkms_spec=${nuage_prefix}-dkms
+	dkms_rpm=${dkms_spec}-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+	agent_rpm=nuage-metadata-agent-${nuage_rel_regex}-${nuage_tag_regex}.${machine}
+	rpm_list="${stats_rpm} ${dpi_rpm} ${probed_rpm} ${debuginfo_rpm} ${dkms_rpm} ${main_rpm} ${agent_rpm} ${kmod_rpm}"
+#	spec_list="${kmod_spec}"
+	spec_list="${main_spec} ${dkms_spec} ${kmod_spec}"
+	home_rpm_pkg_path=${HOME}/rpmbuild/RPMS/${machine}/${os_release}
+fi
+echo "Logfile: ${logfile}"
+echo "Kernel: ${kern_version}"
+echo "OS release: ${os_release}"
+echo "Configure: ${configure}"
+echo "Clean: ${clean}"
+echo "Package: ${package}"
+echo "ISO: ${iso}"
+if [ -n "${RTE_KERNELDIR}" ]; then
+	echo "RTE_KERNELDIR: ${RTE_KERNELDIR}"
+fi
+
+echo > ${logfile}
+if [ ${clean} = "yes" ]; then
+	printf "${progname}: Cleaning ... "
+	make clean >> ${logfile} 2>&1
+	find . -name "*.o" | xargs rm > /dev/null 2>&1
+	find . -name "*.a" | xargs rm > /dev/null 2>&1
+	find . -name "*.spec" | xargs rm > /dev/null 2>&1
+	rm -rf _debian
+	echo "done"
+fi
+if [ ${configure} = "yes" ]; then
+	printf "${progname}: Boot-strapping ... "
+	./boot.sh > ${logfile} 2>&1
+	echo "done"
+	printf "${progname}: Configuring ... "
+	./configure --with-vendor=vrs --enable-perl --prefix=/usr --sysconfdir=/etc --localstatedir=/var ${kern_option} CFLAGS="-g -O2 `xml2-config --cflags`" LIBS="-lrt -lm `xml2-config --libs`" >> ${logfile} 2>&1
+#./configure --enable-perl --prefix=/usr --sysconfdir=/etc --disable-ssl --localstatedir=/var ${kern_option} CFLAGS="-g -O2 `xml2-config --cflags`" LIBS="-lrt -lm `xml2-config --libs`" >> ${logfile} 2>&1
+	if [ $? -eq 0 ]; then
+		echo "done"
+	else
+		echo "failed"
+		exit
+	fi
+fi
+if [ ${package} = "no" ]; then
+	sudo rm -f ${vcapath}/ovs/vswitchd/vswitch.ovsschema.tmp
+	printf "${progname}: Building ... "
+	make >> ${logfile} 2>&1
+	stat=$?
+	n_warnings=`grep -iw warning: ${logfile} | grep -vi "modification time" | grep -vi skew | wc -l`
+	n_errors=`grep -iw error: ${logfile} | wc -l`
+	n_undef_refs=`grep -i ": undefined reference" ${logfile} | wc -l`
+	if [ ${stat} -eq 0 ]; then
+		echo "done (warnings: ${n_warnings}, errors: ${n_errors}, undefined-refs: ${n_undef_refs})"
+		git checkout vswitchd/vswitch.ovsschema manpages.mk
+	else
+		echo "failed (warnings: ${n_warnings}, errors: ${n_errors}, undefined-refs: ${n_undef_refs})"
+		git checkout vswitchd/vswitch.ovsschema manpages.mk
+		exit 1
+	fi
+else
+	if [ -n "${is_ubuntu}" ]; then
+		pkg_path=${home_deb_pkg_path}
+		mkdir -p ${pkg_path} 
+		rm -rf _debian
+		printf "${progname}: Copying debian package files ... "
+		cp -rf ../debian .
+		echo "done"
+		printf "${progname}: Creating Debian package ... "
+		./boot.sh >> ${logfile} 2>&1
+		dpkg-buildpackage -b -tc >> ${logfile} 2>&1
+		if [ $? -eq 0 ]; then
+			echo "done"
+			success=1
+		else
+			echo "failed"
+		fi
+		rm -rf ${pkg_path}/*.deb
+		mv -f ../*.deb ../*.changes ${pkg_path}
+		printf "Cleaning up debian build files ... "
+		rm debian/nuage* debian/dkms_pre_build.sh debian/copyright debian/openvswitch-common.template
+		git checkout debian
+		echo "done"
+	else
+		ping -c 1 strato > /dev/null 2>&1
+		if [ $? -eq 0  -a -n "${stats_pkg_name}" ]; then
+			printf "Mounting strato to /usr/global ... "
+			sudo systemctl enable rpcbind.socket
+			sudo systemctl restart rpcbind.service
+			sudo mount strato:/usr_global /usr/global > /dev/null 2>&1
+			echo "done"
+			mounted=1
+			cp /usr/lib64/libnavl.so.4.5 ~/rpmbuild/BUILD/libnavl.so
+			cp /usr/lib64/libnavl.so.4.5 ~/rpmbuild/BUILD/
+#cp /usr/global/tools/ovs/nsg/perfmon/libnavl/libnavl.so ~/rpmbuild/BUILD/libnavl.so
+#sudo cp /usr/global/tools/ovs/nsg/perfmon/libnavl/libnavl.so /usr/lib64/libnavl.so
+#cp /usr/global/tools/ovs/nsg/perfmon/libnavl/libnavl.so.4.3 ~/rpmbuild/BUILD/libnavl.so.4.3
+			for am in ${nsg_ams}; do
+				am_path=`dirname ${am}`
+				am_dirname=`basename ${am_path}`
+				rm -rf /tmp/${am_dirname}
+				mkdir -p /tmp/${am_dirname}
+				echo "Backing up ${vcapath}/${am} to /tmp/${am_dirname}"
+				cp ${vcapath}/${am} /tmp/${am_dirname}
+				sed -i '/HAVE_NSG_VRS/d' ${am}
+				sed -i '/endif/d' ${am}
+			done
+		else
+			echo "${progname}: cannot ping strato, build may be impaired"
+		fi
+		sudo mkdir -p ${root_rpm_pkg_path} ${home_rpm_pkg_path}
+		printf "${progname}: Preparing RPM build ... "
+		(cd ${vcapath}
+		./build/ovs-prepare.sh >> ${logfile} 2>&1
+		if [ $? -eq 0 ]; then
+			echo "done"
+		else
+			echo "failed"
+			rm -f ${vcapath}/ovsbuild-prepare.tar.gz
+			exit 1
+		fi
+		sudo cp -f ${nuage_prefix}*.tar.gz ${rpmbuild_src_path}
+		rm ${nuage_prefix}*.tar.gz ${vcapath}/ovsbuild-prepare.tar.gz
+		if [ -n "${stats_pkg_name}" ]; then
+			for am in ${nsg_ams}; do
+				am_path=`dirname ${am}`
+				am_dirname=`basename ${am_path}`
+				echo "Restoring /tmp/${am_dirname}/automake to ${vcapath}/${am}"
+				mv /tmp/${am_dirname}/automake.mk ${vcapath}/${am}
+			done
+		fi
+		)
+		OVS_BUILD_NUMBER=`cat configure.ac | grep AC_INIT | head -1 | sed -e "s/AC_INIT([A-Za-z]*, [0-9.]*-//" | sed -e "s/-.*$//"`
+		kernel_for_kmod=$KERNEL_VERSION
+		if [ -n "${stats_pkg_name}" ]; then
+			(cd ${vcapath}
+			mkdir -p ${stats_rpm_name}
+			#printf "${progname}: building ${stats_pkg_name} ... "
+			printf "${progname}: preparing ${stats_pkg_name} ... "
+			cp -R vrs/sbin/nuage-stats-forwarder ${stats_rpm_name} >> ${logfile} 2>&1
+			tar zcvf "${stats_rpm_name}.tar.gz" "${stats_rpm_name}" >> ${logfile} 2>&1
+			sudo rm -rf ${rpmbuild_src_path}/$stats_pkg_name*
+			sudo cp -f ${stats_rpm_name}.tar.gz ${rpmbuild_src_path} >> ${logfile} 2>&1
+			rm -rf $stats_pkg_name*
+			echo "done"
+#cp ${stats_spec}.in ${stats_spec}
+			)
+			## stats forwarder build now moved to nuage-openvswitch RPM build
+			#sed -i "s/Version: .*/Version: ${branch}${priv_tag}/g" ${stats_spec}
+			#sed -i "s/Release: .*/Release: ${release}/g" ${stats_spec}
+			## comment out following line if building in VPN
+			##sudo rpmbuild -ba ${stats_spec} --define "${dist_param}" >> ${logfile} 2>&1
+			#if [ $? -eq 0 ]; then
+				#echo "done"
+			#else
+				#echo "failed"
+			#exit 1
+			#fi
+		fi
+
+		for s in ${spec_list}; do
+			echo ${s} | grep kmod > /dev/null 2>&1
+			if [ $? -eq 0 ]; then
+				kmod=1
+			else
+				kmod=0
+			fi
+			if [ -d vrs ]; then
+				spec=vrs/rhel/${s}.spec
+			else
+				spec=rhel/${s}.spec
+			fi
+			if [ ! -e ${spec} ]; then
+				printf "${progname}: Creating ${spec} ... "
+				make ${spec} > /dev/null 2>&1
+				if [ $? -eq 0 ]; then
+					echo "done"
+				else
+					echo "failed"
+					exit 1
+				fi
+			fi
+			printf "${progname}: Building ${s} ... "
+			echo >> ${logfile} 2>&1
+			echo "Starting build of ${spec}.rpm" >> ${logfile} 2>&1
+			sed -i "s/Version: .*/Version: ${branch}${priv_tag}/g" ${spec}
+			sed -i "s/Conflicts: openvswitch/Conflicts: openvswitch\nAutoReq: no\n/g" ${spec}
+#sed -i "s/, protobuf-c//g" ${spec}
+			if [ ${kmod} -eq 1 ]; then
+				release="${OVS_BUILD_NUMBER}_$(echo $kernel_for_kmod | sed 's/-/_/' | sed 's/\.`arch`//')"
+			else
+				:
+			fi
+			sed -i "s/Release: .*/Release: ${release}/g" ${spec}
+			if [ ${kmod} -eq 1 ]; then
+				sudo rpmbuild -ba ${spec} --define "${dist_param}" --define "kflavors default" --define "kernel_version $KERNEL_VERSION" >> ${logfile} 2>&1
+			else
+				if [ -n "${RTE_KERNELDIR}" ]; then
+					sudo RTE_KERNELDIR=${RTE_KERNELDIR} rpmbuild -ba ${spec} --define "${dist_param}" ${with_nsg} >> ${logfile} 2>&1
+				else
+					sudo rpmbuild -ba ${spec} --define "${dist_param}" ${with_nsg} >> ${logfile} 2>&1
+				fi
+			fi
+			if [ $? -eq 0 ]; then
+				echo "done"
+			else
+				echo "failed"
+				exit 1
+			fi
+		done
+		sudo rm -rf ${home_rpm_pkg_path}/*.rpm ${home_rpm_pkg_path}/*.qcow2 ${home_rpm_pkg_path}/*.tar ${home_rpm_pkg_path}/*.md5
+		for p in ${rpm_list}; do
+			rpm=${p}.rpm
+			new_rpm=`ls -1 ${root_rpm_pkg_path}/${rpm} 2> /dev/null`
+			if [ -z "${new_rpm}" ]; then
+				continue
+			fi
+			success=1
+			printf "Copying `basename ${new_rpm}` ... "
+			sudo cp ${new_rpm} ${home_rpm_pkg_path}
+			sudo rm ${new_rpm}
+			echo "done"
+		done
+		pkg_path=${home_rpm_pkg_path}
+		if [ -e ${toolbox_rpm_path} ]; then
+			printf "Copying ${toolbox_rpm} to ${home_rpm_pkg_path} ... "
+			cp ${toolbox_rpm_path} ${home_rpm_pkg_path}
+			echo "done"
+		fi
+	fi
+	if [ ${success} -eq 0 ]; then
+		echo "${progname}: packaging failed .."
+	else
+		echo "${progname}: package path is ${pkg_path}"
+	fi
+	if [ ${iso} = "yes" ]; then
+		if [ -e ${vcapath}/build/vrs-dpdk-build ]; then
+			(
+				cd ${vcapath}; ~/bin/dpdkb ${os_version} -P
+				if [ $? -ne 0 ]; then
+					exit 1
+				fi
+			)
+		fi
+	fi
+fi
+
+if [ -n "${mounted}" ]; then
+	sudo umount -f /usr/global
+	rm -f ~/rpmbuild/BUILD/libnavl.so
+#sudo rm -f /usr/lib64/libnavl.so
+	rm -f ~/rpmbuild/BUILD/libnavl.so.4.5
+fi
+
+if [ ${iso} = "yes" ]; then
+	echo
+	nsgisob ${os_release}
+	echo
+fi
+echo "All done - `date`"

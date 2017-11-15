@@ -1,0 +1,98 @@
+#!/bin/bash
+
+. ~/bin/dustbin/lib/lib-utils.sh
+
+get_pkg_name()
+{
+	local p=$1 pkg_name_cmd
+
+	if [ -n "${is_ubuntu}" ]; then
+		pkg_name_cmd=`basename ${p} ${pkg_sfx} | awk -F_ '{print $1}'`
+	else
+		pkg_name_cmd=`basename ${p} ${pkg_sfx}`
+	fi
+	echo ${pkg_name_cmd}
+}
+
+progname=`basename $0`
+test_machine=`hostname`
+machine=`uname -m`
+#pkg_location=~/Downloads/nuage
+nuage_pfx1=nuage-openvswitch
+nuage_pfx2=nuage-python-openvswitch_
+nuage_pfx3=nuage-metadata-agent_
+logfile=~/Downloads/logs/${progname}.${test_machine}.log
+is_ubuntu=`uname -v | grep -i ubuntu`
+os_release=`lsb_release -a 2> /dev/null | grep Release | awk -F: '{print $2}' | awk '{print $1}'`
+if [ -z "${os_release}" ]; then
+	if [ -f /etc/redhat-release ]; then
+		os_release=`awk -Frelease '{print $2}' /etc/redhat-release | awk '{print $1}' | awk -F. '{print $1"."$2}'`
+	fi
+fi
+kernel=1
+if [ "$1" = "-n" ]; then
+	kernel=0
+	shift
+fi
+branch=$1
+
+echo "Starting Nuage Package installation - `date`"
+if [ -n "${is_ubuntu}" ]; then
+	pkg_location=~/debbuild/dpkgs/${machine}/${os_release}
+	echo "Distribution: Ubuntu"
+	dkms_deb="`ls -1 ${pkg_location}/${nuage_pfx1}-datapath-dkms*`"
+	debuginfo_deb="`ls -1 ${pkg_location}/${nuage_pfx1}-dbg*`"
+	python_deb="`ls -1 ${pkg_location}/${nuage_pfx2}*`"
+	metadata_deb="`ls -1 ${pkg_location}/${nuage_pfx3}*`"
+	switch_deb="`ls -1 ${pkg_location}/${nuage_pfx1}-switch*`"
+	common_deb="`ls -1 ${pkg_location}/${nuage_pfx1}-common*`"
+	install_deb_list="${dkms_deb} ${python_deb} ${common_deb} ${switch_deb} ${metadata_deb} ${debuginfo_deb}"
+	uninstall_deb_list="${debuginfo_deb} ${metadata_deb} ${switch_deb} ${common_deb} ${python_deb} ${dkms_deb}"
+	install_pkg_list="${install_deb_list}"
+	uninstall_pkg_list="${uninstall_deb_list}"
+	pkg_sfx=".deb"
+	query_cmd="dpkg -l"
+	uninstall_cmd="dpkg -P"
+	install_cmd="dpkg -i"
+else
+	pkg_location=~/rpmbuild/RPMS/${machine}/${os_release}
+	echo "Distribution: Centos"
+	dkms_rpm="`ls -1 ${pkg_location}/${nuage_pfx1}-dkms*`"
+	debuginfo_rpm="`ls -1 ${pkg_location}/${nuage_pfx1}-debuginfo*`"
+	main_rpm="`ls -1 ${pkg_location}/${nuage_pfx1}-${branch}*`"
+	if [ ${kernel} -eq 1 ]; then
+		install_rpm_list="${dkms_rpm} ${debuginfo_rpm} ${main_rpm}"
+		uninstall_rpm_list="${main_rpm} ${debuginfo_rpm} ${dkms_rpm}"
+	else
+		install_rpm_list="${debuginfo_rpm} ${main_rpm}"
+		uninstall_rpm_list="${main_rpm} ${debuginfo_rpm}"
+	fi
+	install_pkg_list="${install_rpm_list}"
+	uninstall_pkg_list="${uninstall_rpm_list}"
+	pkg_sfx=".rpm"
+	query_cmd="rpm -q -a"
+	#uninstall_cmd="rpm -e --noscripts"
+	uninstall_cmd="rpm -e"
+	#install_cmd="rpm --install"
+	install_cmd="rpm --install --nodeps"
+fi
+echo "Test Machine: ${test_machine}"
+echo "Logfile: ${logfile}"
+
+echo > ${logfile}
+
+for p in ${uninstall_pkg_list}; do
+	pkg_name=`get_pkg_name ${p}`
+	sudo ${query_cmd} | grep ${pkg_name} > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		CMD="sudo ${uninstall_cmd} ${pkg_name}"
+		run_cmd "# ${CMD}" "${CMD}" 1 ${logfile}
+	fi
+done
+
+for p in ${install_pkg_list}; do
+	pkg_name=`basename ${p} ${pkg_sfx}`
+	CMD="sudo ${install_cmd} ${p}"
+	run_cmd "# ${CMD}" "${CMD}" 1 ${logfile}
+done
+echo "All done - `date`"

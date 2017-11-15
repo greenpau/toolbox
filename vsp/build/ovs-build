@@ -1,0 +1,75 @@
+#!/bin/bash
+
+. ~/bin/testbin/lib/lib-utils.sh
+usage() {
+	echo "usage: ${progname} <dpdk-sandbox> <ovs-sandbox> [-c] [-k] [-p provider]"
+	echo "       build and configure DPDK-OVS & DPDK-QEMU SDK"
+	echo "options:"
+	echo "       -c: configure DPDK-OVS & DPDK-QEMU SDK before build"
+	echo "       -k: use kernel based datapath (used with -c)"
+	echo "       -p: provider name (nicira or 01.org)"
+	exit
+}
+
+progname=`basename $0`
+dpdk_sandbox=$1
+ovs_sandbox=$2
+if [ $# -lt 2 ]; then
+	usage
+fi
+
+export DPDK_DIR=${linux_sbhead}/${dpdk_sandbox}/dpdk
+#export OVS_DIR=${linux_sbhead}/${ovs_sandbox}/dpdk-ovs/openvswitch
+export OVS_DIR=${linux_sbhead}/${ovs_sandbox}/VCA
+hostname=`hostname`
+machine=`uname -m`
+kern_release=`uname -r`
+export logfile=~/Downloads/logs/${progname}.${hostname}.log
+
+c_flag=0
+while [ -n "$3" ]; do
+	case "$3" in
+	"-c")	c_flag=1
+		;;
+	"-k")	kern_opt="--with-linux=/lib/modules/${kern_release}/build"
+		;;
+	"-p")	provider=$4
+		shift
+		case "${provider}" in
+		"01.org")
+			dpdk_opt="RTE_SDK=${DPDK_DIR}"
+			kern_opt=
+			;;
+		"nicira")
+			dpdk_opt="--with-dpdk=${DPDK_DIR}/x86_64-default-linuxapp-gcc"
+			kern_opt=
+			;;
+		"*")	echo "${progname}: invalid or no provider name specified"
+			usage
+			;;
+		esac
+	esac
+	shift
+done
+
+echo "Host: ${hostname}"
+echo "Machine: ${machine}"
+echo "Release: ${kern_release}"
+echo "Logfile: ${logfile}"
+echo
+
+echo > ${logfile}
+
+cd ${OVS_DIR}
+if [ ${c_flag} -eq 1 ]; then
+	CMD="autoreconf -i"
+	run_cmd "Running autoreconf" "${CMD}" 1 ${logfile}
+	CMD="sh ./boot.sh"
+	run_cmd "Bootstrapping OVS in ${ovs_sandbox} " "${CMD}" 1 ${logfile}
+	CMD="sh ./configure ${dpdk_opt} --disable-ssl ${kern_opt}"
+	run_cmd "Configuring OVS in ${ovs_sandbox}" "${CMD}" 0 ${logfile}
+fi
+
+run_cmd "Building OVS in ${ovs_sandbox}" make 0 ${logfile}
+n_warns=`grep -i warning ${logfile} | wc -l`
+echo "No of warnings: ${n_warns}"

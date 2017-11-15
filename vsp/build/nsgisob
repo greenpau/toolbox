@@ -1,0 +1,156 @@
+#!/bin/bash
+
+execute_cmd() {
+	local cmd="$1"
+	local header="$2"
+	local logfile="$3"
+
+	printf "${progname}: ${header} ... "
+	echo "${progname}: ${header} - `date`" >> ${logfile}
+	eval "${cmd}" >> ${logfile} 2>&1
+	if [ $? -eq 0 ]; then
+		echo "done"
+	else
+		echo "failed"
+		exit 1
+	fi
+}
+
+fetch_files() {
+	local logfile="$1"
+	local flist=$2
+	pkgs_tar="/usr/global/images/vrs/0.0/latest/ncpe/pkgs.tar.gz"
+	(
+		cd /tmp
+		tar xzf ${pkgs_tar} >> ${logfile} 2>&1
+		files="`ls /tmp/pkgs/${flist}*.rpm`"
+		for f in ${files}; do
+			execute_cmd "sudo cp ${f} ${NSG_SANDBOX}/pkgs" "Copying ${f} to pkgs" ${logfile}
+		done
+		execute_cmd "sudo rm -rf /tmp/pkgs" "Removing /tmp/pkgs" ${logfile}
+	)
+}
+
+fetch_nuage_perfd() {
+	local logfile="$1"
+	fetch_files ${logfile} nuage_perfd
+}
+
+fetch_openssl_tpm() {
+	local logfile="$1"
+	fetch_files ${logfile} openssl_tpm_engine/openssl
+}
+
+fetch_nuage_dpdk() {
+	local logfile="$1"
+	local nuage_dpdk=`find ${NSG_SANDBOX}/pkgs -name "nuage-dpdk*" 2> /dev/null`
+	if [ -n "${nuage_dpdk}" ]; then
+		return
+	fi
+	execute_cmd "sudo cp /usr/global/images/vrs/0.0/latest/el7-nsg/nuage-dpdk* ${NSG_SANDBOX}/pkgs" "Copying nuage-dpdk to pkgs" ${logfile}
+}
+
+progname=`basename $0`
+internal=0
+if [ "$1" = "-i" ]; then
+	internal=1
+	shift
+fi
+os_release=${1:-7.3}
+
+hostname=`hostname`
+logfile=$HOME/Downloads/logs/${progname}.log.${hostname}
+NSG_SANDBOX=/var/tmp/nsg_v3
+NSG_QCOW2=${NSG_SANDBOX}/ncpe_centos7.qcow2
+NCPEIMG_PFX=ncpeimg
+if [ ${internal} -eq 1 ]; then
+	NCPEIMG_SFX=USE.
+	NCPEIMG_FINAL="${NCPEIMG_PFX}_${NCPEIMG_SFX}"
+else
+	NCPEIMG_SFX=priv
+	NCPEIMG_FINAL="${NCPEIMG_PFX}_0.0.0${NCPEIMG_SFX}"
+fi
+NSG_TAR=${NSG_SANDBOX}/${NCPEIMG_PFX}_*${NCPEIMG_SFX}.tar
+NSG_MD5=${NSG_SANDBOX}/${NCPEIMG_PFX}_*${NCPEIMG_SFX}.md5
+NSG_IMG=${NSG_SANDBOX}/ncpe_centos7.img
+C7_IMG=${NSG_SANDBOX}/centos7.img
+C7_ISO=${NSG_SANDBOX}/centos7.iso
+#KERNEL_VERSION='3.10.0-229.44.1.el7.x86_64'
+KERNEL_VERSION='3.10.0-229.48.1.el7.x86_64'
+VRS_PKGREPO=/home/sabyasse/rpmbuild/RPMS/x86_64/${os_release}
+
+echo "Starting NSG iso build - `date`"
+echo "NSG build workspace: ${NSG_SANDBOX}"
+echo "VRS Package repository: ${VRS_PKGREPO}"
+echo "Logfile: ${logfile}"
+echo "OS release: ${os_release}"
+
+if [ ! -d "${NSG_SANDBOX}" ]; then
+	echo "${progname}: ${NSG_SANDBOX} does not exit"
+	exit 1
+fi
+cd ${NSG_SANDBOX}
+if [ "$(ls -A pkgs/vrs)" ]; then
+	# non empty, reuse from earlier builds
+	rebuild=0
+else
+	# empty, new workspace, rebuild everything
+	rebuild=1
+fi
+echo "Rebuild: "${rebuild}
+
+echo "" > ${logfile}
+mount | grep /usr/global > /dev/null
+if [ $? -eq 0 ]; then
+	execute_cmd "sudo umount -f /usr/global" "Unmounting stale /usr/global (if any)" ${logfile}
+fi
+execute_cmd "sudo mount strato:/usr_global /usr/global" "Mounting strato to /usr/global" ${logfile}
+
+execute_cmd "sudo rm -rf pkgs/vrs/* pkgs/openssl_tpm_engine" "Cleaning up old packages" ${logfile}
+if [ ! -d pkgs/vrs ]; then
+	sudo mkdir -p pkgs/vrs
+fi
+execute_cmd "sudo cp ${VRS_PKGREPO}/*.rpm pkgs/vrs" "Copying pkgs from ${VRS_PKGREPO}" ${logfile}
+#execute_cmd "sudo ./fetch_bgp 5.0/latest_b/bgp" "Getting BGP packages" ${logfile}
+execute_cmd "sudo ./fetch_bgp 0.0/latest_b/bgp" "Getting BGP packages" ${logfile}
+execute_cmd "sudo make fetch4ls" "Getting 4LS tools " ${logfile}
+if [ ${rebuild} -eq 1 ]; then
+	execute_cmd "sudo make intelqat" "Rebuilding intelqat" ${logfile}
+	execute_cmd "sudo make ath10k" "Building ATH10k" ${logfile}
+	execute_cmd "sudo make drivers" "building kernel drivers for NSG-X" ${logfile}
+fi
+execute_cmd "sudo make screen dnsmasq hostapd syslog-ng" "Rebuilding hostapd, screen, dnsmasq, syslog-ng" ${logfile}
+execute_cmd "sudo make tpm_engine" "Rebuilding TPM" ${logfile}
+execute_cmd "sudo make nuage_redis_rpm" "Rebuilding nuage-redis-rpm" ${logfile}
+fetch_nuage_perfd ${logfile}
+fetch_nuage_dpdk ${logfile}
+fetch_openssl_tpm ${logfile}
+grep nsg_rpm makefile > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+	if [ ${internal} -eq 1 ]; then
+		#execute_cmd "sudo INTERNAL='INTERNAL' make nuage-perfmon" "Making Nuage Perf Mon" ${logfile}
+		execute_cmd "sudo INTERNAL='INTERNAL' make nsg_rpm" "Creating NSG RPM" ${logfile}
+	else
+		#execute_cmd "sudo make nuage-perfmon" "Making Nuage Perf Mon" ${logfile}
+		execute_cmd "sudo make nsg_rpm" "Creating NSG RPM" ${logfile}
+	fi
+fi
+if [ ${internal} -eq 1 ]; then
+	execute_cmd "sudo INTERNAL='INTERNAL' make pre_iso" "Pre ISO " ${logfile}
+	execute_cmd "sudo INTERNAL='INTERNAL' make iso" "Creating ISO (donot interrupt)" ${logfile}
+	execute_cmd "sudo INTERNAL='INTERNAL' make vmimage_4gb" "Creating 4G VM image" ${logfile}
+	execute_cmd "sudo INTERNAL='INTERNAL' make imgarch" "Creating image archive" ${logfile}
+else
+	execute_cmd "sudo make pre_iso" "Pre ISO " ${logfile}
+	execute_cmd "sudo make iso" "Creating ISO (donot interrupt)" ${logfile}
+	execute_cmd "sudo make vmimage_4gb" "Creating 4G VM image" ${logfile}
+	execute_cmd "sudo make imgarch" "Creating image archive" ${logfile}
+fi
+execute_cmd "sudo cp ${NSG_QCOW2} ${VRS_PKGREPO}" "Copying qcow to VRS package repository" ${logfile}
+execute_cmd "sudo cp ${NSG_TAR} ${VRS_PKGREPO}/${NCPEIMG_FINAL}.tar" "Copying tar to VRS package repository (${NCPEIMG_FINAL}.tar)" ${logfile}
+execute_cmd "sudo cp ${NSG_MD5} ${VRS_PKGREPO}/${NCPEIMG_FINAL}.md5" "Copying md5 to VRS package repository (${NCPEIMG_FINAL}.md5)" ${logfile}
+execute_cmd "sudo rm -rf ${NSG_QCOW2} ${NSG_TAR} ${NSG_MD5} ${NSG_IMG} ${C7_ISO} ${C7_IMG}" "Cleaning up build workspace" ${logfile}
+execute_cmd "git checkout python-libs" "checking out temporary python files" ${logfile}
+echo "NSG image is available at: ${VRS_PKGREPO}"
+execute_cmd "sudo umount -f /usr/global" "Unmounting /usr/global" ${logfile}
+echo "Done - `date`"
