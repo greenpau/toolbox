@@ -1,0 +1,14 @@
+#!/bin/bash
+
+host_user="sabyasg"
+#host_name="int-sabyasg-mbp-02"
+host_name="sabyasg-mbp-02"
+host_date="`ssh ${host_user}@${host_name} "date" | tail -1`"
+if [ -z "${host_date}" ]; then
+	exit 1
+fi
+sudo date -s "${host_date}" > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+	printf "Syncing date from ${host_name} - ${host_date} ... "
+	echo "failed"
+fi

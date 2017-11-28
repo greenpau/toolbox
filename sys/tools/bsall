@@ -1,0 +1,31 @@
+#!/bin/bash
+# Example usages:
+# 	SANDBOX=junos_11.1_main bsall 11.1
+# 	SANDBOX=dsi_v6 bsall 11.2
+
+progname=`basename $0`
+bscope_conf_dir=~/bin/bscope-conf
+downloads_root=~/Linux/downloads
+release=$1
+
+if [ -z "${release}" ]
+then
+	echo "usage: ${progname} <release>"
+	echo "Note: release not specified, using default"
+	release="default"
+fi
+
+if [ -z "${SANDBOX}" ]
+then
+	echo "Note: SANDBOX env variable not set, using default"
+	SANDBOX="none"
+fi
+
+echo "Sandbox: $SANDBOX"
+
+cd ${downloads_root}
+artifacts="`find . -maxdepth 1 -type d | grep -ve ^\.$`"
+for a in ${artifacts}; do
+	echo "${progname}: building ${a}"
+	bscope ${bscope_conf_dir}/${a}.conf
+done

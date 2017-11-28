@@ -1,0 +1,69 @@
+#!/bin/bash
+
+function usage {
+	echo "usage: $progname <config_file> <cscope_db_name>"
+	echo "examples:"
+	echo "       SANDBOX=vca_v0 bscope ~/Linux/bin/bscope-conf/nuage-vca-2.1.conf"
+	echo "       SANDBOX=none bscope ~/Linux/bin/bscope-conf/nuage-vca-2.0.conf"
+	exit 1
+}
+
+cscope_db_base=~/Linux/cscopes
+progname=`basename $0`
+config_file=$1
+cscope_db=`basename ${config_file} .conf`
+cscope_db_dir=${cscope_db_base}/$cscope_db
+sb=${SANDBOX}
+os=`uname -s`
+
+if [ -z "${sb}" ]
+then
+	echo "${progname}: env SANDBOX not set"
+	usage
+fi
+
+if [ ${os} != "Linux" ]; then
+	echo "$progname: need to run this on Linux machine"
+	usage
+fi
+
+if [ $# -ne 1 ]; then
+	echo "$progname: insufficient arguments ($#), expected (1)"
+	usage
+fi
+
+if [ -z "$config_file" ]; then
+	echo "$progname: config_file not specified"
+	usage
+fi
+
+if [ -z "$cscope_db" ]; then
+	echo "$progname: missing base directory for cscope database"
+	usage
+fi
+
+mkdir -p $cscope_db_dir
+rm -rf $cscope_db_dir/$cscope_db.*
+
+echo "Sandbox: ${sb}"
+echo "Config file: ${config_file}"
+if [ "${sb}" != "none" ]; then
+	flist=`awk -F"SANDBOX" -v sb=${sb} '{ print $1sb$2 }' $config_file`
+else
+	flist=`cat ${config_file}`
+fi
+for i in ${flist}
+do
+	if [[ ! -d $i ]]
+	then
+		echo "$progname: directory $i does not exist"
+		continue
+	fi
+	printf "\tPath: $i\n"
+	find $i -name "*.[mcChHylsS]" -follow >> $cscope_db_dir/$cscope_db.files
+done
+
+printf "\tBuilding cscope.. please wait"
+cscope -b -q -k -i $cscope_db_dir/$cscope_db.files -f $cscope_db_dir/$cscope_db.out 2> /dev/null > /dev/null
+printf "\n"
+exit 0

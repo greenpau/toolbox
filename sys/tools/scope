@@ -1,0 +1,109 @@
+#!/bin/bash
+
+TERM=xterm
+export TERM
+PAGER=${PAGER:-/usr/bin/less}
+typeset old_viewer=${VIEWER:-$PAGER}
+export VIEWER=${old_viewer}
+if [ "$1" = "-e" ]; then
+	unset -v VIEWER
+else
+	export VIEWER=${old_viewer}
+fi
+typeset CSCOPE=/usr/bin/cscope
+typeset CSCOPE_DB=$HOME/Linux/cscopes/
+typeset _title
+typeset -i _dircnt=0
+typeset _description
+typeset _directory
+typeset -a _array_entries
+typeset -a _directories
+
+function chtitle
+{
+        if [ "${TERM%-*}" != "xterm" ]; then
+                return
+        fi
+        if [ "$_title" = "" ]; then
+                _title=$(gettitle 2>/dev/null)
+        fi
+        if [ $# -eq 0 ]; then           # Restore back the title
+                if [ "$_title" = "" ]
+                then    # node name
+                    PROMPT_COMMAND=`echo -ne "\033]2;$(uname -n)\007" >/dev/tty`
+                else
+                    PROMPT_COMMAND=`echo -ne "\033]2;$_title\007" >/dev/tty`
+                fi
+        else
+		PROMPT_COMMAND=`echo -ne "\033]2;$*\007" >/dev/tty`
+        fi
+	export PROMPT_COMMAND
+}
+
+if [ ! -f ${CSCOPE} ]
+then
+	echo `basename $0 ` : `basename ${CSCOPE} ` not found.
+	echo "        Please install your `basename ${CSCOPE}` at /usr/local/bin/"
+	exit 1
+fi
+
+if [ ! -d ${CSCOPE_DB} ]
+then
+	echo `basename $0` : ${CSCOPE_DB} not found.
+	echo "        Please place your database in ${CSCOPE_DB} or"
+	echo "        set CSCOPE_DB in the script \"`basename $0`\" to the"
+	echo "        directory containing the scope database"
+	exit 1
+fi
+
+for _directory in ${CSCOPE_DB}
+do
+	ls -l1 | grep ^d | awk '{print $9}' 2>&1 1>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo `basename $0` : *.out files not found in ${_directory}
+		echo "        Please generate cscope database"
+		exit 1
+	fi
+done
+
+for _directory in ${CSCOPE_DB}
+do
+	#description=`ls -l1 $_directory | grep ^d | awk '{print $8}'`
+	description=`ls -l1 $_directory | grep ^d | awk '{print $9}'`
+	for i in ${description}
+	do
+		_dircnt=_dircnt+1
+		_array_entries[$_dircnt]=${i}
+		_directories[$_dircnt]=${_directory}/$i
+	done
+done
+
+trap - INT QUIT CHLD
+chtitle Cscope          # change title to "Cscope"
+PS3='Select by number: '
+select description in "${_array_entries[@]}"
+do case ${REPLY} in
+	([1-9]*)
+		if (( ${REPLY} <= ${_dircnt} ))
+		then
+			export TERM=vt100
+			chtitle "Cscope (${_array_entries[${REPLY}]})"
+			${CSCOPE} -d -f ${_directories[${REPLY}]}/${_array_entries[$REPLY]}.out \
+			-i ${_directories[$REPLY]}/${_array_entries[$REPLY]}.files
+		else
+			echo -ne "Invalid input. Valid input is 1 thru' $_dircnt."
+		fi ;;
+	!)
+		$SHELL ;;
+	q*|Q*)
+		set +x
+		break;;
+	v)
+		export VIEWER=${old_viewer} ;;
+	*)
+		echo -ne "Invalid input.  For a change try 'q' or 'Q' :-)" ;;
+   esac
+REPLY=""
+done
+chtitle
