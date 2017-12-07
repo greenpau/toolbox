@@ -1,8 +1,8 @@
 #!/bin/bash
 
 host_user="sabyasg"
-#host_name="int-sabyasg-mbp-02"
-host_name="sabyasg-mbp-02"
+host_name="int-sabyasg-mbp-02"
+#host_name="sabyasg-mbp-02"
 host_date="`ssh ${host_user}@${host_name} "date" | tail -1`"
 if [ -z "${host_date}" ]; then
 	exit 1
