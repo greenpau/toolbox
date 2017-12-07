@@ -1,0 +1,47 @@
+#!/bin/bash
+
+progname=`basename $0`
+hostname=`hostname`
+screen="`screen -list | grep ${hostname} | grep -v Socket |awk '{print $1}'`"
+
+if [ "${screen}" = "" ]; then
+	echo "${progname}: no screen found in host ${hostname}"
+	exit 1
+fi
+
+n_screen=`echo ${screen} | wc -w`
+if [ ${n_screen} -eq 1 ]; then
+	screen -r -R -D ${screen}
+else
+	typeset -a _array_entries
+	typeset -i count=0
+	echo "You have the following active screens available:"
+	for s in ${screen}; do
+		count=${count}+1
+		_array_entries[${count}]=${s}
+	done
+	PS3="Select screen ID: "
+	select s in "${_array_entries[@]}"
+	do case ${REPLY} in
+	([1-9]*)
+		if (( ${REPLY} <= ${count} ))
+		then
+			screen_id=${_array_entries[${REPLY}]}
+		else
+			screen_id=`echo "${screen}" | awk -F. -v reply=${REPLY} 'reply==$1{ print $0 }'`
+		fi
+		if [ -n "${screen_id}" ]; then
+			screen -r -D -R ${screen_id}
+			break
+		else
+			echo "${progname}: invalid screen ID specified"
+		fi
+		;;
+	c|C)	clear
+		;;
+	q|Q)	break
+		;;
+	esac
+	REPLY=""
+	done
+fi

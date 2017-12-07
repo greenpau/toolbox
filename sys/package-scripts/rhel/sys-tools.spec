@@ -37,6 +37,7 @@ mkdir -p $RPM_BUILD_ROOT $basedir
 cd %{pkg_name}/sys/tools
 install__ 0755 bsall
 install__ 0755 bscope
+install__ 0755 scattach
 install__ 0755 scope
 install__ 0755 sync-host-date
 install__ 0755 tree
@@ -48,6 +49,7 @@ install__ 0755 tree
 %defattr(-,root,root)
 /usr/local/sys-tools/bsall
 /usr/local/sys-tools/bscope
+/usr/local/sys-tools/scattach
 /usr/local/sys-tools/scope
 /usr/local/sys-tools/sync-host-date
 /usr/local/sys-tools/tree
