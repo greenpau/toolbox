@@ -1,0 +1,36 @@
+#!/bin/bash
+
+build_rpm() {
+	this_rpm=$1
+	this_rpm_build_path=$2
+	root_rpm_pkg_path=/root/rpmbuild/RPMS/${machine}
+	this_rpm_path=${root_rpm_pkg_path}/${this_rpm}
+	home_rpm_pkg_path=${HOME}/rpmbuild/RPMS/${machine}/${os_release}/${this_rpm}
+	
+	echo "Starting build of $this_rpm - `date`"
+	sudo ${tools_sb}/${this_rpm_build_path} ${logfile}
+	#cp /root/rpmbuild/RPMS/x86_64/${this_rpm} ~/rpmbuild/RPMS/x86_64/6.5
+	sudo cp ${this_rpm_path} ${home_rpm_pkg_path}
+	echo "RPM Path: ${home_rpm_pkg_path}"
+	echo "All done - `date`"
+	echo
+}
+
+progname=`basename $0`
+tools_sb=${HOME}/Linux/src/sandbox/tools_v1
+machine=`uname -m`
+logfile=~/Downloads/logs/${progname}.log
+os_release=`lsb_release -a 2> /dev/null | grep Release | awk -F: '{print $2}' | awk '{print $1}'`
+
+#nuage-openvswitch-toolbox-master-0.1.x86_64.rpm:build/vsp-rpm-build \
+rpm_list=" \
+	git-tools-master-0.1.x86_64.rpm:build/git-rpm-build \
+	sys-tools-master-0.1.x86_64.rpm:build/sys-rpm-build \
+	"
+
+echo "" > ${logfile}
+for rpm_desc in $rpm_list; do
+	rpm_name=`echo $rpm_desc | awk -F: '{print $1}'`
+	build_path=`echo $rpm_desc | awk -F: '{print $2}'`
+	build_rpm ${rpm_name} ${build_path}
+done
