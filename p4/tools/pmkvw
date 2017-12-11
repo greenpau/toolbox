@@ -1,0 +1,27 @@
+#!/bin/bash
+
+progname=`basename $0`
+branch=$1
+client=$2
+if [ -z "${client}" ]; then
+	echo "usage: ${progname} <branch> <view-name>"
+	exit 1
+fi
+
+user=`whoami`
+vw_basedir=/data/${user}/adu/views
+mkdir -p ${vw_basedir}
+
+export P4CLIENT=$client
+printf "Running mkclient with ${branch}:${client} - `date`"
+adu mkclient -b ${branch} -q ${client}
+if [ $? -eq 0 ]; then
+	echo "done"
+else
+	echo "failed"
+	exit 1
+fi
+printf "Syncing view ... "
+adu sync -q
+echo "done"
+pentervw ${client}

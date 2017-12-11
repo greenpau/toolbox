@@ -39,6 +39,7 @@ cd %{pkg_name}/p4/tools
 install__ 0755 pentervw
 install__ 0755 plsvw
 install__ 0755 plogvw
+install__ 0755 pmkvw
 install__ 0755 ppwvw
 
 %clean
@@ -48,6 +49,7 @@ install__ 0755 ppwvw
 /usr/local/p4-tools/pentervw
 /usr/local/p4-tools/plsvw
 /usr/local/p4-tools/plogvw
+/usr/local/p4-tools/pmkvw
 /usr/local/p4-tools/ppwvw
 
 %pre
