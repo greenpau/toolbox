@@ -22,7 +22,7 @@ Toolbox for p4 (perforce wrappers)
 %prep
 
 %install
-basedir=/usr/local/p4
+basedir=/usr/local/p4-tools
 
 install__() {
     mode=$1
@@ -35,23 +35,23 @@ install__() {
 rm -rf $RPM_BUILD_ROOT $basedir
 mkdir -p $RPM_BUILD_ROOT $basedir
 
-cd %{pkg_name}/p4
-install__ 0755 tools/pentervw
-install__ 0755 tools/plsvw
-install__ 0755 tools/ppwvw
+cd %{pkg_name}/p4/tools
+install__ 0755 pentervw
+install__ 0755 plsvw
+install__ 0755 ppwvw
 
 %clean
 
 %files
 %defattr(-,root,root)
-/usr/local/p4/tools/pentervw
-/usr/local/p4/plsvw
-/usr/local/p4/tools/ppwvw
+/usr/local/p4-tools/pentervw
+/usr/local/p4-tools/plsvw
+/usr/local/p4-tools/ppwvw
 
 %pre
 
 %post
 
 %preun
-rm -rf /usr/local/p4
+rm -rf /usr/local/p4-tools
 exit 0
