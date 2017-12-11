@@ -1,7 +1,7 @@
 #!/bin/bash
 
 progname=`basename $0`
-hostname=`hostname`
+hostname=`hostname | awk -F. '{print $1}'`
 screen="`screen -list | grep ${hostname} | grep -v Socket |awk '{print $1}'`"
 
 if [ "${screen}" = "" ]; then
