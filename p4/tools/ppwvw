@@ -1,0 +1,10 @@
+#!/bin/bash
+
+progname=`basename $0`
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "${progname}: must be inside a view"
+	exit 1
+fi
+
+echo "Current working view directory:" ${P4CLIENT_DIR}
+echo "Current working view:" ${P4CLIENT}

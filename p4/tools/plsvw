@@ -1,0 +1,14 @@
+#!/bin/bash
+
+user=`whoami`
+vws_dir=/data/${user}/adu/views
+vws="`ls -1 ${vws_dir}`"
+
+echo "List of views for user ${user}"
+echo "------------------------------------------------------------------------"
+printf "View\t\t\tNum-Modified\n"
+echo "------------------------------------------------------------------------"
+for v in ${vws}; do
+	printf "$v\t\t$n_mods\n"
+done
+echo "------------------------------------------------------------------------"

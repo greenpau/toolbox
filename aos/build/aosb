@@ -1,0 +1,76 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} -p <platform>"
+	echo "       platform: 'all' or one of: ${platforms}"
+	exit 1
+}
+
+progname=`basename $0`
+logfile=${HOME}/Downloads/logs/${progname}.log
+platforms="porfidio nebbiolo grenache grappa shumway"
+user=`whoami`
+
+[ $# -eq 0 ] && usage
+
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "${progname}: need to be inside a perforce view to build"
+	exit 1
+fi
+
+platform=
+while getopts ":hp:" arg; do
+	case $arg in
+	p) platform=${OPTARG}
+	;;
+	h | *) usage
+	;;
+	esac
+done
+
+mkdir -p `dirname ${logfile}`
+
+echo > ${logfile}
+
+echo "Logfile:" ${logfile}
+echo "Client:" ${P4CLIENT}
+echo "View:" ${P4CLIENT_DIR}
+echo "Platform:" ${platform}
+
+if [ -z "${platform}" ]; then
+	echo "${progname}: missing platform"
+	usage
+elif [ "${platform}" != "all" ]; then
+	echo "${platforms}" | grep -w ${platform} > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "${progname}: ${platform} not a recognized platform"
+		usage
+	fi
+fi
+
+cd ${P4CLIENT_DIR}
+
+for p in $platforms; do
+	build=false
+	if [ "${platform}" == "all" ]; then
+		build=true
+	elif [ ${platform} == ${p} ]; then
+		build=true
+	fi
+	if [ ${build} == false ]; then
+		continue
+	fi
+	printf "Building ${p} - `date` ... "
+	echo "== Running mktree of ${p} - `date`" >> ${logfile}
+	adu mktree $p >> ${logfile} 2>&1
+	echo "== Starting build of ${p} - `date`" >> ${logfile}
+	adu build $p >> ${logfile} 2>&1
+	stat=$?
+	echo "== completed build of ${p} - `date`" >> ${logfile}
+	if [ ${stat} -eq 0 ]; then
+		echo "done"
+	else
+		echo "failed"
+	fi
+done
+echo "All done - `date`"

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+progname=`basename $0`
+if [ -z "$1" ]
+then
+	echo "usage: ${progname} <view>"
+	exit
+fi
+client=$1
+user=`whoami`
+client_dir=/data/${user}/adu/views/${client}
+
+if [ ! -d ${client_dir} ]
+then
+	echo "${progname}: bad view name specified"
+	echo "usage: ${progname} <view>"
+	exit
+fi
+export P4CLIENT=$client
+export P4CLIENT_DIR=${client_dir}
+echo "P4CLIENT_DIR:" ${P4CLIENT_DIR}
+echo "P4CLIENT:" ${P4CLIENT}
+bash
