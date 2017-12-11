@@ -1,0 +1,13 @@
+#!/bin/bash
+
+progname=`basename $0`
+user=`whoami`
+client_dir=/data/${user}/adu/views/$P4CLIENT
+
+if [ ! -d ${client_dir} ]
+then
+	echo "Must be ran inside a view"
+	exit 1
+fi
+p4 changes -l | less
+exit 0
