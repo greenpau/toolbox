@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ~sabyasse/bin/git-tools/libgit.sh
+. /usr/local/git-tools/libgit.sh
 
 usage() {
 	echo "usage: ${progname} <rev> start^..end"

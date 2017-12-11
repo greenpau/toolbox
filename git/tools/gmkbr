@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ~sabyasse/bin/git-tools/libgit.sh
+. /usr/local/git-tools/libgit.sh
 
 usage()
 {
