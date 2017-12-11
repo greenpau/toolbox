@@ -20,4 +20,9 @@ export P4CLIENT=$client
 export P4CLIENT_DIR=${client_dir}
 echo "P4CLIENT_DIR:" ${P4CLIENT_DIR}
 echo "P4CLIENT:" ${P4CLIENT}
-bash
+
+TMPFILE=$(mktemp)
+echo "source ~/.bashrc" > $TMPFILE
+echo "cd ${P4CLIENT_DIR}" >> $TMPFILE
+echo "rm -f $TMPFILE" >> $TMPFILE
+bash --rcfile $TMPFILE
