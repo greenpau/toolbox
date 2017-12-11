@@ -6,9 +6,11 @@ vws="`ls -1 ${vws_dir}`"
 
 echo "List of views for user ${user}"
 echo "------------------------------------------------------------------------"
-printf "View\t\t\tNum-Modified\n"
+printf "%-20s\t\t%s\n" "View" "Last-Modified"
 echo "------------------------------------------------------------------------"
 for v in ${vws}; do
-	printf "$v\t\t$n_mods\n"
+	vw_path=${vws_dir}/${v}
+	last_mod="`stat --printf=\"%y\n\" ${vw_path} | awk -F. '{print $1}'`"
+	printf "%-20s\t\t%s\n" $v "$last_mod"
 done
 echo "------------------------------------------------------------------------"
