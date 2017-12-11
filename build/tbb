@@ -6,11 +6,15 @@ build_rpm() {
 	root_rpm_pkg_path=/root/rpmbuild/RPMS/${machine}
 	this_rpm_path=${root_rpm_pkg_path}/${this_rpm}
 	home_rpm_pkg_path=${HOME}/rpmbuild/RPMS/${machine}/${os_release}/${this_rpm}
+	home_rpm_pkg_dir=`dirname ${home_rpm_pkg_path}`
 	
 	echo "Starting build of $this_rpm - `date`"
 	sudo ${tools_sb}/${this_rpm_build_path} ${logfile}
-	#cp /root/rpmbuild/RPMS/x86_64/${this_rpm} ~/rpmbuild/RPMS/x86_64/6.5
-	sudo cp ${this_rpm_path} ${home_rpm_pkg_path}
+	mkdir -p ${home_rpm_pkg_dir} > /dev/null 2>&1
+	chmod -R 777 ${home_rpm_pkg_dir} > /dev/null 2>&1
+	if [ -f ${this_rpm_path} ]; then
+		sudo cp ${this_rpm_path} ${home_rpm_pkg_path}
+	fi
 	echo "RPM Path: ${home_rpm_pkg_path}"
 	echo "All done - `date`"
 	echo
@@ -26,6 +30,8 @@ os_release=`lsb_release -a 2> /dev/null | grep Release | awk -F: '{print $2}' | 
 rpm_list=" \
 	git-tools-master-0.1.x86_64.rpm:build/git-rpm-build \
 	sys-tools-master-0.1.x86_64.rpm:build/sys-rpm-build \
+	aos-toolbox-master-0.1.x86_64.rpm:build/aos-rpm-build \
+	p4-tools-master-0.1.x86_64.rpm:build/p4-rpm-build \
 	"
 
 echo "" > ${logfile}
