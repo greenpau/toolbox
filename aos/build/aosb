@@ -1,8 +1,9 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} -p <platform>"
+	echo "usage: ${progname} -p <platform> [-m <module>]"
 	echo "       platform: 'all' or one of: ${platforms}"
+	echo "       module: 'sos'"
 	exit 1
 }
 
@@ -10,6 +11,7 @@ progname=`basename $0`
 logfile=${HOME}/Downloads/logs/${progname}.log
 platforms="porfidio nebbiolo grenache grappa shumway"
 user=`whoami`
+build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
 
 [ $# -eq 0 ] && usage
 
@@ -19,9 +21,12 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 fi
 
 platform=
-while getopts ":hp:" arg; do
+module=
+while getopts ":hp:m:" arg; do
 	case $arg in
 	p) platform=${OPTARG}
+	;;
+	m) module=${OPTARG}
 	;;
 	h | *) usage
 	;;
@@ -63,14 +68,30 @@ for p in $platforms; do
 	printf "Building ${p} - `date` ... "
 	echo "== Running mktree of ${p} - `date`" >> ${logfile}
 	adu mktree $p >> ${logfile} 2>&1
-	echo "== Starting build of ${p} - `date`" >> ${logfile}
-	adu build $p >> ${logfile} 2>&1
-	stat=$?
+	if [ -n "${module}" ]; then
+		echo "== Starting ${module} build of ${p} - `date`" >> ${logfile}
+		adu build $p =${module}/build: >> ${logfile} 2>&1
+		stat=$?
+	else
+		echo "== Starting build of ${p} - `date`" >> ${logfile}
+		adu build $p >> ${logfile} 2>&1
+		stat=$?
+	fi
 	echo "== completed build of ${p} - `date`" >> ${logfile}
 	if [ ${stat} -eq 0 ]; then
 		echo "done"
+		if [ -n "${module}" ]; then
+			build_outdir=${build_rootdir}/$p/${module}/build
+			build_objs="`find ${build_outdir} -name ${module}.elf`"
+			echo "Build object for ${module} available at:"
+			echo "${build_objs}"
+		fi
 	else
 		echo "failed"
 	fi
 done
+if [ -z "${module}" ]; then
+	image_loc=`find /tftpboot -name "ArubaOS_7*${P4CLIENT}*"`
+	echo "Images: ${image_loc}"
+fi
 echo "All done - `date`"
