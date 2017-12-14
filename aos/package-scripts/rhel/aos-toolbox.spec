@@ -32,7 +32,7 @@ install__() {
     install -D -m $mode $src $dst_dir
 }
 
-rm -rf $RPM_BUILD_ROOT $basedir
+rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT $basedir
 
 cd %{pkg_name}/aos
