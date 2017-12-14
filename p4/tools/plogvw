@@ -1,13 +1,29 @@
 #!/bin/bash
 
-progname=`basename $0`
-user=`whoami`
-client_dir=/data/${user}/adu/views/$P4CLIENT
+usage() {
+	echo "usage: ${progname} [-f <filename>]"
+	echo "       -f: display log of a particular file"
+	exit 1
+}
 
-if [ ! -d ${client_dir} ]
-then
+progname=`basename $0`
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	echo "Must be ran inside a view"
 	exit 1
 fi
-p4 changes -l | less
+
+filename=
+while getopts ":hf:" arg; do
+	case $arg in
+	f)	filename=${OPTARG}
+		;;
+	h)	usage
+		;;
+	esac
+done
+if [ -n "${filename}" ]; then
+	p4 filelog -l ${filename} | less
+else
+	p4 changes -l | less
+fi
 exit 0
