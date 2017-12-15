@@ -1,15 +1,82 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} -p <platform> [-m <module>]"
-	echo "       platform: 'all' or one of: ${platforms}"
-	echo "       module: 'sos'"
+	echo "usage: ${progname} [-a <platform>] -c <platform> [-m <module>]"
+	echo "       -a platform: 'all' or one of AP '${ap_platforms}' platforms"
+	echo "       -c platform: 'all' or one of Controller '${controller_platforms}' platforms"
+	echo "       -m module: 'sos'"
 	exit 1
+}
+
+build_ap_images() {
+	sudo chmod -R 777 /var/www
+	for ap in ${ap_platforms}; do
+		build=false
+		if [ "${tgt_ap}" == "all" ]; then
+			build=true
+		elif [ ${tgt_ap} == ${ap} ]; then
+			build=true
+		fi
+		if [ ${build} == false ]; then
+			continue
+		fi
+		printf "Building AP ${ap} - `date` ... "
+		echo "== Running mktree of ${ap} - `date`" >> ${logfile}
+		adu mktree ${ap} >> ${logfile} 2>&1
+		echo "== Running build of ${ap} - `date`" >> ${logfile}
+		adu build ${ap} >> ${logfile} 2>&1
+		if [ $? -eq 0 ]; then
+			echo "done"
+		else
+			echo "failed"
+			exit 1
+		fi
+	done
+}
+
+build_controller_images() {
+	for cp in $controller_platforms; do
+		build=false
+		if [ "${tgt_cp}" == "all" ]; then
+			build=true
+		elif [ ${tgt_cp} == ${cp} ]; then
+			build=true
+		fi
+		if [ ${build} == false ]; then
+			continue
+		fi
+		printf "Building ${cp} - `date` ... "
+		echo "== Running mktree of ${cp} - `date`" >> ${logfile}
+		adu mktree $cp >> ${logfile} 2>&1
+		if [ -n "${module}" ]; then
+			echo "== Starting ${module} build of ${cp} - `date`" >> ${logfile}
+			adu build $cp =${module}/build: >> ${logfile} 2>&1
+			stat=$?
+		else
+			echo "== Starting build of ${cp} - `date`" >> ${logfile}
+			adu build $cp >> ${logfile} 2>&1
+			stat=$?
+		fi
+		echo "== completed build of ${cp} - `date`" >> ${logfile}
+		if [ ${stat} -eq 0 ]; then
+			echo "done"
+			if [ -n "${module}" ]; then
+				build_outdir=${build_rootdir}/$cp/${module}/build
+				build_objs="`find ${build_outdir} -name ${module}.elf`"
+				echo "Build object for ${module} available at:"
+				echo "${build_objs}"
+			fi
+		else
+			echo "failed"
+			exit 1
+		fi
+	done
 }
 
 progname=`basename $0`
 logfile=${HOME}/Downloads/logs/${progname}.log
-platforms="porfidio nebbiolo grenache grappa shumway"
+controller_platforms="porfidio nebbiolo grenache grappa shumway"
+ap_platforms="ardmore"
 user=`whoami`
 build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
 
@@ -20,11 +87,16 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	exit 1
 fi
 
-platform=
+tgt_cp=
+tgt_ap=
 module=
-while getopts ":hp:m:" arg; do
+apbuild=false
+while getopts ":ha:c:m:" arg; do
 	case $arg in
-	p) platform=${OPTARG}
+	a) tgt_ap=${OPTARG}
+	   apbuild=true
+	;;
+	c) tgt_cp=${OPTARG}
 	;;
 	m) module=${OPTARG}
 	;;
@@ -40,56 +112,31 @@ echo > ${logfile}
 echo "Logfile:" ${logfile}
 echo "Client:" ${P4CLIENT}
 echo "View:" ${P4CLIENT_DIR}
-echo "Platform:" ${platform}
+echo "AP-Build:" ${apbuild}
+echo "AP Platform(s):" ${tgt_ap}
+echo "Controller Platform(s):" ${tgt_cp}
 
-if [ -z "${platform}" ]; then
+if [ -z "${tgt_cp}" ]; then
 	echo "${progname}: missing platform"
 	usage
-elif [ "${platform}" != "all" ]; then
-	echo "${platforms}" | grep -w ${platform} > /dev/null 2>&1
+elif [ "${tgt_cp}" != "all" ]; then
+	echo "${controller_platforms}" | grep -w ${tgt_cp} > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		echo "${progname}: ${platform} not a recognized platform"
+		echo "${progname}: ${tgt_cp} not a recognized platform"
 		usage
 	fi
 fi
 
 cd ${P4CLIENT_DIR}
 
-for p in $platforms; do
-	build=false
-	if [ "${platform}" == "all" ]; then
-		build=true
-	elif [ ${platform} == ${p} ]; then
-		build=true
+if [ -z "${module}" ]; then
+	if [ ${apbuild} == true ]; then
+		build_ap_images
 	fi
-	if [ ${build} == false ]; then
-		continue
-	fi
-	printf "Building ${p} - `date` ... "
-	echo "== Running mktree of ${p} - `date`" >> ${logfile}
-	adu mktree $p >> ${logfile} 2>&1
-	if [ -n "${module}" ]; then
-		echo "== Starting ${module} build of ${p} - `date`" >> ${logfile}
-		adu build $p =${module}/build: >> ${logfile} 2>&1
-		stat=$?
-	else
-		echo "== Starting build of ${p} - `date`" >> ${logfile}
-		adu build $p >> ${logfile} 2>&1
-		stat=$?
-	fi
-	echo "== completed build of ${p} - `date`" >> ${logfile}
-	if [ ${stat} -eq 0 ]; then
-		echo "done"
-		if [ -n "${module}" ]; then
-			build_outdir=${build_rootdir}/$p/${module}/build
-			build_objs="`find ${build_outdir} -name ${module}.elf`"
-			echo "Build object for ${module} available at:"
-			echo "${build_objs}"
-		fi
-	else
-		echo "failed"
-	fi
-done
+fi
+
+build_controller_images
+
 if [ -z "${module}" ]; then
 	image_loc=`find /tftpboot -name "ArubaOS_7*${P4CLIENT}*"`
 	echo "Images: ${image_loc}"
