@@ -1,0 +1,136 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <view> <crashinfo-path> [options]"
+	echo "arguments:"
+	echo "       view: name of any perforce view for obtaining cross tool location"
+	echo "       crashinfo-path: path to top of your crashinfo location"
+	echo "options:"
+	echo "       -n: donot cleanup temporary files after reading corefile"
+	exit 1
+}
+
+sos7z_to_core() {
+	sos7z=sos.7z
+	sos_core=sos.core
+	if [ -f ${sos_core} ]; then
+		echo "${progname}: using ${sos_core}"
+		return
+	fi
+	if [ ! -f ${sos7z} ]; then
+		echo "${progname}: missing ${sos7z}, cannot extract ${sos_core}"
+		exit 1
+	fi
+	printf "Converting sos.7z to sos.core, please wait ... "
+	/usr/local/aos/tools/7z2soscore sos.7z > ${logfile} 2>&1
+	echo done
+}
+
+download_syms_tar() {
+	build_server=10.1.1.41
+	tftpuser=tftpfips
+	tfppass=tftpfips
+	if [ -f symbols.tar.gz ]; then
+		echo "${progname}: using symbols.tar.gz"
+		return
+	fi
+	printf "Downloading symbols.tar.gz from ${build_server}, please wait ... "
+	sshpass -p ${tfppass} scp ${tftpuser}@${build_server}:/tftpboot/symbols/${label}/symbols.tar.gz .
+	echo done
+}
+
+extract_sym_file() {
+	symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null`
+	if [ -z "${symfile_path}" ]; then
+		printf "Extracting sos.${platform}.elf.symbols from symbols.tar.gz, please wait ... "
+		tar -xzf symbols.tar.gz --no-anchored sos.${platform}.elf.symbols
+		echo done
+		symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null`
+	fi
+}
+
+run_gdb() {
+	if [ ! -f ${symfile_path} ]; then
+		echo "${progname}: missing ${symfile_path}"
+		return
+	fi
+	if [ ! -f ${sos_core} ]; then
+		echo "${progname}: missing ${sos_core}"
+		return
+	fi
+	${mips_xgdb} ${symfile_path} ${sos_core}
+}
+
+cleanup() {
+	printf "Cleaning up, please wait ... "
+	rm -rf ${sos_core} ${symfile_path} symbols.tar.gz
+	echo done
+}
+
+progname=`basename $0`
+P4CLIENT=$1
+crashinfo_path=$2
+logfile=/var/tmp/${progname}.log
+user=`whoami`
+P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
+export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
+mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
+
+if [ ! -d ${P4CLIENT_DIR} ]; then
+	echo "${progname}: ${P4CLIENT} does not map to a valid view"
+	exit 1
+fi
+
+if [ -z "${crashinfo_path}" ]; then
+	usage
+fi
+
+if [ ! -d ${crashinfo_path} ]; then
+	echo "${progname}: ${crashinfo_path} does not exist"
+	exit 1
+fi
+
+shift;shift
+do_cleanup=true
+while getopts ":n" arg; do
+	case ${arg} in
+	n) do_cleanup=false
+	;;
+	esac
+done
+
+echo > ${logfile}
+
+if [ ! -d ${crashinfo_path} ]; then
+	echo "${progname}: missing ${crashinfo_path}"
+	exit 1
+fi
+cd ${crashinfo_path}
+if [ ! -f machineInfo ]; then
+	echo "${progname}: missing machineInfo in ${crashinfo_path}"
+	exit 1
+fi
+platform=`grep -a MODEL machineInfo | awk -F: '{print $2}' | awk '{print $1}' | awk -F")" '{print $1}' | sed 's/Aruba//g'`
+if [ -z "${platform}" ]; then
+	echo "${progname}: unable to determine platform from machineInfo"
+	exit 1
+fi
+label=`sed -n -e '/Default boot/,/--------/ p' machineInfo | grep Label | awk '{print $3}'`
+if [ -z "${label}" ]; then
+	echo "${progname}: unable to determine label from machineInfo"
+	exit 1
+fi
+
+echo "Crashinfo Path:" ${crashinfo_path}
+echo "MIPS xGDB:" ${mips_xgdb}
+echo "Platform:" ${platform}
+echo "Label:" ${label}
+
+sos7z_to_core
+download_syms_tar
+extract_sym_file
+run_gdb
+if [ ${do_cleanup} == true ]; then
+	cleanup
+fi
+exit 0

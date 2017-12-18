@@ -38,6 +38,7 @@ mkdir -p $RPM_BUILD_ROOT $basedir
 cd %{pkg_name}/aos
 install__ 0755 build/aosb
 install__ 0755 tools/7z2soscore
+install__ 0755 tools/sos-crash-debug
 
 %clean
 
@@ -45,6 +46,7 @@ install__ 0755 tools/7z2soscore
 %defattr(-,root,root)
 /usr/local/aos/build/aosb
 /usr/local/aos/tools/7z2soscore
+/usr/local/aos/tools/sos-crash-debug
 
 %pre
 
