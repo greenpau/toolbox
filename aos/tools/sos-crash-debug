@@ -73,6 +73,7 @@ crashinfo_path=$2
 logfile=/var/tmp/${progname}.log
 user=`whoami`
 P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
+export ARUBA_SRC=${P4CLIENT_DIR}
 export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
 mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
 
