@@ -1,0 +1,23 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <zip_file>"
+	exit 1
+}
+
+progname=`basename $0`
+zip_file=$1
+if [ -z "${zip_file}" ]; then
+	usage
+fi
+if [ ! -e ${zip_file} ]; then
+	echo "${progname}: ${zip_file} not found"
+	exit 1
+fi
+echo "Content of ${zip_file}"
+7za l ${zip_file}
+
+echo "Generating sos.core .. please wait"
+7za x ${zip_file} | grep Extracting | awk -F" " '{ print $2 }' | sort -t. -k 2 -n -b | xargs cat > sos.core
+rm -f core* sosmemdump*
+exit 0
