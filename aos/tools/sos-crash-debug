@@ -7,6 +7,7 @@ usage() {
 	echo "       crashinfo-path: path to top of your crashinfo location"
 	echo "options:"
 	echo "       -n: donot cleanup temporary files after reading corefile"
+	echo "       -x <script>: run specified gdbscript at startup"
 	exit 1
 }
 
@@ -58,7 +59,11 @@ run_gdb() {
 		echo "${progname}: missing ${sos_core}"
 		return
 	fi
-	${mips_xgdb} ${symfile_path} ${sos_core}
+	if [ -n "${gdbscript}" ]; then
+		${mips_xgdb} -x ${gdbscript} ${symfile_path} ${sos_core}
+	else
+		${mips_xgdb} ${symfile_path} ${sos_core}
+	fi
 }
 
 cleanup() {
@@ -93,9 +98,12 @@ fi
 
 shift;shift
 do_cleanup=true
-while getopts ":n" arg; do
+gdbscript=
+while getopts ":nx:" arg; do
 	case ${arg} in
 	n) do_cleanup=false
+	;;
+	x) gdbscript=${OPTARG}
 	;;
 	esac
 done
