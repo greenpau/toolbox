@@ -1,0 +1,32 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} [-f <filename>]"
+	echo "       -f: display log of a particular file"
+	exit 1
+}
+
+progname=`basename $0`
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "${progname}: not inside any perforce view"
+	exit 1
+fi
+
+detail=0
+while getopts ":hd" arg; do
+	case $arg in
+	d)	detail=1
+		;;
+	h)	usage
+		;;
+	esac
+done
+
+if [ ${detail} -eq 1 ]; then
+	p4 diff -ds
+else
+	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}'`"
+	echo "List of files checked out in ${P4CLIENT}:"
+	echo "$flist"
+fi
+echo

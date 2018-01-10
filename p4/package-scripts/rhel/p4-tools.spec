@@ -41,6 +41,7 @@ install__ 0755 plsvw
 install__ 0755 plogvw
 install__ 0755 pmkvw
 install__ 0755 ppwvw
+install__ 0755 pstatvw
 
 %clean
 
@@ -51,6 +52,7 @@ install__ 0755 ppwvw
 /usr/local/p4-tools/plogvw
 /usr/local/p4-tools/pmkvw
 /usr/local/p4-tools/ppwvw
+/usr/local/p4-tools/pstatvw
 
 %pre
 
