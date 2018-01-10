@@ -1,0 +1,30 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} [-f <filename>]"
+	echo "       -f: display diff of a particular file"
+	exit 1
+}
+
+progname=`basename $0`
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "Must be ran inside a view"
+	exit 1
+fi
+
+filename=
+while getopts ":hf:" arg; do
+	case $arg in
+	f)	filename=${OPTARG}
+		;;
+	*)	usage
+		;;
+	esac
+done
+if [ -n "${filename}" ]; then
+	p4 diff -du ${filename} | less
+else
+	p4 diff -du | less
+fi
+exit 0
+
