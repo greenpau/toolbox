@@ -13,17 +13,21 @@ usage() {
 
 sos7z_to_core() {
 	sos7z=sos.7z
-	sos_core=sos.core
+	sos_core="`find . -name sos.core*`"
 	if [ -f ${sos_core} ]; then
-		echo "${progname}: using ${sos_core}"
+		echo "${progname}: using $PWD/${sos_core}"
 		return
 	fi
 	if [ ! -f ${sos7z} ]; then
 		echo "${progname}: missing ${sos7z}, cannot extract ${sos_core}"
 		exit 1
 	fi
+	if [ ! -f ${z2soscore} ]; then
+		echo "${progname}: missing ${z2soscore}, cannot extract ${sos_core}"
+		exit 1
+	fi
 	printf "Converting sos.7z to sos.core, please wait ... "
-	/usr/local/aos/tools/7z2soscore sos.7z > ${logfile} 2>&1
+	${z2soscore} sos.7z > ${logfile} 2>&1
 	echo done
 }
 
@@ -81,6 +85,11 @@ P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
 export ARUBA_SRC=${P4CLIENT_DIR}
 export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
 mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
+z2soscore=/usr/local/aos/tools/7z2soscore
+
+if [ -z "${P4CLIENT}" ]; then
+	usage
+fi
 
 if [ ! -d ${P4CLIENT_DIR} ]; then
 	echo "${progname}: ${P4CLIENT} does not map to a valid view"
@@ -105,6 +114,10 @@ while getopts ":nx:" arg; do
 	;;
 	x) gdbscript=${OPTARG}
 	;;
+	*)
+	echo "${progname}: invalid option ${arg}"
+	usage
+	;;
 	esac
 done
 
@@ -119,7 +132,7 @@ if [ ! -f machineInfo ]; then
 	echo "${progname}: missing machineInfo in ${crashinfo_path}"
 	exit 1
 fi
-platform=`grep -a MODEL machineInfo | awk -F: '{print $2}' | awk '{print $1}' | awk -F")" '{print $1}' | sed 's/Aruba//g'`
+platform=`grep -a MODEL machineInfo | awk -F: '{print $2}' | awk '{print $1}' | awk -F")" '{print $1}' | sed 's/Aruba//g' | awk -F- '{print $1}'`
 if [ -z "${platform}" ]; then
 	echo "${progname}: unable to determine platform from machineInfo"
 	exit 1
