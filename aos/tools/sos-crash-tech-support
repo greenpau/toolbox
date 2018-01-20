@@ -18,7 +18,7 @@ EOF
 append_source_dirs() {
 	for i in ${gdbscripts}; do
 		cat >> ${gdbscript} << EOF
-print "======= source ${i} ======"
+print "${marker} source ${i}"
 source -v ${gdbscripts_dir}/${i}
 EOF
 	done
@@ -26,16 +26,16 @@ EOF
 
 append_basic_core_info() {
 cat >> ${gdbscript} << EOF
-print "======= info files ======"
+print "${marker} info files"
 info files
 EOF
 }
 
 append_thread_info() {
 cat >> ${gdbscript} << EOF
-print "======= info threads ======"
+print "${marker} info threads"
 info threads
-print "======= backtrace full ======"
+print "${marker} backtrace full"
 thread apply all bt full
 EOF
 }
@@ -43,7 +43,7 @@ EOF
 append_gdbproc_runs() {
 	for i in ${gdbprocs}; do
 		cat >> ${gdbscript} << EOF
-print "======= ${i} ======"
+print "${marker} ${i}"
 ${i}
 EOF
 	done
@@ -74,7 +74,7 @@ cleanup_gdbscript() {
 }
 
 finalize_log() {
-	sed -e 's/''\$''.*= "=======/"=======/g' ${tech_support_log} | sed -e 's/"//g' > ${tech_support_log}.$$
+	sed -e 's/''\$''.*= "=======/"(gdb)/g' ${tech_support_log} | sed -e 's/"//g' > ${tech_support_log}.$$
 	mv ${tech_support_log}.$$ ${tech_support_log}
 	echo "Tech Support Log location: ${tech_support_log}"
 }
@@ -111,6 +111,7 @@ aos_tools_path=/usr/local/aos/tools
 timestamp=`date +"%Y%m%d%H%M%S"`
 tech_support_log=/var/tmp/${progname}.${timestamp}.txt
 gdbscript=/var/tmp/gdbscript.$$
+marker="======="
 
 echo "Crashdump path: ${crashdump_path}"
 echo "Tech Support Log location: ${tech_support_log}"
