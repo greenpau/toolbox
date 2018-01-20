@@ -1,0 +1,131 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <view> <crashinfo-path>"
+	exit 1
+}
+
+append_gdb_env() {
+	cat >> ${gdbscript} << EOF
+set logging redirect on
+set logging file ${tech_support_log}
+set logging on
+set print repeat 0
+set pagination off
+EOF
+}
+
+append_source_dirs() {
+	for i in ${gdbscripts}; do
+		cat >> ${gdbscript} << EOF
+print "======= source ${i} ======"
+source -v ${gdbscripts_dir}/${i}
+EOF
+	done
+}
+
+append_basic_core_info() {
+cat >> ${gdbscript} << EOF
+print "======= info files ======"
+info files
+EOF
+}
+
+append_thread_info() {
+cat >> ${gdbscript} << EOF
+print "======= info threads ======"
+info threads
+print "======= backtrace full ======"
+thread apply all bt full
+EOF
+}
+
+append_gdbproc_runs() {
+	for i in ${gdbprocs}; do
+		cat >> ${gdbscript} << EOF
+print "======= ${i} ======"
+${i}
+EOF
+	done
+}
+
+append_quit() {
+	cat >> ${gdbscript} << EOF
+quit
+EOF
+}
+
+create_gdbscript() {
+	echo > ${gdbscript}
+	append_gdb_env
+	append_basic_core_info
+	append_thread_info
+	append_source_dirs
+	append_gdbproc_runs
+	append_quit
+}
+
+run_gdb() {
+	${aos_tools_path}/sos-crash-debug ${P4CLIENT} ${crashdump_path} -x ${gdbscript} -n
+}
+
+cleanup_gdbscript() {
+	rm -f ${gdbscript}
+}
+
+finalize_log() {
+	sed -e 's/''\$''.*= "=======/"=======/g' ${tech_support_log} | sed -e 's/"//g' > ${tech_support_log}.$$
+	mv ${tech_support_log}.$$ ${tech_support_log}
+	echo "Tech Support Log location: ${tech_support_log}"
+}
+
+gdbscripts="\
+	bwm.gdb \
+	python/bwm.py \
+	xlp/cpu.gdb \
+	xlp/python/cpu.py \
+	xlp/dma.gdb \
+	xlp/python/dma.py \
+	xlp/sbeth.gdb \
+	xlp/python/sbeth.py \
+	xlp/stats.gdb \
+	xlp/python/stats.py \
+"
+
+gdbprocs="\
+	print_cpu_utilization \
+	dump_all_stats \
+	print_all_bwms \
+	print_dma_info \
+	sbeth_leak_stats \
+	sbeth_print_freelist \
+"
+
+progname=`basename $0`
+user=`whoami`
+P4CLIENT=$1
+P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
+gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
+crashdump_path=$2
+aos_tools_path=/usr/local/aos/tools
+timestamp=`date +"%Y%m%d%H%M%S"`
+tech_support_log=/var/tmp/${progname}.${timestamp}.txt
+gdbscript=/var/tmp/gdbscript.$$
+
+echo "Crashdump path: ${crashdump_path}"
+echo "Tech Support Log location: ${tech_support_log}"
+
+if [ -z "${P4CLIENT}" ]; then
+	echo "${progname}: missing view name"
+	usage
+fi
+
+if [ -z "${crashdump_path}" ]; then
+	echo "${progname}: missing crashdump path"
+	usage
+fi
+
+create_gdbscript
+run_gdb
+cleanup_gdbscript
+finalize_log
