@@ -63,11 +63,7 @@ run_gdb() {
 		echo "${progname}: missing ${sos_core}"
 		return
 	fi
-	if [ -n "${gdbscript}" ]; then
-		${mips_xgdb} -x ${gdbscript} ${symfile_path} ${sos_core}
-	else
-		${mips_xgdb} ${symfile_path} ${sos_core}
-	fi
+	${mips_xgdb} ${gdb_addl_opts} ${symfile_path} ${sos_core}
 }
 
 cleanup() {
@@ -107,12 +103,13 @@ fi
 
 shift;shift
 do_cleanup=true
-gdbscript=
+gdb_addl_opts=
 while getopts ":nx:" arg; do
 	case ${arg} in
 	n) do_cleanup=false
 	;;
-	x) gdbscript=${OPTARG}
+	x)
+	gdb_addl_opts="-q -x ${OPTARG}"
 	;;
 	*)
 	echo "${progname}: invalid option ${arg}"
