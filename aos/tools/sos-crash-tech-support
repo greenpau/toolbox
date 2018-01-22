@@ -1,7 +1,10 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} <view> <crashinfo-path>"
+	echo "usage: ${progname} <view> <crashinfo-path> [options]"
+	echo "options:"
+	echo "       -p <path>: P4 view root directory (default /data/<login>/adu/views)"
+	echo "       -t <path>: AOS tools path (default /usr/local/aos/tools)"
 	exit 1
 }
 
@@ -69,7 +72,15 @@ create_gdbscript() {
 }
 
 run_gdb() {
-	${aos_tools_path}/sos-crash-debug ${P4CLIENT} ${crashdump_path} -x ${gdbscript} -n
+	p4view_opt=
+	if [ -n "${P4VIEW_ROOTDIR}" ]; then
+		p4view_opt="-p ${P4VIEW_ROOTDIR}"
+	fi
+	tools_opt=
+	if [ -n "${AOS_TOOLS_DIR}" ]; then
+		tools_opt="-t ${AOS_TOOLS_DIR}"
+	fi
+	${sos_crash_debug} ${P4CLIENT} ${crashdump_path} -x ${gdbscript} -n ${tools_opt} ${p4view_opt}
 }
 
 cleanup_gdbscript() {
@@ -111,19 +122,12 @@ gdbcomms=(\
 )
 
 progname=`basename $0`
-user=`whoami`
 P4CLIENT=$1
-P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
-gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
 crashdump_path=$2
-aos_tools_path=/usr/local/aos/tools
 timestamp=`date +"%Y%m%d%H%M%S"`
 tech_support_log=/var/tmp/${progname}.${timestamp}.txt
 gdbscript=/var/tmp/gdbscript.$$
 marker="======="
-
-echo "Crashdump path: ${crashdump_path}"
-echo "Tech Support Log location: ${tech_support_log}"
 
 if [ -z "${P4CLIENT}" ]; then
 	echo "${progname}: missing view name"
@@ -134,6 +138,37 @@ if [ -z "${crashdump_path}" ]; then
 	echo "${progname}: missing crashdump path"
 	usage
 fi
+
+shift;shift
+
+while getopts ":p:t:" arg; do
+	case ${arg} in
+	p)
+	P4VIEW_ROOTDIR=${OPTARG}
+	;;
+	t)
+	AOS_TOOLS_DIR=${OPTARG}
+	;;
+	*)
+	echo "${progname}: invalid option ${arg}"
+	usage
+	;;
+	esac
+done
+
+user=`whoami`
+P4VIEWDIR_DEF=/data/${user}/adu/views
+P4CLIENT_DIR=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${P4CLIENT}
+gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
+
+AOS_TOOLS_DEF=/usr/local/aos/tools
+AOS_TOOLS=${AOS_TOOLS_DIR:-${AOS_TOOLS_DEF}}
+sos_crash_debug=${AOS_TOOLS}/sos-crash-debug
+
+echo "Crashdump path: ${crashdump_path}"
+echo "Tech Support Log location: ${tech_support_log}"
+echo "AOS Tools: ${AOS_TOOLS}"
+echo "P4 client path: ${P4CLIENT_DIR}" 
 
 create_gdbscript
 run_gdb

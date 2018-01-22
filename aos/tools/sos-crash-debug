@@ -8,6 +8,8 @@ usage() {
 	echo "options:"
 	echo "       -n: donot cleanup temporary files after reading corefile"
 	echo "       -x <script>: run specified gdbscript at startup"
+	echo "       -p <path>: P4 view root directory (default /data/<login>/adu/views)"
+	echo "       -t <path>: AOS tools path (default /usr/local/aos/tools)"
 	exit 1
 }
 
@@ -76,20 +78,9 @@ progname=`basename $0`
 P4CLIENT=$1
 crashinfo_path=$2
 logfile=/var/tmp/${progname}.log
-user=`whoami`
-P4CLIENT_DIR=/data/${user}/adu/views/${P4CLIENT}
-export ARUBA_SRC=${P4CLIENT_DIR}
-export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
-mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
-z2soscore=/usr/local/aos/tools/7z2soscore
 
 if [ -z "${P4CLIENT}" ]; then
 	usage
-fi
-
-if [ ! -d ${P4CLIENT_DIR} ]; then
-	echo "${progname}: ${P4CLIENT} does not map to a valid view"
-	exit 1
 fi
 
 if [ -z "${crashinfo_path}" ]; then
@@ -104,12 +95,20 @@ fi
 shift;shift
 do_cleanup=true
 gdb_addl_opts=
-while getopts ":nx:" arg; do
+P4VIEW_ROOTDIR=
+AOS_TOOLS_DIR=
+while getopts ":nx:p:t:" arg; do
 	case ${arg} in
 	n) do_cleanup=false
 	;;
 	x)
 	gdb_addl_opts="-q -x ${OPTARG}"
+	;;
+	p)
+	P4VIEW_ROOTDIR=${OPTARG}
+	;;
+	t)
+	AOS_TOOLS_DIR=${OPTARG}
 	;;
 	*)
 	echo "${progname}: invalid option ${arg}"
@@ -117,6 +116,20 @@ while getopts ":nx:" arg; do
 	;;
 	esac
 done
+
+AOS_TOOLS_DEF=/usr/local/aos/tools
+z2soscore=${AOS_TOOLS_DIR:-${AOS_TOOLS_DEF}}/7z2soscore
+
+user=`whoami`
+P4VIEWDIR_DEF=/data/${user}/adu/views
+P4CLIENT_DIR=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${P4CLIENT}
+export ARUBA_SRC=${P4CLIENT_DIR}
+export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
+mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
+if [ ! -d ${P4CLIENT_DIR} ]; then
+	echo "${progname}: ${P4CLIENT_DIR} does not map to a valid view"
+	exit 1
+fi
 
 echo > ${logfile}
 
