@@ -35,7 +35,9 @@ append_thread_info() {
 cat >> ${gdbscript} << EOF
 print "${marker} info threads"
 info threads
-print "${marker} backtrace full"
+print "${marker} thread apply all backtrace"
+thread apply all bt
+print "${marker} thread apply all backtrace full"
 thread apply all bt full
 EOF
 }
