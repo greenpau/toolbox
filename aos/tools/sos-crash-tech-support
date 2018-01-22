@@ -31,15 +31,16 @@ info files
 EOF
 }
 
-append_thread_info() {
-cat >> ${gdbscript} << EOF
-print "${marker} info threads"
-info threads
-print "${marker} thread apply all backtrace"
-thread apply all bt
-print "${marker} thread apply all backtrace full"
-thread apply all bt full
+append_gdbcomm_runs() {
+	n=${#gdbcomms[@]}
+	i=0
+	while [ $i -lt $n ]; do
+		cat >> ${gdbscript} << EOF
+print "${marker} ${gdbcomms[$i]}"
+${gdbcomms[$i]}
 EOF
+		i=`expr $i + 1`
+	done
 }
 
 append_gdbproc_runs() {
@@ -61,7 +62,7 @@ create_gdbscript() {
 	echo > ${gdbscript}
 	append_gdb_env
 	append_basic_core_info
-	append_thread_info
+	append_gdbcomm_runs
 	append_source_dirs
 	append_gdbproc_runs
 	append_quit
@@ -102,6 +103,12 @@ gdbprocs="\
 	sbeth_leak_stats \
 	sbeth_print_freelist \
 "
+
+gdbcomms=(\
+'info threads' \
+'thread apply all backtrace' \
+'thread apply all backtrace full' \
+)
 
 progname=`basename $0`
 user=`whoami`
