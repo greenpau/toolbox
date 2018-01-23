@@ -37,6 +37,7 @@ set logging redirect on
 set logging file ${tech_support_log}
 set logging on
 set print repeat 0
+set print pretty on
 set pagination off
 EOF
 }
@@ -148,6 +149,8 @@ gdbcomms=(\
 'info threads' \
 'thread apply all backtrace' \
 'thread apply all backtrace full' \
+'print sos_sys_info'
+'print stats.maint'
 )
 
 progname=`basename $0`
