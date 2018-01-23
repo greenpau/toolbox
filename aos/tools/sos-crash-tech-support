@@ -47,11 +47,14 @@ EOF
 }
 
 append_gdbproc_runs() {
-	for i in ${gdbprocs}; do
+	n=${#gdbprocs[@]}
+	i=0
+	while [ $i -lt $n ]; do
 		cat >> ${gdbscript} << EOF
-print "${marker} ${i}"
-${i}
+print "${marker} ${gdbprocs[$i]}"
+${gdbprocs[$i]}
 EOF
+		i=`expr $i + 1`
 	done
 }
 
@@ -106,14 +109,14 @@ gdbscripts="\
 	xlp/python/stats.py \
 "
 
-gdbprocs="\
-	print_cpu_utilization \
-	dump_all_stats \
-	print_all_bwms \
-	print_dma_info \
-	sbeth_leak_stats \
-	sbeth_print_freelist \
-"
+gdbprocs=(\
+'print_cpu_utilization' \
+'dump_all_stats' \
+'print_all_bwms' \
+'print_dma_info' \
+'sbeth_leak_stats' \
+'sbeth_print_freelist' \
+)
 
 gdbcomms=(\
 'info threads' \
