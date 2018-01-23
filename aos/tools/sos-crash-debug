@@ -16,7 +16,7 @@ usage() {
 sos7z_to_core() {
 	sos7z=sos.7z
 	sos_core="`find . -name sos.core*`"
-	if [ -f ${sos_core} ]; then
+	if [ -n "${sos_core}" ] && [ -f ${sos_core} ]; then
 		echo "${progname}: using $PWD/${sos_core}"
 		return
 	fi
@@ -28,9 +28,16 @@ sos7z_to_core() {
 		echo "${progname}: missing ${z2soscore}, cannot extract ${sos_core}"
 		exit 1
 	fi
-	printf "Converting sos.7z to sos.core, please wait ... "
-	${z2soscore} sos.7z > ${logfile} 2>&1
+	printf "Converting ${sos7z} to sos.core, please wait ... "
+	${z2soscore} ${sos7z} > ${logfile} 2>&1
 	echo done
+	sos_core="`find . -name sos.core*`"
+	if [ -n "${sos_core}" ] && [ -f ${sos_core} ]; then
+		echo "${progname}: using $PWD/${sos_core}"
+	else
+		echo "${progname}: unable to extract ${sos_core}"
+		exit 1
+	fi
 }
 
 download_syms_tar() {
@@ -47,12 +54,12 @@ download_syms_tar() {
 }
 
 extract_sym_file() {
-	symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null`
+	symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null | grep Aruba`
 	if [ -z "${symfile_path}" ]; then
 		printf "Extracting sos.${platform}.elf.symbols from symbols.tar.gz, please wait ... "
 		tar -xzf symbols.tar.gz --no-anchored sos.${platform}.elf.symbols
 		echo done
-		symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null`
+		symfile_path=`find home -name sos.${platform}.elf.symbols 2> /dev/null | grep Aruba`
 	fi
 }
 
@@ -148,7 +155,7 @@ if [ -z "${platform}" ]; then
 	echo "${progname}: unable to determine platform from machineInfo"
 	exit 1
 fi
-label=`sed -n -e '/Default boot/,/--------/ p' machineInfo | grep Label | awk '{print $3}'`
+label=`sed -n -e '/Default boot/,/--------/ p' machineInfo | grep -a Label | awk '{print $3}'`
 if [ -z "${label}" ]; then
 	echo "${progname}: unable to determine label from machineInfo"
 	exit 1
