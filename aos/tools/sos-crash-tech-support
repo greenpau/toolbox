@@ -8,6 +8,29 @@ usage() {
 	exit 1
 }
 
+append_print_banner() {
+	local comm="$1"
+	if [ -z "${comm}" ]; then
+		return
+	fi
+	cat >> ${gdbscript} << EOF
+set logging off
+shell echo "Running ${comm}"
+set logging on
+EOF
+}
+
+append_gdb_run() {
+	local comm="$1"
+	if [ -z "${comm}" ]; then
+		return
+	fi
+	cat >> ${gdbscript} << EOF
+print "${marker} ${comm}"
+$comm
+EOF
+}
+
 append_gdb_env() {
 	cat >> ${gdbscript} << EOF
 set logging redirect on
@@ -38,10 +61,8 @@ append_gdbcomm_runs() {
 	n=${#gdbcomms[@]}
 	i=0
 	while [ $i -lt $n ]; do
-		cat >> ${gdbscript} << EOF
-print "${marker} ${gdbcomms[$i]}"
-${gdbcomms[$i]}
-EOF
+		append_print_banner "${gdbcomms[$i]}"
+		append_gdb_run "${gdbcomms[$i]}"
 		i=`expr $i + 1`
 	done
 }
@@ -50,10 +71,8 @@ append_gdbproc_runs() {
 	n=${#gdbprocs[@]}
 	i=0
 	while [ $i -lt $n ]; do
-		cat >> ${gdbscript} << EOF
-print "${marker} ${gdbprocs[$i]}"
-${gdbprocs[$i]}
-EOF
+		append_print_banner "${gdbprocs[$i]}"
+		append_gdb_run "${gdbprocs[$i]}"
 		i=`expr $i + 1`
 	done
 }
