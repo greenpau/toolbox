@@ -140,7 +140,7 @@ gdbprocs=(\
 'print_dma_info' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
-'sess_table_print_v4 3' \
+'sess_table_print_v4 1' \
 'user_table_hash_dump' \
 'user_pend_dump' \
 )
