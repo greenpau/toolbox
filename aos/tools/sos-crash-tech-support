@@ -119,6 +119,10 @@ finalize_log() {
 gdbscripts="\
 	bwm.gdb \
 	python/bwm.py \
+	routecache.gdb \
+	python/routecache.py \
+	route_table_hash.gdb \
+	python/route_table_hash.py \
 	python/session.gdb \
 	python/session.py \
 	user.gdb \
@@ -140,6 +144,8 @@ gdbprocs=(\
 'print_dma_info' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
+'route_cache_dump' \
+'route_table_dump' \
 'sess_table_print_v4 1' \
 'user_table_hash_dump' \
 'user_pend_dump' \
