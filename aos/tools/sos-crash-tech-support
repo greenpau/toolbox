@@ -99,6 +99,10 @@ finalize_log() {
 gdbscripts="\
 	bwm.gdb \
 	python/bwm.py \
+	python/session.gdb \
+	python/session.py \
+	user.gdb \
+	python/user.py \
 	xlp/cpu.gdb \
 	xlp/python/cpu.py \
 	xlp/dma.gdb \
@@ -116,6 +120,9 @@ gdbprocs=(\
 'print_dma_info' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
+'sess_table_print_v4 3' \
+'user_table_hash_dump' \
+'user_pend_dump' \
 )
 
 gdbcomms=(\
