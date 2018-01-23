@@ -130,6 +130,7 @@ if [ ! -d ${P4CLIENT_DIR} ]; then
 	echo "${progname}: ${P4CLIENT_DIR} does not map to a valid view"
 	exit 1
 fi
+export SHELL=/bin/bash
 
 echo > ${logfile}
 
