@@ -63,6 +63,15 @@ extract_sym_file() {
 	fi
 }
 
+copy_sym_file() {
+	symfile_path=`find ${P4CLIENT_BUILD} -name sos.elf.symbols 2> /dev/null | grep ${platform}`
+	if [ -z "${symfile_path}" ]; then
+		echo "${progname}: unable to find sos.elf.symbols in ${P4CLIENT_BUILD}"
+		exit 1
+	fi
+	echo "${progname}: using ${symfile_path}"
+}
+
 run_gdb() {
 	if [ ! -f ${symfile_path} ]; then
 		echo "${progname}: missing ${symfile_path}"
@@ -130,6 +139,7 @@ z2soscore=${AOS_TOOLS_DIR:-${AOS_TOOLS_DEF}}/7z2soscore
 user=`whoami`
 P4VIEWDIR_DEF=/data/${user}/adu/views
 P4CLIENT_DIR=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${P4CLIENT}
+P4CLIENT_BUILD=`echo ${P4CLIENT_DIR} | sed -e 's/views/build/g'`
 export ARUBA_SRC=${P4CLIENT_DIR}
 export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
 mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
@@ -160,6 +170,7 @@ if [ -z "${label}" ]; then
 	echo "${progname}: unable to determine label from machineInfo"
 	exit 1
 fi
+is_private_build=`echo ${label} | grep ${user}`
 
 echo "Crashinfo Path:" ${crashinfo_path}
 echo "MIPS xGDB:" ${mips_xgdb}
@@ -167,8 +178,12 @@ echo "Platform:" ${platform}
 echo "Label:" ${label}
 
 sos7z_to_core
-download_syms_tar
-extract_sym_file
+if [ -n "${is_private_build}" ]; then
+	copy_sym_file
+else
+	download_syms_tar
+	extract_sym_file
+fi
 run_gdb
 if [ ${do_cleanup} == true ]; then
 	cleanup
