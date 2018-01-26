@@ -125,6 +125,8 @@ gdbscripts="\
 	python/route_table_hash.py \
 	python/session.gdb \
 	python/session.py \
+	tunnel.gdb \
+	python/tunnel.py \
 	user.gdb \
 	python/user.py \
 	xlp/cpu.gdb \
@@ -147,6 +149,7 @@ gdbprocs=(\
 'route_cache_dump' \
 'route_table_dump' \
 'sess_table_print_v4 1' \
+'tunnel_dump' \
 'user_table_hash_dump' \
 'user_pend_dump' \
 )
