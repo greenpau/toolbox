@@ -58,6 +58,17 @@ class Device(object):
 			break
 		return partition
 
+	def reload(self):
+		if self.s == None:
+			self.ssh()
+		cmd = "reload"
+		print cmd
+		self.s.sendline(cmd)
+		self.s.expect("Do you really want to restart the system.*y/n.*:")
+		self.s.sendline("y")
+		print self.s.after
+		self.s = None
+
 	def is_telnet_enabled(self):
 		self.telnet()
 		if (self.t != None):

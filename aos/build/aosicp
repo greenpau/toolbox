@@ -16,11 +16,12 @@ def usage():
 	print "    -b <ip>: IP address of build machine"
 	print "    -c <ip>: IP address of target controller"
 	print "    -p <path>: path of AOS image to be copied"
+	print "    -r: reload (reboot) target controller after image copy"
 	exit(1)
 
 def main(argc, argv):
 	try:
-		opts, args = getopt.getopt(argv, "hb:c:p:");
+		opts, args = getopt.getopt(argv, "hb:c:p:r");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -32,6 +33,7 @@ def main(argc, argv):
 	sos_elf = False
 	dst_path = ""
 	aos_tools_path = "/usr/local/aos/tools"
+	reload = False
 
 	for opt, arg in opts:
 		if opt == "-c":
@@ -45,6 +47,8 @@ def main(argc, argv):
 				sos_elf = True
 			else:
 				dst_path = "system: partition "
+		elif opt == "-r":
+			reload = True
 		elif opt == "-h":
 			usage()
 
@@ -79,6 +83,8 @@ def main(argc, argv):
 		c_src_path = c_flash_config + "/" + os.path.basename(startupscript_src)
 		c_dst_path = c_flash + "/.startupscript"
 		c.mv(c_src_path, c_dst_path)
+	if (reload == True):
+		c.reload()
 
 if __name__ == "__main__":
 	argc = len(sys.argv)
