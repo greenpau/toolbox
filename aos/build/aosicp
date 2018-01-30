@@ -69,11 +69,11 @@ def main(argc, argv):
 	print "Source Path: " + src_path
 	print "Controller: " + device
 	print "Controller Path: " + dst_path
-	c.scp_file(src_host, src_user, src_path, dst_path)
+	c.scp(src_host, src_user, src_path, dst_path)
 	if (sos_elf == True) and os.path.exists(aos_tools_path) == True:
 		startupscript_src = aos_tools_path + "/sos-startupscript"
 		startupscript_dst = "flash: " + os.path.basename(startupscript_src)
-		c.scp_file(src_host, src_user, startupscript_src, startupscript_dst)
+		c.scp(src_host, src_user, startupscript_src, startupscript_dst)
 
 if __name__ == "__main__":
 	argc = len(sys.argv)

@@ -12,42 +12,42 @@ class Device(object):
 	admin_pass = "admins"
 	src_user_password = None
 	ssh_newkey = 'Are you sure you want to continue connecting'
-	p = None
+	s = None
 
 	def __init__(self, hostname):
 		self.hostname = hostname
-		self.login()
+		self.ssh()
 
-	def login(self):
-		p = pexpect.spawn('ssh ' + self.admin + '@' + self.hostname)
-		i = p.expect([self.ssh_newkey, 'password:', pexpect.EOF,
+	def ssh(self):
+		s = pexpect.spawn('ssh ' + self.admin + '@' + self.hostname)
+		i = s.expect([self.ssh_newkey, 'password:', pexpect.EOF,
 			      pexpect.TIMEOUT], 1)
-		p.sendline(self.admin_pass)
-		p.expect('.*#')
-		self.p = p
+		s.sendline(self.admin_pass)
+		s.expect('.*#')
+		self.s = s
+
+	def scp(self, src_host, src_user, src_path, dst_path):
+		if self.s == None:
+			self.ssh()
+		cmd = "copy scp: " + src_host + " " + src_user + " " + src_path + " " + dst_path
+		print cmd
+		self.s.sendline(cmd)
+		self.s.expect('.*Password:')
+		if (self.src_user_password == None):
+			self.src_user_password = getpass.getpass(src_user + '@' + src_host + '\'s password: ')
+		self.s.sendline(self.src_user_password)
+		self.s.expect('.*#', timeout=300)
+		print self.s.after
 
 	def get_boot_partition(self):
-		if self.p == None:
-			self.login()
-		self.p.sendline('show image version')
-		self.p.expect('.*#')
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show image version')
+		self.s.expect('.*#')
 		partition = ""
-		for l in self.p.after.splitlines():
+		for l in self.s.after.splitlines():
 			if l.find("Default boot") == -1:
 				continue
 			partition = l.split(":")[2].split(" ")[0]
 			break
 		return partition
-
-	def scp_file(self, src_host, src_user, src_path, dst_path):
-		if self.p == None:
-			self.login()
-		cmd = "copy scp: " + src_host + " " + src_user + " " + src_path + " " + dst_path
-		print cmd
-		self.p.sendline(cmd)
-		self.p.expect('.*Password:')
-		if (self.src_user_password == None):
-			self.src_user_password = getpass.getpass(src_user + '@' + src_host + '\'s password: ')
-		self.p.sendline(self.src_user_password)
-		self.p.expect('.*#', timeout=300)
-		print self.p.after
