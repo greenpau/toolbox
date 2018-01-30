@@ -29,6 +29,8 @@ def main(argc, argv):
 	src_host = ""
 	src_user = shell.whoami()
 	src_path = ""
+	sos_elf = False
+	dst_path = ""
 
 	for opt, arg in opts:
 		if opt == "-c":
@@ -37,10 +39,15 @@ def main(argc, argv):
 			src_host = arg
 		elif opt == "-p":
 			src_path = arg
+			if (src_path.find("sos.elf") != -1):
+				dst_path = "flash: sos.elf"
+				sos_elf = True
+			else:
+				dst_path = "system: partition "
 		elif opt == "-h":
 			usage()
 
-	if (device == "") or (src_path == ""):
+	if (device == "") or (src_path == "") or (dst_path == ""):
 		print progname + ": missing arguments"
 		usage()
 
@@ -53,13 +60,15 @@ def main(argc, argv):
 
 	c = wlan_controller.Device(device)
 	dst_partition = c.get_boot_partition()
+	if (sos_elf == False):
+		dst_path = dst_path + dst_partition
 
 	print "Source Machine: " + src_host
 	print "Source User: " + src_user
 	print "Source Path: " + src_path
 	print "Controller: " + device
-	print "Controller boot partition: " + dst_partition
-	c.scp_image(src_host, src_user, src_path, dst_partition)
+	print "Controller Path: " + dst_path
+	c.scp_file(src_host, src_user, src_path, dst_path)
 
 if __name__ == "__main__":
 	argc = len(sys.argv)
