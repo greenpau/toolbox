@@ -40,9 +40,16 @@ def main(argc, argv):
 		elif opt == "-h":
 			usage()
 
-	if (device == "") or (src_host == "") or (src_path == ""):
+	if (device == "") or (src_path == ""):
 		print progname + ": missing arguments"
 		usage()
+
+	if (src_host == ""):
+		src_host_canon = "dev-" + src_user
+		src_host = shell.getent(src_host_canon)
+		if (src_host == ""):
+			print progname + ": unable to find dev machine for user " + src_user
+			usage()
 
 	c = wlan_controller.Device(device)
 	dst_partition = c.get_boot_partition()

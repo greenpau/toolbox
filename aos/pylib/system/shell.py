@@ -19,3 +19,6 @@ def call_prog_as_is(cmd):
 def whoami():
 	return call_prog_as_is('whoami').replace("\n", "")
 
+def getent(host):
+	outstr = call_prog_as_is('getent hosts ' + host).replace("\n", "")
+	return outstr.split(" ")[0]
