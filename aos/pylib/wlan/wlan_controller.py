@@ -38,10 +38,11 @@ class Device(object):
 			break
 		return partition
 
-	def scp_image(self, src_host, src_user, src_path, dst_partition):
+	def scp_file(self, src_host, src_user, src_path, dst_path):
 		if self.p == None:
 			self.login()
-		cmd = "copy scp: " + src_host + " " + src_user + " " + src_path + " system: partition " + dst_partition
+		cmd = "copy scp: " + src_host + " " + src_user + " " + src_path + " " + dst_path
+		print cmd
 		self.p.sendline(cmd)
 		self.p.expect('.*Password:')
 		password = getpass.getpass(src_user + '@' + src_host + ' password: ')
