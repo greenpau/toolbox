@@ -1,0 +1,61 @@
+#!/usr/bin/python
+
+import sys
+import os
+import getopt
+
+sys.path.append("/usr/local/aos/pylib/system")
+import shell
+
+sys.path.append("/usr/local/aos/pylib/wlan")
+import wlan_controller
+
+def usage():
+	print "usage: " + progname + " options"
+	print "options:"
+	print "    -b <ip>: IP address of build machine"
+	print "    -c <ip>: IP address of target controller"
+	print "    -p <path>: path of AOS image to be copied"
+	exit(1)
+
+def main(argc, argv):
+	try:
+		opts, args = getopt.getopt(argv, "hb:c:p:");
+	except getopt.GetoptError as err:
+		print progname + ": invalid argument, " + str(err)
+		usage()
+
+	device = ""
+	src_host = ""
+	src_user = shell.whoami()
+	src_path = ""
+
+	for opt, arg in opts:
+		if opt == "-c":
+			device = arg
+		elif opt == "-b":
+			src_host = arg
+		elif opt == "-p":
+			src_path = arg
+		elif opt == "-h":
+			usage()
+
+	if (device == "") or (src_host == "") or (src_path == ""):
+		print progname + ": missing arguments"
+		usage()
+
+	c = wlan_controller.Device(device)
+	dst_partition = c.get_boot_partition()
+
+	print "Source Machine: " + src_host
+	print "Source User: " + src_user
+	print "Source Path: " + src_path
+	print "Controller: " + device
+	print "Controller boot partition: " + dst_partition
+	c.scp_image(src_host, src_user, src_path, dst_partition)
+
+if __name__ == "__main__":
+	argc = len(sys.argv)
+	progfile = os.path.basename(sys.argv[0])
+	progname = progfile.split(".")[0]
+	main(argc, sys.argv[1:])

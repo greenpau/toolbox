@@ -37,6 +37,11 @@ mkdir -p $RPM_BUILD_ROOT $basedir
 
 cd %{pkg_name}/aos
 install__ 0755 build/aosb
+install__ 0755 build/aosicp
+
+install__ 0755 pylib/system/shell.py
+install__ 0755 pylib/wlan/wlan_controller.py
+
 install__ 0755 tools/7z2soscore
 install__ 0755 tools/sos-crash-debug
 install__ 0755 tools/sos-crash-tech-support
@@ -46,6 +51,11 @@ install__ 0755 tools/sos-crash-tech-support
 %files
 %defattr(-,root,root)
 /usr/local/aos/build/aosb
+/usr/local/aos/build/aosicp
+
+/usr/local/aos/pylib/system/shell.py
+/usr/local/aos/pylib/wlan/wlan_controller.py
+
 /usr/local/aos/tools/7z2soscore
 /usr/local/aos/tools/sos-crash-debug
 /usr/local/aos/tools/sos-crash-tech-support
