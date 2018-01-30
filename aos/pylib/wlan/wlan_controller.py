@@ -10,6 +10,7 @@ class Device(object):
 	hostname = None
 	admin = "admin"
 	admin_pass = "admins"
+	src_user_password = None
 	ssh_newkey = 'Are you sure you want to continue connecting'
 	p = None
 
@@ -45,7 +46,8 @@ class Device(object):
 		print cmd
 		self.p.sendline(cmd)
 		self.p.expect('.*Password:')
-		password = getpass.getpass(src_user + '@' + src_host + ' password: ')
-		self.p.sendline(password)
+		if (self.src_user_password == None):
+			self.src_user_password = getpass.getpass(src_user + '@' + src_host + '\'s password: ')
+		self.p.sendline(self.src_user_password)
 		self.p.expect('.*#', timeout=300)
 		print self.p.after
