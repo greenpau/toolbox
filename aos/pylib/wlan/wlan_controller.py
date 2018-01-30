@@ -94,3 +94,17 @@ class Device(object):
 			self.t.sendline("\r\n")
 			time.sleep(5)
 			self.t.expect(" #")
+
+	def mv(self, src_file, dst_file):
+		if self.is_telnet_enabled() == False:
+			sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
+			self.enable_telnet()
+			self.telnet()
+			print "done"
+		if self.t == None:
+			print "Failed to telnet to " + self.hostname
+			return
+		cmd = "mv " + src_file + " " + dst_file
+		print cmd
+		self.t.sendline(cmd)
+		self.t.expect(" #")

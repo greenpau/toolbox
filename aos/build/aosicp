@@ -74,6 +74,11 @@ def main(argc, argv):
 		startupscript_src = aos_tools_path + "/sos-startupscript"
 		startupscript_dst = "flash: " + os.path.basename(startupscript_src)
 		c.scp(src_host, src_user, startupscript_src, startupscript_dst)
+		c_flash = "/flash"
+		c_flash_config = c_flash + "/config"
+		c_src_path = c_flash_config + "/" + os.path.basename(startupscript_src)
+		c_dst_path = c_flash + "/.startupscript"
+		c.mv(c_src_path, c_dst_path)
 
 if __name__ == "__main__":
 	argc = len(sys.argv)
