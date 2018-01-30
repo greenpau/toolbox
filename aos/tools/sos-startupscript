@@ -3,13 +3,17 @@
 copy_sos_elf() {
 	src_sos_elf=/flash/config/sos.elf
 	dst_sos_elf=/mswitch/bin/sos.${plat}.elf
+	echo
 	if [ ! -f ${src_sos_elf} ]; then
 		echo "${progname}: no ${src_sos_elf}, continuing..."
 		return
 	fi
 	echo "Replacing SOS binary for platform ${plat}"
+	set -x
 	cp -f ${src_sos_elf} ${dst_sos_elf}
 	mv ${src_sos_elf} ${src_sos_elf}.done
+	set +x
+	echo done
 }
 
 progname=`basename $0`
