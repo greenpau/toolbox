@@ -1,0 +1,23 @@
+#!/bin/sh
+
+copy_sos_elf() {
+	src_sos_elf=/flash/config/sos.elf
+	dst_sos_elf=/mswitch/bin/sos.${plat}.elf
+	if [ ! -f ${src_sos_elf} ]; then
+		echo "${progname}: no ${src_sos_elf}, continuing..."
+		return
+	fi
+	echo "Replacing SOS binary for platform ${plat}"
+	cp -f ${sos_elf_src} ${dst_sos_elf}
+	mv ${sos_elf_src} ${sos_elf_src}.done
+}
+
+set -x
+progname=`basename $0`
+plat=`platid | awk -F- '{print $1}' | sed -e 's/A//g'`
+if [ -z "${plat}" ]; then
+	echo "${progname}: could not determine platform ID"
+	exit 1
+fi
+
+copy_sos_elf
