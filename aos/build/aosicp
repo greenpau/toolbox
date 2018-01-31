@@ -16,12 +16,13 @@ def usage():
 	print "    -b <ip>: IP address of build machine"
 	print "    -c <ip>: IP address of target controller"
 	print "    -p <path>: path of AOS image to be copied"
+	print "    -s: copy sos-startupscript to controller (usually with sos.elf)"
 	print "    -r: reload (reboot) target controller after image copy"
 	exit(1)
 
 def main(argc, argv):
 	try:
-		opts, args = getopt.getopt(argv, "hb:c:p:r");
+		opts, args = getopt.getopt(argv, "hb:c:p:rs");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -34,6 +35,7 @@ def main(argc, argv):
 	dst_path = ""
 	aos_tools_path = "/usr/local/aos/tools"
 	reload = False
+	copy_startup = False
 
 	for opt, arg in opts:
 		if opt == "-c":
@@ -49,6 +51,8 @@ def main(argc, argv):
 				dst_path = "system: partition "
 		elif opt == "-r":
 			reload = True
+		elif opt == "-s":
+			copy_startup = True
 		elif opt == "-h":
 			usage()
 
@@ -73,8 +77,11 @@ def main(argc, argv):
 	print "Source Path: " + src_path
 	print "Controller: " + device
 	print "Controller Path: " + dst_path
+	print "Reload: " + str(reload)
+	print "Copy Startup Script: " + str(copy_startup)
+	print
 	c.scp(src_host, src_user, src_path, dst_path)
-	if (sos_elf == True) and os.path.exists(aos_tools_path) == True:
+	if (copy_startup == True) and (os.path.exists(aos_tools_path) == True):
 		startupscript_src = aos_tools_path + "/sos-startupscript"
 		startupscript_dst = "flash: " + os.path.basename(startupscript_src)
 		c.scp(src_host, src_user, startupscript_src, startupscript_dst)
