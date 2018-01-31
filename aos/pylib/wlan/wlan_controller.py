@@ -104,7 +104,43 @@ class Device(object):
 			self.t.sendline(self.support_pass + "\r")
 			self.t.sendline("\r\n")
 			time.sleep(5)
-			self.t.expect(" #")
+			self.t.expect(".*#")
+
+	def telnet_session(self):
+		if self.is_telnet_enabled() == False:
+			sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
+			self.enable_telnet()
+			self.telnet()
+			print "done"
+		if self.t == None:
+			print "Failed to telnet to " + self.hostname
+			return
+		self.__telnet_shell()
+
+	def __telnet_shell(self):
+		self.__dump_cmd_output(self.t.after)
+		while True:
+			self.t.after = ""
+			try:
+				cmd = raw_input()
+			except:
+				break
+			if cmd == "":
+				sys.stdout.write("/tmp #")
+				continue
+			if cmd == "exit":
+				break
+			self.t.sendline(cmd)
+			self.t.expect(".*#")
+			self.__dump_cmd_output(self.t.after)
+
+	def __dump_cmd_output(self, outbuf):
+		if (outbuf == ""):
+			return
+		first_newline_idx = outbuf.index("\n")
+		if (first_newline_idx == -1):
+			return
+		sys.stdout.write(outbuf[first_newline_idx + 1:])
 
 	def mv(self, src_file, dst_file):
 		if self.is_telnet_enabled() == False:

@@ -43,6 +43,7 @@ install__ 0755 pylib/system/shell.py
 install__ 0755 pylib/wlan/wlan_controller.py
 
 install__ 0755 tools/7z2soscore
+install__ 0755 tools/aos-telnet
 install__ 0755 tools/sos-crash-debug
 install__ 0755 tools/sos-crash-tech-support
 install__ 0755 tools/sos-startupscript
@@ -58,6 +59,7 @@ install__ 0755 tools/sos-startupscript
 /usr/local/aos/pylib/wlan/wlan_controller.py
 
 /usr/local/aos/tools/7z2soscore
+/usr/local/aos/tools/aos-telnet
 /usr/local/aos/tools/sos-crash-debug
 /usr/local/aos/tools/sos-crash-tech-support
 /usr/local/aos/tools/sos-startupscript
