@@ -118,29 +118,52 @@ class Device(object):
 		self.__telnet_shell()
 
 	def __telnet_shell(self):
-		self.__dump_cmd_output(self.t.after)
+		sys.stdout.write(self.__sans_firstline(self.t.after))
+		prompt = self.__telnet_get_prompt()
 		while True:
 			self.t.after = ""
 			try:
 				cmd = raw_input()
 			except:
 				break
-			if cmd == "":
-				sys.stdout.write("/tmp #")
+			if cmd == "" or cmd == "\n":
+				prompt = self.__telnet_get_prompt()
+				sys.stdout.write(prompt)
 				continue
 			if cmd == "exit":
 				break
 			self.t.sendline(cmd)
 			self.t.expect(".*#")
-			self.__dump_cmd_output(self.t.after)
+			sys.stdout.write(self.__sans_firstline(self.t.after))
 
-	def __dump_cmd_output(self, outbuf):
-		if (outbuf == ""):
-			return
-		first_newline_idx = outbuf.index("\n")
+	def __telnet_get_prompt(self):
+		self.t.sendline("pwd")
+		self.t.expect(".*#")
+		prompt = self.__sans_firstline(self.__sans_firstline(self.t.after))
+		return prompt
+
+	def __sans_firstline(self, inbuf):
+		if (inbuf == ""):
+			return ""
+		first_newline_idx = inbuf.index("\n")
 		if (first_newline_idx == -1):
-			return
-		sys.stdout.write(outbuf[first_newline_idx + 1:])
+			return inbuf
+		outbuf = inbuf[first_newline_idx + 1:]
+		return outbuf
+
+	def __sans_lastline(self, inbuf):
+		if (inbuf == ""):
+			return ""
+		last_newline_idx = inbuf.rfind('\n')
+		if (last_newline_idx == -1):
+			return inbuf
+		outbuf = inbuf[:last_newline_idx]
+		for i in range(0, len(outbuf)):
+			print "i:"+str(i)+":"+outbuf[i]
+		return outbuf
+
+	def __sans_first_and_last_line(self, inbuf):
+		return self.__sans_firstline(self.__sans_lastline(inbuf))
 
 	def mv(self, src_file, dst_file):
 		if self.is_telnet_enabled() == False:
