@@ -19,6 +19,8 @@ class Device(object):
 	ssh_newkey = 'Are you sure you want to continue connecting'
 	s = None
 	t = None
+	ssh_prompt_re = '\(.*\).*#'
+	telnet_prompt_re = '\/.*#'
 	telnet_enabled = False
 	telnet_conn_refused = "Connection refused"
 	telnet_port = "2323"
@@ -32,7 +34,7 @@ class Device(object):
 		i = s.expect([self.ssh_newkey, 'password:', pexpect.EOF,
 			      pexpect.TIMEOUT], 1)
 		s.sendline(self.admin_pass)
-		s.expect('.*#')
+		s.expect(self.ssh_prompt_re)
 		self.s = s
 
 	def scp(self, src_host, src_user, src_path, dst_path):
@@ -45,16 +47,16 @@ class Device(object):
 		if (self.src_user_password == None):
 			self.src_user_password = getpass.getpass(src_user + '@' + src_host + '\'s password: ')
 		self.s.sendline(self.src_user_password)
-		self.s.expect('.*#', timeout=300)
-		print self.s.after
+		self.s.expect(self.ssh_prompt_re, timeout=300)
+		print self.s.before
 
 	def get_boot_partition(self):
 		if self.s == None:
 			self.ssh()
 		self.s.sendline('show image version')
-		self.s.expect('.*#')
+		self.s.expect(self.ssh_prompt_re)
 		partition = ""
-		for l in self.s.after.splitlines():
+		for l in self.s.before.splitlines():
 			if l.find("Default boot") == -1:
 				continue
 			partition = l.split(":")[2].split(" ")[0]
@@ -107,7 +109,7 @@ class Device(object):
 			self.t.sendline(self.support_pass + "\r")
 			self.t.sendline("\r\n")
 			time.sleep(5)
-			self.t.expect(".*#")
+			self.t.expect(self.telnet_prompt_re)
 
 	def telnet_session(self):
 		if self.is_telnet_enabled() == False:
@@ -121,33 +123,36 @@ class Device(object):
 		self.__telnet_shell()
 
 	def __telnet_shell(self):
-		sys.stdout.write(string_ext.sans_firstline(self.t.after))
+		sys.stdout.write(string_ext.sans_firstline(self.t.before))
 		prompt = self.__telnet_get_prompt()
+		sys.stdout.write(prompt)
 		while True:
-			if (self.__telnet_shell_cmd(prompt) == False):
+			if (self.__telnet_shell_cmd() == False):
 				break
 
-	def __telnet_shell_cmd(self, prompt):
+	def __telnet_shell_cmd(self):
+		self.t.before = ""
 		self.t.after = ""
 		try:
 			cmd = raw_input()
 		except:
 			return True
+		prompt = self.__telnet_get_prompt()
 		if cmd == "" or cmd == "\n":
-			prompt = self.__telnet_get_prompt()
 			sys.stdout.write(prompt)
 			return True
 		if cmd == "exit":
 			return False
 		self.t.sendline(cmd)
-		self.t.expect(".*#")
-		sys.stdout.write(string_ext.sans_firstline(self.t.after))
+		self.t.expect(self.telnet_prompt_re)
+		outbuf = self.t.before + self.t.after
+		sys.stdout.write(string_ext.sans_firstline(outbuf))
 		return True
 
 	def __telnet_get_prompt(self):
 		self.t.sendline("pwd")
-		self.t.expect(".*#")
-		prompt = string_ext.sans_firstline(string_ext.sans_firstline(self.t.after))
+		self.t.expect(self.telnet_prompt_re)
+		prompt = string_ext.sans_firstline(self.t.after)
 		return prompt
 
 	def mv(self, src_file, dst_file):
@@ -162,4 +167,4 @@ class Device(object):
 		cmd = "mv " + src_file + " " + dst_file
 		print cmd
 		self.t.sendline(cmd)
-		self.t.expect(" #")
+		self.t.expect(self.telnet_prompt_re)
