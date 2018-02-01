@@ -69,7 +69,7 @@ class Device(object):
 		self.s.sendline(cmd)
 		self.s.expect("Do you really want to restart the system.*y/n.*:")
 		self.s.sendline("y")
-		print self.s.after
+		self.s.expect(pexpect.EOF)
 		self.s = None
 
 	def is_telnet_enabled(self):
