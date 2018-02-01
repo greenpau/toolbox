@@ -6,6 +6,8 @@ sys.path.append("/usr/local/aos/pylib/system")
 def sans_firstline(inbuf):
 	if (inbuf == ""):
 		return ""
+	if (inbuf.find("\n") == -1):
+		return inbuf
 	first_newline_idx = inbuf.index("\n")
 	if (first_newline_idx == -1):
 		return inbuf
@@ -15,6 +17,8 @@ def sans_firstline(inbuf):
 def sans_lastline(inbuf):
 	if (inbuf == ""):
 		return ""
+	if (inbuf.find("\n") == -1):
+		return inbuf
 	last_newline_idx = inbuf.rfind('\n')
 	if (last_newline_idx == -1):
 		return inbuf
