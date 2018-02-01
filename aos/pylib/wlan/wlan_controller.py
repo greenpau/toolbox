@@ -7,6 +7,9 @@ import time
 import sys
 sys.path.append("/usr/local/aos/pylib/wlan")
 
+sys.path.append("/usr/local/aos/pylib/system")
+import string_ext
+
 class Device(object):
 	hostname = None
 	admin = "admin"
@@ -118,7 +121,7 @@ class Device(object):
 		self.__telnet_shell()
 
 	def __telnet_shell(self):
-		sys.stdout.write(self.__sans_firstline(self.t.after))
+		sys.stdout.write(string_ext.sans_firstline(self.t.after))
 		prompt = self.__telnet_get_prompt()
 		while True:
 			self.t.after = ""
@@ -134,36 +137,13 @@ class Device(object):
 				break
 			self.t.sendline(cmd)
 			self.t.expect(".*#")
-			sys.stdout.write(self.__sans_firstline(self.t.after))
+			sys.stdout.write(string_ext.sans_firstline(self.t.after))
 
 	def __telnet_get_prompt(self):
 		self.t.sendline("pwd")
 		self.t.expect(".*#")
-		prompt = self.__sans_firstline(self.__sans_firstline(self.t.after))
+		prompt = string_ext.sans_firstline(string_ext.sans_firstline(self.t.after))
 		return prompt
-
-	def __sans_firstline(self, inbuf):
-		if (inbuf == ""):
-			return ""
-		first_newline_idx = inbuf.index("\n")
-		if (first_newline_idx == -1):
-			return inbuf
-		outbuf = inbuf[first_newline_idx + 1:]
-		return outbuf
-
-	def __sans_lastline(self, inbuf):
-		if (inbuf == ""):
-			return ""
-		last_newline_idx = inbuf.rfind('\n')
-		if (last_newline_idx == -1):
-			return inbuf
-		outbuf = inbuf[:last_newline_idx]
-		for i in range(0, len(outbuf)):
-			print "i:"+str(i)+":"+outbuf[i]
-		return outbuf
-
-	def __sans_first_and_last_line(self, inbuf):
-		return self.__sans_firstline(self.__sans_lastline(inbuf))
 
 	def mv(self, src_file, dst_file):
 		if self.is_telnet_enabled() == False:
