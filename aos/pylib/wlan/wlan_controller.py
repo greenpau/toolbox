@@ -124,20 +124,25 @@ class Device(object):
 		sys.stdout.write(string_ext.sans_firstline(self.t.after))
 		prompt = self.__telnet_get_prompt()
 		while True:
-			self.t.after = ""
-			try:
-				cmd = raw_input()
-			except:
+			if (self.__telnet_shell_cmd(prompt) == False):
 				break
-			if cmd == "" or cmd == "\n":
-				prompt = self.__telnet_get_prompt()
-				sys.stdout.write(prompt)
-				continue
-			if cmd == "exit":
-				break
-			self.t.sendline(cmd)
-			self.t.expect(".*#")
-			sys.stdout.write(string_ext.sans_firstline(self.t.after))
+
+	def __telnet_shell_cmd(self, prompt):
+		self.t.after = ""
+		try:
+			cmd = raw_input()
+		except:
+			return True
+		if cmd == "" or cmd == "\n":
+			prompt = self.__telnet_get_prompt()
+			sys.stdout.write(prompt)
+			return True
+		if cmd == "exit":
+			return False
+		self.t.sendline(cmd)
+		self.t.expect(".*#")
+		sys.stdout.write(string_ext.sans_firstline(self.t.after))
+		return True
 
 	def __telnet_get_prompt(self):
 		self.t.sendline("pwd")
