@@ -93,6 +93,7 @@ class Device(object):
 		self.s.sendline("telnet shell")
 		self.s.expect('.*support.*#')
 		self.telnet_enabled = True
+		print "done"
 
 	def telnet(self):
 		cmd = "telnet " + self.hostname + " " + self.telnet_port
@@ -157,10 +158,8 @@ class Device(object):
 
 	def mv(self, src_file, dst_file):
 		if self.is_telnet_enabled() == False:
-			sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
 			self.enable_telnet()
 			self.telnet()
-			print "done"
 		if self.t == None:
 			print "Failed to telnet to " + self.hostname
 			return
