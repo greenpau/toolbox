@@ -20,6 +20,7 @@ class Device(object):
 	s = None
 	t = None
 	ssh_prompt_re = '\(.*\).*#'
+	ssh_support_prompt_re = '.*support.*#'
 	telnet_prompt_re = '\/.*#'
 	telnet_enabled = False
 	telnet_conn_refused = "Connection refused"
@@ -74,6 +75,12 @@ class Device(object):
 		self.s.expect(pexpect.EOF)
 		self.s = None
 
+	def __enable_support(self):
+		self.s.sendline("support")
+		self.s.expect('Password')
+		self.s.sendline(self.support_pass)
+		self.s.expect(self.ssh_support_prompt_re)
+
 	def is_telnet_enabled(self):
 		self.telnet()
 		if (self.t != None):
@@ -86,12 +93,9 @@ class Device(object):
 			return
 		if self.s == None:
 			self.login()
-		self.s.sendline("support")
-		self.s.expect('Password')
-		self.s.sendline(self.support_pass)
-		self.s.expect('support.*#')
+		self.__enable_support()
 		self.s.sendline("telnet shell")
-		self.s.expect('.*support.*#')
+		self.s.expect(self.ssh_support_prompt_re)
 		self.telnet_enabled = True
 		print "done"
 
