@@ -26,7 +26,7 @@ def getent(host):
 def is_alive(host):
 	cmd = "ping -c 1 " + host
 	outstr = call_prog_as_is(cmd)
-	if (outstr.find("Unreachable") != -1):
+	if (outstr.find("64 bytes from") == -1):
 		return False
 	else:
 		return True
