@@ -7,6 +7,9 @@ import getopt
 sys.path.append("/usr/local/aos/pylib/wlan")
 import wlan_controller
 
+sys.path.append("/usr/local/aos/pylib/system")
+import shell
+
 def usage():
 	print "usage: " + progname + " <options> <device-ip-address>"
 	print "options:"
@@ -35,6 +38,9 @@ def main(argc, argv):
 		print progname + ": need a controller device to operate on"
 		usage()
 
+	if shell.is_alive(device) == False:
+		print progname + ": controller " + device + " appears to be down"
+		return
 	c = wlan_controller.Device(device)
 
 	if (telnet == True):
