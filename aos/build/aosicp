@@ -80,11 +80,11 @@ def main(argc, argv):
 	print "Reload: " + str(reload)
 	print "Copy Startup Script: " + str(copy_startup)
 	print
-	c.scp(src_host, src_user, src_path, dst_path)
+	c.scp_to(src_host, src_user, src_path, dst_path)
 	if (copy_startup == True) and (os.path.exists(aos_tools_path) == True):
 		startupscript_src = aos_tools_path + "/sos-startupscript"
 		startupscript_dst = "flash: " + os.path.basename(startupscript_src)
-		c.scp(src_host, src_user, startupscript_src, startupscript_dst)
+		c.scp_to(src_host, src_user, startupscript_src, startupscript_dst)
 		c_flash = "/flash"
 		c_flash_config = c_flash + "/config"
 		c_src_path = c_flash_config + "/" + os.path.basename(startupscript_src)

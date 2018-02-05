@@ -39,7 +39,7 @@ class Device(object):
 		s.expect(self.ssh_prompt_re)
 		self.s = s
 
-	def scp(self, src_host, src_user, src_path, dst_path):
+	def scp_to(self, src_host, src_user, src_path, dst_path):
 		if self.s == None:
 			self.ssh()
 		cmd = "copy scp: " + src_host + " " + src_user + " " + src_path + " " + dst_path
