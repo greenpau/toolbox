@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+import time
 
 sys.path.append("/usr/local/aos/pylib/wlan")
 import wlan_controller
@@ -15,17 +16,19 @@ def usage():
 	print "options:"
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
+	print "    -c: generate a controller datapath coredump"
 	exit(1)
 
 def main(argc, argv):
 	try:
-		opts, args = getopt.getopt(argv, "ht:T:");
+		opts, args = getopt.getopt(argv, "ht:T:c:");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
 	device = ""
 	telnet = False
 	enable_telnet = False
+	dp_core = False
 	for opt, arg in opts:
 		if opt == "-t":
 			device = arg
@@ -33,6 +36,9 @@ def main(argc, argv):
 		elif opt == "-T":
 			device = arg
 			telnet = True
+		elif opt == "-c":
+			device = arg
+			dp_core = True
 
 	if (device == ""):
 		print progname + ": need a controller device to operate on"
@@ -47,6 +53,17 @@ def main(argc, argv):
 		c.telnet_session()
 	elif (enable_telnet == True):
 		c.enable_telnet()
+	elif (dp_core == True):
+		c.gen_dp_core()
+		print "Waiting for " + device + " to reboot, please wait"
+		while (True):
+			sys.stdout.write(".")
+			sys.stdout.flush()
+			time.sleep(5)
+			if (shell.is_alive(device) == True):
+				break
+		print
+		print "Controller " + device + " is now alive"
 
 if __name__ == "__main__":
 	argc = len(sys.argv)

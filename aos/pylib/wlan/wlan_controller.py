@@ -171,3 +171,17 @@ class Device(object):
 		print cmd
 		self.t.sendline(cmd)
 		self.t.expect(self.telnet_prompt_re)
+
+	def gen_dp_core(self):
+		if self.s == None:
+			self.ssh()
+		self.__enable_support()
+		sys.stdout.write("Generating datapath coredump for " + self.hostname + ", please wait ... ")
+		self.s.sendline('generate datapath coredump')
+		self.s.expect(['.*Are you sure.*', pexpect.EOF,
+			       pexpect.TIMEOUT])
+		self.s.sendline('y')
+		self.s.expect([self.ssh_support_prompt_re, pexpect.EOF,
+			       pexpect.TIMEOUT])
+		print "done"
+		self.s = None
