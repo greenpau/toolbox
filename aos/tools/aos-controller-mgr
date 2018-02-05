@@ -64,6 +64,12 @@ def main(argc, argv):
 				break
 		print
 		print "Controller " + device + " is now alive"
+		if c.tar_crash() == True:
+			time.sleep(5)
+			dst_user = shell.whoami()
+			dst_host_canon = "dev-" + dst_user
+			dst_host = shell.getent(dst_host_canon)
+			c.scp_crash(dst_user, dst_host, "/var/tmp")
 
 if __name__ == "__main__":
 	argc = len(sys.argv)

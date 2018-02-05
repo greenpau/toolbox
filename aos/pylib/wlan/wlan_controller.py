@@ -25,6 +25,7 @@ class Device(object):
 	telnet_enabled = False
 	telnet_conn_refused = "Connection refused"
 	telnet_port = "2323"
+	crash_tarfile = "/flash/config/crash.tar"
 
 	def __init__(self, hostname):
 		self.hostname = hostname
@@ -47,6 +48,19 @@ class Device(object):
 		self.s.expect('.*Password:')
 		if (self.src_user_password == None):
 			self.src_user_password = getpass.getpass(src_user + '@' + src_host + '\'s password: ')
+		self.s.sendline(self.src_user_password)
+		self.s.expect(self.ssh_prompt_re, timeout=300)
+		print self.s.before
+
+	def scp_from(self, src_path, dst_user, dst_host, dst_path):
+		if (self.s == None):
+			self.ssh()
+		cmd = "copy flash: " + src_path + " scp: " + dst_host + " " + dst_user + " " + dst_path
+		print cmd
+		self.s.sendline(cmd)
+		self.s.expect('.*Password:')
+		if (self.src_user_password == None):
+			self.src_user_password = getpass.getpass(dst_user + '@' + dst_host + '\'s password: ')
 		self.s.sendline(self.src_user_password)
 		self.s.expect(self.ssh_prompt_re, timeout=300)
 		print self.s.before
@@ -93,6 +107,7 @@ class Device(object):
 			return
 		if self.s == None:
 			self.login()
+		sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
 		self.__enable_support()
 		self.s.sendline("telnet shell")
 		self.s.expect(self.ssh_support_prompt_re)
@@ -118,10 +133,8 @@ class Device(object):
 
 	def telnet_session(self):
 		if self.is_telnet_enabled() == False:
-			sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
 			self.enable_telnet()
 			self.telnet()
-			print "done"
 		if self.t == None:
 			print "Failed to telnet to " + self.hostname
 			return
@@ -185,3 +198,34 @@ class Device(object):
 			       pexpect.TIMEOUT])
 		print "done"
 		self.s = None
+
+	def tar_crash(self):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('tar crash')
+		self.s.expect(self.ssh_prompt_re, timeout=300)
+		return self.crash_tarfile_exists()
+
+	def crash_tarfile_exists(self):
+		self.enable_telnet()
+		self.telnet()
+		if self.t == None:
+			print "Failed to telnet to " + self.hostname
+			return False
+		cmd = "ls -l " + self.crash_tarfile
+		self.t.sendline(cmd)
+		self.t.expect(self.telnet_prompt_re)
+		output = self.t.before + self.t.after
+		if output == "":
+			print "No output for " + self.crash_tarfile
+			return False
+		if output.find(self.crash_tarfile) == -1:
+			print "Unable to find " + self.crash_tarfile
+			return False
+		return True
+
+	def scp_crash(self, dst_user, dst_host, dst_path):
+		if (self.crash_tarfile_exists() == False):
+			return
+		self.scp_from(self.crash_tarfile, dst_user, dst_host, dst_path)
+		return True
