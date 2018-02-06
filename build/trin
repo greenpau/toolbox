@@ -1,0 +1,34 @@
+#!/bin/bash
+
+pkg_list="\
+aos-toolbox-master-0.1.x86_64 \
+git-tools-master-0.1.x86_64 \
+p4-tools-master-0.1.x86_64 \
+sys-tools-master-0.1.x86_64 \
+"
+
+progname=`basename $0`
+pkg=$1
+redhat_release=`lsb_release -a | grep Release | awk -F: '{print $2}' | awk '{print $1}'`
+rpmbuild=${HOME}/rpmbuild/RPMS
+
+for p in ${pkg_list}; do
+	reinstall=false
+	if [ -z "${pkg}" ]; then
+		reinstall=true
+	elif [ "${pkg}" = "${p}" ]; then
+		reinstall=true
+	fi
+	if [ ${reinstall} = false ]; then
+		continue
+	fi
+	arch=`echo ${p} | awk -F. '{print $NF}'`
+	rpmpath=${rpmbuild}/${arch}/${redhat_release}/${p}.rpm
+	if [ ! -e ${rpmpath} ]; then
+		echo ${progname}: ${rpmpath} not found
+		continue
+	fi
+	sudo rpm -e ${p}
+	sudo rpm -ivh ${rpmpath}
+done
+
