@@ -8,13 +8,39 @@ usage() {
 	exit 1
 }
 
+validate_platforms() {
+	tgt_plats="$1"
+	invalid_platforms=
+	for cp in ${tgt_cp}; do
+		echo "${controller_platforms}" | grep -w ${cp} > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			invalid_platforms="${invalid_platforms} ${cp}"
+		fi
+	done
+	echo "${invalid_platforms}"
+}
+
+build_this_platform() {
+	this_plat=$1
+	tgt_plats="$2"
+	if [ "${tgt_plats}" == "all" ]; then
+		return 0
+	else
+		for p in ${tgt_plats}; do
+			if [ ${p} == ${this_plat} ]; then
+				return 0
+			fi
+		done
+	fi
+	return 1
+}
+
 build_ap_images() {
 	sudo chmod -R 777 /var/www
 	for ap in ${ap_platforms}; do
 		build=false
-		if [ "${tgt_ap}" == "all" ]; then
-			build=true
-		elif [ ${tgt_ap} == ${ap} ]; then
+		build_this_platform ${ap} "${tgt_ap}"
+		if [ $? -eq 0 ]; then
 			build=true
 		fi
 		if [ ${build} == false ]; then
@@ -29,7 +55,6 @@ build_ap_images() {
 			echo "done"
 		else
 			echo "failed"
-			exit 1
 		fi
 	done
 }
@@ -37,15 +62,14 @@ build_ap_images() {
 build_controller_images() {
 	for cp in $controller_platforms; do
 		build=false
-		if [ "${tgt_cp}" == "all" ]; then
-			build=true
-		elif [ ${tgt_cp} == ${cp} ]; then
+		build_this_platform ${cp} "${tgt_cp}"
+		if [ $? -eq 0 ]; then
 			build=true
 		fi
 		if [ ${build} == false ]; then
 			continue
 		fi
-		printf "Building ${cp} - `date` ... "
+		printf "Building Controller ${cp} - `date` ... "
 		echo "== Running mktree of ${cp} - `date`" >> ${logfile}
 		adu mktree $cp >> ${logfile} 2>&1
 		if [ -n "${module}" ]; then
@@ -75,8 +99,8 @@ build_controller_images() {
 
 progname=`basename $0`
 logfile=${HOME}/Downloads/logs/${progname}.log
-controller_platforms="porfidio grenache grappa shumway"
-ap_platforms="ardmore"
+controller_platforms="porfidio grappa shumway opusone"
+ap_platforms="ardmore masterson talisker arran springbank octomore x4 glenmorangie"
 user=`whoami`
 build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
 
@@ -120,9 +144,9 @@ if [ -z "${tgt_cp}" ]; then
 	echo "${progname}: missing platform"
 	usage
 elif [ "${tgt_cp}" != "all" ]; then
-	echo "${controller_platforms}" | grep -w ${tgt_cp} > /dev/null 2>&1
-	if [ $? -ne 0 ]; then
-		echo "${progname}: ${tgt_cp} not a recognized platform"
+	invalid_platforms=`validate_platforms "${tgt_cp}"`
+	if [ "${invalid_platforms}" != "" ]; then
+		echo "${progname}: ${invalid_platforms} not a recognized platform"
 		usage
 	fi
 fi
