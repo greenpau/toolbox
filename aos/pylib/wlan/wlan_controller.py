@@ -108,6 +108,7 @@ class Device(object):
 		if self.s == None:
 			self.login()
 		sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
+		sys.stdout.flush()
 		self.__enable_support()
 		self.s.sendline("telnet shell")
 		self.s.expect(self.ssh_support_prompt_re)
@@ -190,6 +191,7 @@ class Device(object):
 			self.ssh()
 		self.__enable_support()
 		sys.stdout.write("Generating datapath coredump for " + self.hostname + ", please wait ... ")
+		sys.stdout.flush()
 		self.s.sendline('generate datapath coredump')
 		self.s.expect(['.*Are you sure.*', pexpect.EOF,
 			       pexpect.TIMEOUT])
