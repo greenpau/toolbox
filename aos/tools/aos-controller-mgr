@@ -12,7 +12,7 @@ sys.path.append("/usr/local/aos/pylib/system")
 import shell
 
 def usage():
-	print "usage: " + progname + " <options> <device-ip-address>"
+	print "usage: " + progname + " <device> <options>"
 	print "options:"
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
@@ -20,24 +20,23 @@ def usage():
 	exit(1)
 
 def main(argc, argv):
+	if (argc == 1):
+		usage()
 	try:
-		opts, args = getopt.getopt(argv, "ht:T:c:");
+		opts, args = getopt.getopt(argv[1:], "htTc");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
-	device = ""
+	device = argv[0]
 	telnet = False
 	enable_telnet = False
 	dp_core = False
 	for opt, arg in opts:
 		if opt == "-t":
-			device = arg
 			enable_telnet = True
 		elif opt == "-T":
-			device = arg
 			telnet = True
 		elif opt == "-c":
-			device = arg
 			dp_core = True
 
 	if (device == ""):
@@ -70,6 +69,8 @@ def main(argc, argv):
 			dst_host_canon = "dev-" + dst_user
 			dst_host = shell.getent(dst_host_canon)
 			c.scp_crash(dst_user, dst_host, "/var/tmp")
+	else:
+		usage()
 
 if __name__ == "__main__":
 	argc = len(sys.argv)
