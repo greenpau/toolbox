@@ -18,13 +18,14 @@ def usage():
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
 	print "    -c: generate a controller datapath coredump"
+	print "    -r: reload the specified controller"
 	exit(1)
 
 def main(argc, argv):
 	if (argc == 1):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[1:], "htTcs");
+		opts, args = getopt.getopt(argv[1:], "htTcsr");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -33,6 +34,7 @@ def main(argc, argv):
 	enable_telnet = False
 	dp_core = False
 	status = False
+	reload = False
 	for opt, arg in opts:
 		if opt == "-t":
 			enable_telnet = True
@@ -42,6 +44,8 @@ def main(argc, argv):
 			dp_core = True
 		elif opt == "-s":
 			status = True
+		elif opt == "-r":
+			reload = True
 
 	if (device == ""):
 		print progname + ": need a controller device to operate on"
@@ -83,6 +87,8 @@ def main(argc, argv):
 		print "\tSW Version (build): %s (%s)" % (sw_vers, build_number)
 		print "\tLabel: %s" % (label)
 		print "\tBuild Date: %s" % (build_date)
+	elif (reload == True):
+		c.reload()
 	else:
 		usage()
 
