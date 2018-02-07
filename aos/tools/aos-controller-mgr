@@ -14,6 +14,7 @@ import shell
 def usage():
 	print "usage: " + progname + " <device> <options>"
 	print "options:"
+	print "    -s: status of a specified controller"
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
 	print "    -c: generate a controller datapath coredump"
@@ -23,7 +24,7 @@ def main(argc, argv):
 	if (argc == 1):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[1:], "htTc");
+		opts, args = getopt.getopt(argv[1:], "htTcs");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -31,6 +32,7 @@ def main(argc, argv):
 	telnet = False
 	enable_telnet = False
 	dp_core = False
+	status = False
 	for opt, arg in opts:
 		if opt == "-t":
 			enable_telnet = True
@@ -38,6 +40,8 @@ def main(argc, argv):
 			telnet = True
 		elif opt == "-c":
 			dp_core = True
+		elif opt == "-s":
+			status = True
 
 	if (device == ""):
 		print progname + ": need a controller device to operate on"
@@ -69,6 +73,16 @@ def main(argc, argv):
 			dst_host_canon = "dev-" + dst_user
 			dst_host = shell.getent(dst_host_canon)
 			c.scp_crash(dst_user, dst_host, "/var/tmp")
+	elif (status == True):
+		platid = c.get_platid()
+		boot_partition = c.get_boot_partition()
+		sw_vers, build_number, label, build_date = c.get_boot_image_version()
+		print "Platform: %s" %platid
+		print "Boot Information:"
+		print "\tPartition: %s" %boot_partition
+		print "\tSW Version (build): %s (%s)" % (sw_vers, build_number)
+		print "\tLabel: %s" % (label)
+		print "\tBuild Date: %s" % (build_date)
 	else:
 		usage()
 
