@@ -71,7 +71,8 @@ class Device(object):
 		self.s.sendline('show image version')
 		self.s.expect(self.ssh_prompt_re)
 		partition = ""
-		for l in self.s.before.splitlines():
+		output = self.s.before + self.s.after
+		for l in output.splitlines():
 			if l.find("Default boot") == -1:
 				continue
 			partition = l.split(":")[2].split(" ")[0]
