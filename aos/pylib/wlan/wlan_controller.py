@@ -102,7 +102,7 @@ class Device(object):
 			if (l.find("Software Version") != -1):
 				sw_vers = l.split(":")[1].split(" ")[1:][1]
 			if (l.find("Build number") != -1):
-				build_number = l.split(":")[1]
+				build_number = l.split(":")[1].split(" ")[1]
 			if (l.find("Label") != -1):
 				label = l.split(":")[1]
 			if (l.find("Built on") != -1):
