@@ -78,6 +78,34 @@ class Device(object):
 			break
 		return partition
 
+	def get_boot_image_version(self):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show image version')
+		self.s.expect(self.ssh_prompt_re)
+		sw_vers = ""
+		build_date = ""
+		build_number = ""
+		label = ""
+		default_boot_seen = False
+		output = self.s.before + self.s.after
+		for l in output.splitlines():
+			if l.find("Default boot") == -1:
+				if (default_boot_seen == False):
+					continue
+			else:
+				default_boot_seen = True
+			if (l.find("Software Version") != -1):
+				sw_vers = l.split(":")[1].split(" ")[1]
+			if (l.find("Build number") != -1):
+				build_number = l.split(":")[1]
+			if (l.find("Label") != -1):
+				label = l.split(":")[1]
+			if (l.find("Built on") != -1):
+				build_date_entry = l.split(":")[1:]
+				build_date = " ".join(build_date_entry)
+		return sw_vers, build_number, label, build_date
+
 	def reload(self):
 		if self.s == None:
 			self.ssh()
