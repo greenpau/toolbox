@@ -69,6 +69,7 @@ build_controller_images() {
 		if [ ${build} == false ]; then
 			continue
 		fi
+		cleanup ${cp}
 		printf "Building Controller ${cp} - `date` ... "
 		echo "== Running mktree of ${cp} - `date`" >> ${logfile}
 		adu mktree $cp >> ${logfile} 2>&1
@@ -94,6 +95,16 @@ build_controller_images() {
 			echo "failed"
 			exit 1
 		fi
+	done
+}
+
+cleanup() {
+	local platform=$1
+	local cleanup_modules="cmn/syslog cmn/gsm"
+	for cm in ${cleanup_modules}; do
+		printf "== Cleaning up ${cm} for ${platform} - `date` ... "
+		adu build ${platform} =${cm}:clean >> ${logfile} 2>&1
+		echo "done"
 	done
 }
 
