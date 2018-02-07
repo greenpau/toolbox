@@ -21,7 +21,7 @@ class Device(object):
 	t = None
 	ssh_prompt_re = '\(.*\).*#'
 	ssh_support_prompt_re = '.*support.*#'
-	telnet_prompt_re = '\/.*#'
+	telnet_prompt_re = '[\/|\~].*#'
 	telnet_enabled = False
 	telnet_conn_refused = "Connection refused"
 	telnet_port = "2323"
