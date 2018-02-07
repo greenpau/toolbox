@@ -35,7 +35,12 @@ class Device(object):
 		s = pexpect.spawn('ssh ' + self.admin + '@' + self.hostname)
 		i = s.expect([self.ssh_newkey, 'password:', pexpect.EOF,
 			      pexpect.TIMEOUT], 1)
-		s.sendline(self.admin_pass)
+		if (i == 0):
+			s.sendline("yes")
+			s.expect("password:")
+			s.sendline(self.admin_pass)
+		elif (i == 1):
+			s.sendline(self.admin_pass)
 		s.expect(self.ssh_prompt_re)
 		self.s = s
 
