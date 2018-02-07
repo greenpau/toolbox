@@ -100,7 +100,7 @@ class Device(object):
 				if (default_boot_seen == True):
 					break
 			if (l.find("Software Version") != -1):
-				sw_vers = l.split(":")[1].split(" ")[1]
+				sw_vers = l.split(":")[1].split(" ")[1:][1]
 			if (l.find("Build number") != -1):
 				build_number = l.split(":")[1]
 			if (l.find("Label") != -1):
