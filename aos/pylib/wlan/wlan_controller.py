@@ -96,6 +96,9 @@ class Device(object):
 					continue
 			else:
 				default_boot_seen = True
+			if (l.find("----") != -1):
+				if (default_boot_seen == True):
+					break
 			if (l.find("Software Version") != -1):
 				sw_vers = l.split(":")[1].split(" ")[1]
 			if (l.find("Build number") != -1):
