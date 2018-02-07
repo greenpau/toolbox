@@ -34,14 +34,18 @@ class Device(object):
 	def ssh(self):
 		s = pexpect.spawn('ssh ' + self.admin + '@' + self.hostname)
 		i = s.expect([self.ssh_newkey, 'password:', pexpect.EOF,
-			      pexpect.TIMEOUT], 1)
+			      pexpect.TIMEOUT], timeout=60)
 		if (i == 0):
 			s.sendline("yes")
 			s.expect("password:")
 			s.sendline(self.admin_pass)
-		elif (i == 1):
+			s.expect(self.ssh_prompt_re)
+		elif (i == 1) or (i == 2):
 			s.sendline(self.admin_pass)
-		s.expect(self.ssh_prompt_re)
+			s.expect(self.ssh_prompt_re)
+		else:
+			print "Failed to ssh to " + self.hostname
+			exit(1)
 		self.s = s
 
 	def scp_to(self, src_host, src_user, src_path, dst_path):
@@ -142,9 +146,22 @@ class Device(object):
 
 	def __enable_support(self):
 		self.s.sendline("support")
-		self.s.expect('Password')
-		self.s.sendline(self.support_pass)
-		self.s.expect(self.ssh_support_prompt_re)
+		i = self.s.expect(['Password', 'Username', pexpect.EOF,
+				   pexpect.TIMEOUT], timeout=60)
+		if (i == 1):
+			self.s.sendline(self.admin)
+			self.s.expect("Please generate one time password", timeout=60)
+			print
+			if (self.s.before.find("Token: ") != -1):
+				token = self.s.before.split("Token: ")[1].replace("\n", "")
+				print "NOTE: support access needs to enabled with token " + token
+			else:
+				print "NOTE: support access needs to enabled"
+			exit(1)
+		else:
+			self.s.sendline(self.support_pass)
+			self.s.expect(self.ssh_support_prompt_re)
+			
 
 	def is_telnet_enabled(self):
 		self.telnet()
@@ -157,7 +174,7 @@ class Device(object):
 		if self.telnet_enabled == True:
 			return
 		if self.s == None:
-			self.login()
+			self.ssh()
 		sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
 		sys.stdout.flush()
 		self.__enable_support()
@@ -170,7 +187,7 @@ class Device(object):
 		cmd = "telnet " + self.hostname + " " + self.telnet_port
 		t = pexpect.spawn(cmd)
 		i = t.expect([self.telnet_conn_refused, 'User:', pexpect.EOF,
-			      pexpect.TIMEOUT], 1)
+			      pexpect.TIMEOUT], timeout=60)
 		if (i == 1):
 			self.telnet_enabled = True
 			self.t = t
