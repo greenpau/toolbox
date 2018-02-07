@@ -1,9 +1,10 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} [-C] [-a <platform>] -c <platform> [-m <module>]"
+	echo "usage: ${progname} [-C|-q] [-a <platform>] -c <platform> [-m <module>]"
 	echo "options:"
 	echo "       -C: do a full cleanup of build area of the view"
+	echo "       -q: do a quick build (parallelize wherever possible)"
 	echo "       -a platform: 'all' or one of AP '${ap_platforms}' platforms"
 	echo "       -c platform: 'all' or one of Controller '${controller_platforms}' platforms"
 	echo "       -m module: 'sos'"
@@ -52,12 +53,17 @@ build_ap_images() {
 		printf "Building AP ${ap} - `date` ... "
 		echo "== Running mktree of ${ap} - `date`" >> ${logfile}
 		adu mktree ${ap} >> ${logfile} 2>&1
-		echo "== Running build of ${ap} - `date`" >> ${logfile}
-		adu build ${ap} >> ${logfile} 2>&1
-		if [ $? -eq 0 ]; then
-			echo "done"
+		if [ ${quick} == true ]; then
+			adu build ${ap} > /dev/null 2>&1 &
+			echo "(running in background)"
 		else
-			echo "failed"
+			echo "== Running build of ${ap} - `date`" >> ${logfile}
+			adu build ${ap} >> ${logfile} 2>&1
+			if [ $? -eq 0 ]; then
+				echo "done"
+			else
+				echo "failed"
+			fi
 		fi
 	done
 }
@@ -141,7 +147,8 @@ tgt_ap=
 module=
 apbuild=false
 full_cleanup=false
-while getopts ":ha:c:m:C" arg; do
+quick=false
+while getopts ":ha:c:m:Cq" arg; do
 	case $arg in
 	a) tgt_ap=${OPTARG}
 	   apbuild=true
@@ -151,6 +158,8 @@ while getopts ":ha:c:m:C" arg; do
 	m) module=${OPTARG}
 	;;
 	C) full_cleanup=true
+	;;
+	q) quick=true
 	;;
 	h | *) usage
 	;;
@@ -164,6 +173,9 @@ echo > ${logfile}
 echo "Logfile:" ${logfile}
 echo "Client:" ${P4CLIENT}
 echo "View:" ${P4CLIENT_DIR}
+echo "Quick:" ${quick}
+echo "Full cleanup:" ${full_cleanup}
+echo "Module:" ${module}
 echo "AP-Build:" ${apbuild}
 echo "AP Platform(s):" ${tgt_ap}
 echo "Controller Platform(s):" ${tgt_cp}
