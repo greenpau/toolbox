@@ -110,6 +110,20 @@ class Device(object):
 				build_date = " ".join(build_date_entry)
 		return sw_vers, build_number, label, build_date
 
+	def get_platid(self):
+		if self.is_telnet_enabled() == False:
+			self.enable_telnet()
+			self.telnet()
+		if self.t == None:
+			print "Failed to telnet to " + self.hostname
+			return
+		cmd = "platid"
+		self.t.sendline(cmd)
+		self.t.expect(self.telnet_prompt_re)
+		output = self.t.before + self.t.before
+		platid = string_ext.sans_firstline(output).split("-")[0]
+		return platid
+
 	def reload(self):
 		if self.s == None:
 			self.ssh()
