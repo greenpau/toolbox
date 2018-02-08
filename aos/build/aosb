@@ -1,9 +1,10 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} [-C|-q] [-a <platform>] -c <platform> [-m <module>]"
+	echo "usage: ${progname} [-C|-P|-q] [-a <platform>] [-c <platform>] [-m <module>]"
 	echo "options:"
 	echo "       -C: do a full cleanup of build area of the view"
+	echo "       -P: do a full production build"
 	echo "       -q: do a quick build (parallelize wherever possible)"
 	echo "       -a platform: 'all' or one of AP '${ap_platforms}' platforms"
 	echo "       -c platform: 'all' or one of Controller '${controller_platforms}' platforms"
@@ -110,15 +111,32 @@ build_controller_images() {
 	done
 }
 
+cleanup_platform_build() {
+	local platform=$1
+	local build_dir_plat=${build_rootdir}/${platform}
+
+	printf "Cleanup ${build_dir_plat} ... "
+	rm -rf ${build_dir_plat}
+	echo "done"
+}
+
+cleanup_production() {
+	for ap in ${ap_platforms}; do
+		cleanup_platform_build ${ap}
+	done
+	for cp in ${controller_platforms}; do
+		cleanup_platform_build ${cp}
+	done
+}
+
 cleanup() {
 	local platform=$1
 	local cleanup_modules="cmn/syslog cmn/gsm"
-	local build_dir_plat=${build_rootdir}/${platform}
 
-	if [ ${full_cleanup} == true ]; then
-		printf "== Cleaning up ${build_dir_plat} ... "
-		rm -rf ${build_dir_plat}
-		echo "done"
+	if [ ${production} == true ]; then
+		return
+	elif [ ${full_cleanup} == true ]; then
+		cleanup_platform_build ${platform}
 	else
 		for cm in ${cleanup_modules}; do
 			printf "== Cleaning up ${cm} for ${platform} - `date` ... "
@@ -148,7 +166,8 @@ module=
 apbuild=false
 full_cleanup=false
 quick=false
-while getopts ":ha:c:m:Cq" arg; do
+production=false
+while getopts ":ha:c:m:CqP" arg; do
 	case $arg in
 	a) tgt_ap=${OPTARG}
 	   apbuild=true
@@ -160,6 +179,12 @@ while getopts ":ha:c:m:Cq" arg; do
 	C) full_cleanup=true
 	;;
 	q) quick=true
+	;;
+	P) production=true
+	   apbuild=true
+	   tgt_ap="all"
+	   tgt_cp="all"
+	   quick=true
 	;;
 	h | *) usage
 	;;
@@ -173,6 +198,7 @@ echo > ${logfile}
 echo "Logfile:" ${logfile}
 echo "Client:" ${P4CLIENT}
 echo "View:" ${P4CLIENT_DIR}
+echo "Production:" ${production}
 echo "Quick:" ${quick}
 echo "Full cleanup:" ${full_cleanup}
 echo "Module:" ${module}
@@ -193,6 +219,9 @@ fi
 
 cd ${P4CLIENT_DIR}
 
+if [ ${production} == true ]; then
+	cleanup_production
+fi
 if [ -z "${module}" ]; then
 	if [ ${apbuild} == true ]; then
 		build_ap_images
