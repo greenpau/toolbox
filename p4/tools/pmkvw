@@ -19,10 +19,10 @@ vw_basedir=/data/${user}/adu/views
 mkdir -p ${vw_basedir}
 
 export P4CLIENT=$client
-printf "Running mkclient with ${branch}:${client} - `date`"
+echo "Running mkclient with ${branch}:${client} - `date`"
 adu mkclient -b ${branch} -q ${client} ${labelstr}
 if [ $? -eq 0 ]; then
-	echo "done"
+	echo "View ${P4CLIENT} successfully created."
 else
 	echo "failed"
 	exit 1
