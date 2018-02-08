@@ -6,5 +6,8 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	exit 1
 fi
 
+branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
+
 echo "Current working view directory:" ${P4CLIENT_DIR}
 echo "Current working view:" ${P4CLIENT}
+echo "Current working branch:" ${branch}
