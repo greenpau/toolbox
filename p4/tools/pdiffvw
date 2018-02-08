@@ -30,6 +30,12 @@ while getopts ":hf:F:o:" arg; do
 		;;
 	esac
 done
+
+if [ -n "${outfile}" ]; then
+	out_dirname=`dirname ${outfile}`
+	mkdir -p ${out_dirname}
+fi
+
 if [ -n "${filename}" ]; then
 	if [ -n "${outfile}" ]; then
 		p4 diff -du ${filename} > ${outfile}
