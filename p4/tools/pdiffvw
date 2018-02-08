@@ -1,8 +1,10 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} [-f <filename>]"
-	echo "       -f: display diff of a particular file"
+	echo "usage: ${progname} [options]"
+	echo "options:"
+	echo "       -f <filename>: display diff of a particular file"
+	echo "       -F <flist>: file containing list of files to be diff'd"
 	exit 1
 }
 
@@ -13,9 +15,12 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 fi
 
 filename=
-while getopts ":hf:" arg; do
+flist=
+while getopts ":hf:F:" arg; do
 	case $arg in
 	f)	filename=${OPTARG}
+		;;
+	F)	flist=${OPTARG}
 		;;
 	*)	usage
 		;;
@@ -23,6 +28,15 @@ while getopts ":hf:" arg; do
 done
 if [ -n "${filename}" ]; then
 	p4 diff -du ${filename} | less
+elif [ -n "${flist}" ]; then
+	if [ ! -f ${flist} ]; then
+		echo "${progname}: missing ${flist}"
+		exit 1
+	fi
+	files="`cat ${flist}`"
+	for f in ${files}; do
+		p4 diff -du ${f} | less
+	done
 else
 	p4 diff -du | less
 fi
