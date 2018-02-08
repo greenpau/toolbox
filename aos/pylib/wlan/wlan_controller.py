@@ -133,6 +133,20 @@ class Device(object):
 		platid = string_ext.sans_firstline(output).split("-")[0]
 		return platid
 
+	def get_uptime(self):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show switch software')
+		self.s.expect(self.ssh_prompt_re)
+		output = self.s.before + self.s.after
+		uptime = ""
+		for l in output.splitlines():
+			if (l.find("Switch uptime is") == -1):
+				continue
+			uptime = l.split("Switch uptime is")[1]
+			break
+		return uptime
+
 	def reload(self):
 		if self.s == None:
 			self.ssh()
