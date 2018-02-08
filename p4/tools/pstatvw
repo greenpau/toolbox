@@ -5,33 +5,28 @@ usage() {
 	echo "options:"
 	echo "       -d: detailed information about each file checked out"
 	echo "       -u: display untracked files"
+	echo "       -a: display all files (both tracked and untracked)"
 	exit 1
 }
 
-progname=`basename $0`
-if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
-	echo "${progname}: not inside any perforce view"
-	exit 1
-fi
+pstatvw_tracked() {
+	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}' | awk -F${branch}/ '{print $2}'`"
+#	awk -F/ '{\
+#		for (i = 4; i < NF - 1; i++) {\
+#			printf("%s/", $i);\
+#		}\
+#		printf("%s\n",$NF);\
+#	}'`
+	echo "List of files checked out in ${P4CLIENT}:"
+	echo
+	echo "$flist"
+}
 
-detail=0
-untracked=0
-while getopts ":hdu" arg; do
-	case $arg in
-	d)	detail=1
-		;;
-	u)	untracked=1
-		;;
-	h)	usage
-		;;
-	esac
-done
-
-branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
-
-if [ ${detail} -eq 1 ]; then
+pstatvw_tracked_detail() {
 	p4 diff -ds
-elif [ ${untracked} -eq 1 ]; then
+}
+
+pstatvw_untracked() {
 	ignore_list="pyc swp x4"
 	echo "List of untracked files in ${P4CLIENT} (ignoring file ext ${ignore_list}):"
 	echo
@@ -50,16 +45,41 @@ elif [ ${untracked} -eq 1 ]; then
 				print $1; \
 			} \
 		}' | sed -e 's|^./||g'
-else
-	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}' | awk -F${branch}/ '{print $2}'`"
-#	awk -F/ '{\
-#		for (i = 4; i < NF - 1; i++) {\
-#			printf("%s/", $i);\
-#		}\
-#		printf("%s\n",$NF);\
-#	}'`
-	echo "List of files checked out in ${P4CLIENT}:"
+}
+
+progname=`basename $0`
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "${progname}: not inside any perforce view"
+	exit 1
+fi
+
+detail=0
+untracked=0
+all=0
+while getopts ":hdua" arg; do
+	case $arg in
+	d)	detail=1
+		;;
+	u)	untracked=1
+		;;
+	a)	all=1
+		;;
+	h)	usage
+		;;
+	esac
+done
+
+branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
+
+if [ ${detail} -eq 1 ]; then
+	pstatvw_tracked_detail
+elif [ ${untracked} -eq 1 ]; then
+	pstatvw_untracked
+elif [ ${all} -eq 1 ]; then
+	pstatvw_tracked
 	echo
-	echo "$flist"
+	pstatvw_untracked
+else
+	pstatvw_tracked
 fi
 echo
