@@ -27,11 +27,14 @@ while getopts ":hdu" arg; do
 	esac
 done
 
+branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
+
 if [ ${detail} -eq 1 ]; then
 	p4 diff -ds
 elif [ ${untracked} -eq 1 ]; then
 	ignore_list="pyc swp x4"
-	echo "List of untracked files in ${P4CLIENT} - ignoring file extensions ${ignore_list}"
+	echo "List of untracked files in ${P4CLIENT} (ignoring file ext ${ignore_list}):"
+	echo
 	find -type f ! -name '*~' -print0| xargs -0 p4 fstat 2>&1 | \
 		awk -v ignore_list="${ignore_list}" 'BEGIN{ \
 			split(ignore_list,ignore_elems," "); \
@@ -46,10 +49,17 @@ elif [ ${untracked} -eq 1 ]; then
 			if (!match($1, regex)) { \
 				print $1; \
 			} \
-		}'
+		}' | sed -e 's|^./||g'
 else
-	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}'`"
+	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}' | awk -F${branch}/ '{print $2}'`"
+#	awk -F/ '{\
+#		for (i = 4; i < NF - 1; i++) {\
+#			printf("%s/", $i);\
+#		}\
+#		printf("%s\n",$NF);\
+#	}'`
 	echo "List of files checked out in ${P4CLIENT}:"
+	echo
 	echo "$flist"
 fi
 echo
