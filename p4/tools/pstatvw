@@ -1,8 +1,9 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} [-f <filename>]"
-	echo "       -f: display log of a particular file"
+	echo "usage: ${progname} [options]"
+	echo "options:"
+	echo "       -d: detailed information about each file checked out"
 	echo "       -u: display untracked files"
 	exit 1
 }
