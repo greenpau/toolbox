@@ -12,7 +12,10 @@ sys.path.append("/usr/local/aos/pylib/system")
 import shell
 
 def usage():
-	print "usage: " + progname + " <device> <options>"
+	print "usage: " + progname + " <type> <device> <options>"
+	print "arguments:"
+	print "    type: 'controller'"
+	print "    device: IP address of the device"
 	print "options:"
 	print "    -s: status of a specified controller"
 	print "    -t: enable telnet at specified device"
@@ -22,14 +25,26 @@ def usage():
 	exit(1)
 
 def main(argc, argv):
-	if (argc == 1):
+	all_device_types = [
+		{ 'type' : "controller", 'handler': manage_controller, }
+	]
+	if (argc < 3):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[1:], "htTcsr");
+		opts, args = getopt.getopt(argv[2:], "htTcsr");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
-	device = argv[0]
+	type = argv[0]
+	device = argv[1]
+	found = False
+	for d in all_device_types:
+		if (d['type'] == type):
+			found = True
+			break
+	if (found == False):
+		print progname + ": invalid type specified"
+		usage()
 	telnet = False
 	enable_telnet = False
 	dp_core = False
@@ -54,6 +69,25 @@ def main(argc, argv):
 	if shell.is_alive(device) == False:
 		print progname + ": controller " + device + " appears to be down"
 		return
+	options = {
+		'telnet' : telnet,
+		'enable_telnet': telnet,
+		'dp_core': dp_core,
+		'status': status,
+		'reload': reload,
+	}
+	for d in all_device_types:
+		if (d['type'] == type):
+			d['handler'](device, options)
+			return
+
+def manage_controller(device, options):
+	telnet = options['telnet']
+	enable_telnet = options['enable_telnet']
+	dp_core = options['dp_core']
+	status = options['status']
+	reload = options['reload']
+
 	c = wlan_controller.Device(device)
 
 	if (telnet == True):
