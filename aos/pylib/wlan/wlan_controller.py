@@ -225,11 +225,11 @@ class Device(object):
 				print "NOTE: support access needs to enabled with token " + token
 			else:
 				print "NOTE: support access needs to enabled"
-			exit(1)
+			return False
 		else:
 			self.s.sendline(self.support_pass)
 			self.s.expect(self.ssh_support_prompt_re)
-			
+		return True
 
 	def is_telnet_enabled(self):
 		self.telnet()
@@ -245,7 +245,9 @@ class Device(object):
 			self.ssh()
 		sys.stdout.write("Enabling telnet access in controller " + self.hostname + ", please wait ... ")
 		sys.stdout.flush()
-		self.__enable_support()
+		if (self.__enable_support() == False):
+			self.s = None
+			return
 		self.s.sendline("telnet shell")
 		self.s.expect(self.ssh_support_prompt_re)
 		self.telnet_enabled = True
@@ -325,7 +327,8 @@ class Device(object):
 	def gen_dp_core(self):
 		if self.s == None:
 			self.ssh()
-		self.__enable_support()
+		if (self.__enable_support() == False):
+			return
 		sys.stdout.write("Generating datapath coredump for " + self.hostname + ", please wait ... ")
 		sys.stdout.flush()
 		self.s.sendline('generate datapath coredump')
