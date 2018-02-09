@@ -81,9 +81,11 @@ def main(argc, argv):
 		platid = c.get_platid()
 		boot_partition = c.get_boot_partition()
 		uptime = c.get_uptime()
+		switchrole = c.get_switchrole()
 		sw_vers, build_number, label, build_date = c.get_boot_image_version()
 		print "Platform: %s" %platid
 		print "Uptime: %s" %uptime
+		print "Switch Role: %s" %switchrole
 		print "Boot Information:"
 		print "\tPartition: %s" %boot_partition
 		print "\tSW Version (build): %s (%s)" % (sw_vers, build_number)

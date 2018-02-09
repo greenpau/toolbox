@@ -147,6 +147,20 @@ class Device(object):
 			break
 		return uptime
 
+	def get_switchrole(self):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show switchinfo')
+		self.s.expect(self.ssh_prompt_re)
+		output = self.s.before + self.s.after
+		switchrole = ""
+		for l in output.splitlines():
+			if (l.find("switchrole") == -1):
+				continue
+			switchrole = l.split(":")[1]
+			break
+		return switchrole
+
 	def reload(self):
 		if self.s == None:
 			self.ssh()
