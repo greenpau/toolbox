@@ -7,6 +7,7 @@ import time
 
 sys.path.append("/usr/local/aos/pylib/wlan")
 import wlan_controller
+import wlan_ap
 
 sys.path.append("/usr/local/aos/pylib/system")
 import shell
@@ -89,6 +90,7 @@ def manage_controller(device, options):
 	reload = options['reload']
 
 	c = wlan_controller.Device(device)
+	apList = wlan_ap.APList(c)
 
 	if (telnet == True):
 		c.telnet_session()
@@ -116,6 +118,7 @@ def manage_controller(device, options):
 		boot_partition = c.get_boot_partition()
 		uptime = c.get_uptime()
 		switchrole = c.get_switchrole()
+		naps = apList.get_naps()
 		sw_vers, build_number, label, build_date = c.get_boot_image_version()
 		print "Platform: %s" %platid
 		print "Uptime: %s" %uptime
@@ -125,6 +128,12 @@ def manage_controller(device, options):
 		print "\tSW Version (build): %s (%s)" % (sw_vers, build_number)
 		print "\tLabel: %s" % (label)
 		print "\tBuild Date: %s" % (build_date)
+		print "Number of active APs: %d" %(naps)
+		if (naps != 0):
+			print "%-17s %-15s %-5s %-s" %("Name", "IP", "Type", "Group")
+			for i in range(0, naps):
+				ap = apList.info(i)
+				print "%-17s %-15s %-5s %-s" %(ap.name, ap.ip, ap.type, ap.group)
 	elif (reload == True):
 		c.reload()
 	else:

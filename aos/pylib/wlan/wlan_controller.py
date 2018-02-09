@@ -161,6 +161,46 @@ class Device(object):
 			break
 		return switchrole
 
+	def get_naps(self, type):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show ap ' + type)
+		self.s.expect(self.ssh_prompt_re)
+		output = self.s.before + self.s.after
+		naps = ""
+		for l in output.splitlines():
+			if (l.find("Num APs") == -1):
+				continue
+			naps = l.split(":")[1]
+			break
+		return naps
+
+	def get_aplines(self, type):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show ap ' + type)
+		self.s.expect(self.ssh_prompt_re)
+		output = self.s.before + self.s.after
+		name_seen = False
+		flags_seen = False
+		aplines = []
+		for l in output.splitlines():
+			if (l.find("Name") == -1):
+				if (name_seen == False):
+					continue
+			else:
+				name_seen = True
+				continue
+			if (l.find("Flags:") == -1):
+				if (flags_seen == False):
+					if (l.find("----") == -1) and (l != ''):
+						aplines.append(l)
+					continue
+			else:
+				flags_seen = True
+			break
+		return aplines
+
 	def reload(self):
 		if self.s == None:
 			self.ssh()

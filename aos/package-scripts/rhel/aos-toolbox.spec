@@ -41,6 +41,7 @@ install__ 0755 build/aosicp
 
 install__ 0755 pylib/system/shell.py
 install__ 0755 pylib/system/string_ext.py
+install__ 0755 pylib/wlan/wlan_ap.py
 install__ 0755 pylib/wlan/wlan_controller.py
 
 install__ 0755 tools/7z2soscore
@@ -58,6 +59,7 @@ install__ 0755 tools/sos-startupscript
 
 /usr/local/aos/pylib/system/shell.py
 /usr/local/aos/pylib/system/string_ext.py
+/usr/local/aos/pylib/wlan/wlan_ap.py
 /usr/local/aos/pylib/wlan/wlan_controller.py
 
 /usr/local/aos/tools/7z2soscore
