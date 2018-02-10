@@ -264,7 +264,13 @@ class Device(object):
 			self.t.sendline(self.admin + "\r")
 			self.t.expect("Password:")
 			self.t.sendline(self.admin_pass + "\r")
-			self.t.expect("Support Password:")
+			i = self.t.expect(["Support Password:", "Username",
+					   pexpect.EOF, pexpect.TIMEOUT],
+					  timeout=60)
+			if (i != 0):
+				self.t = None
+				self.s = None
+				return
 			self.t.sendline(self.support_pass + "\r")
 			self.t.sendline("\r\n")
 			time.sleep(5)
