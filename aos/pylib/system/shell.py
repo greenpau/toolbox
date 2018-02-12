@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import subprocess
-import os
 import sys
 sys.path.append("/usr/local/aos/pylib/system")
 
@@ -17,16 +16,4 @@ def call_prog_as_is(cmd):
 	return outline
 
 def whoami():
-	return call_prog_as_is('whoami').replace("\n", "")
-
-def getent(host):
-	outstr = call_prog_as_is('getent hosts ' + host).replace("\n", "")
-	return outstr.split(" ")[0]
-
-def is_alive(host):
-	cmd = "ping -c 1 " + host
-	outstr = call_prog_as_is(cmd)
-	if (outstr.find("64 bytes from") == -1):
-		return False
-	else:
-		return True
+	return shell.call_prog_as_is('whoami').replace("\n", "")

@@ -11,6 +11,7 @@ import wlan_ap
 
 sys.path.append("/usr/local/aos/pylib/system")
 import shell
+import net
 
 def usage():
 	print "usage: " + progname + " <type> <device> <options>"
@@ -67,7 +68,7 @@ def main(argc, argv):
 		print progname + ": need a controller device to operate on"
 		usage()
 
-	if shell.is_alive(device) == False:
+	if net.is_alive(device) == False:
 		print progname + ": controller " + device + " appears to be down"
 		return
 	options = {
@@ -111,7 +112,7 @@ def manage_controller(device, options):
 			time.sleep(5)
 			dst_user = shell.whoami()
 			dst_host_canon = "dev-" + dst_user
-			dst_host = shell.getent(dst_host_canon)
+			dst_host = net.getent(dst_host_canon)
 			c.scp_crash(dst_user, dst_host, "/var/tmp")
 	elif (status == True):
 		platid = c.get_platid()
