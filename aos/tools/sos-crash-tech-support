@@ -110,10 +110,23 @@ cleanup_gdbscript() {
 	rm -f ${gdbscript}
 }
 
+abspath() {
+	local path=$1
+	case $f in
+	/*)	abspath=${path}
+		;;
+	*)	abspath=$PWD/${path}
+		;;
+	esac
+	echo "${abspath}"
+}
+
 finalize_log() {
 	sed -e 's/''\$''.*= "=======/"(gdb)/g' ${tech_support_log} | sed -e 's/"//g' > ${tech_support_log}.$$
-	mv ${tech_support_log}.$$ ${tech_support_log}
-	echo "Tech Support Log location: ${tech_support_log}"
+	log_final_location=${crashdump_path}/`basename ${tech_support_log}`
+	log_final_path=`abspath ${log_final_location}`
+	mv ${tech_support_log}.$$ ${log_final_path}
+	echo "Tech Support Log location: ${log_final_path}"
 }
 
 gdbscripts="\
