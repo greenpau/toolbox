@@ -40,6 +40,7 @@ install__ 0755 pdiffvw
 install__ 0755 pentervw
 install__ 0755 plsvw
 install__ 0755 plogvw
+install__ 0755 pman
 install__ 0755 pmkvw
 install__ 0755 ppwvw
 install__ 0755 pstatvw
@@ -52,6 +53,7 @@ install__ 0755 pstatvw
 /usr/local/p4-tools/pentervw
 /usr/local/p4-tools/plsvw
 /usr/local/p4-tools/plogvw
+/usr/local/p4-tools/pman
 /usr/local/p4-tools/pmkvw
 /usr/local/p4-tools/ppwvw
 /usr/local/p4-tools/pstatvw

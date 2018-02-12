@@ -1,0 +1,15 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <p4cmd>[,<p4cmd>]"
+	exit 1
+}
+
+progname=`basename $0`
+cmd="$*"
+if [ -z "${cmd}" ]; then
+	usage
+fi
+for c in ${cmd}; do
+	p4 help ${c} | less
+done
