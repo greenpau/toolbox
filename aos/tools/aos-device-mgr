@@ -24,6 +24,7 @@ def usage():
 	print "    -T: establish a telnet session with specified device"
 	print "    -c: generate a controller datapath coredump"
 	print "    -r: reload the specified controller"
+	print "    -C: generate and copy out coredump tarball from a device"
 	exit(1)
 
 def main(argc, argv):
@@ -33,7 +34,7 @@ def main(argc, argv):
 	if (argc < 3):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[2:], "htTcsr");
+		opts, args = getopt.getopt(argv[2:], "htTcsrC");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -52,6 +53,7 @@ def main(argc, argv):
 	dp_core = False
 	status = False
 	reload = False
+	copyout_core = False
 	for opt, arg in opts:
 		if opt == "-t":
 			enable_telnet = True
@@ -59,6 +61,8 @@ def main(argc, argv):
 			telnet = True
 		elif opt == "-c":
 			dp_core = True
+		elif opt == "-C":
+			copyout_core = True
 		elif opt == "-s":
 			status = True
 		elif opt == "-r":
@@ -77,6 +81,7 @@ def main(argc, argv):
 		'dp_core': dp_core,
 		'status': status,
 		'reload': reload,
+		'copyout_core': copyout_core,
 	}
 	for d in all_device_types:
 		if (d['type'] == type):
@@ -89,6 +94,7 @@ def manage_controller(device, options):
 	dp_core = options['dp_core']
 	status = options['status']
 	reload = options['reload']
+	copyout_core = options['copyout_core']
 
 	c = wlan_controller.Device(device)
 	apList = wlan_ap.APList(c)
@@ -114,6 +120,15 @@ def manage_controller(device, options):
 			dst_host_canon = "dev-" + dst_user
 			dst_host = net.getent(dst_host_canon)
 			c.scp_crash(dst_user, dst_host, "/var/tmp")
+	elif (copyout_core == True):
+		if c.tar_crash() == True:
+			time.sleep(5)
+			dst_user = shell.whoami()
+			dst_host_canon = "dev-" + dst_user
+			dst_host = net.getent(dst_host_canon)
+			c.scp_crash(dst_user, dst_host, "/var/tmp")
+		else:
+			print "Coredump does not exist on " + device
 	elif (status == True):
 		platid = c.get_platid()
 		boot_partition = c.get_boot_partition()
