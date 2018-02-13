@@ -73,7 +73,7 @@ def main(argc, argv):
 		return
 	options = {
 		'telnet' : telnet,
-		'enable_telnet': telnet,
+		'enable_telnet': enable_telnet,
 		'dp_core': dp_core,
 		'status': status,
 		'reload': reload,
@@ -138,6 +138,7 @@ def manage_controller(device, options):
 	elif (reload == True):
 		c.reload()
 	else:
+		print progname + ": Unsupported operation"
 		usage()
 
 if __name__ == "__main__":
