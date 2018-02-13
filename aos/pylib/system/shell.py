@@ -16,4 +16,4 @@ def call_prog_as_is(cmd):
 	return outline
 
 def whoami():
-	return shell.call_prog_as_is('whoami').replace("\n", "")
+	return call_prog_as_is('whoami').replace("\n", "")
