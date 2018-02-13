@@ -6,11 +6,17 @@ vws="`ls -1 ${vws_dir}`"
 
 echo "List of views for user ${user}"
 echo "------------------------------------------------------------------------"
-printf "%-20s\t\t%s\n" "View" "Last-Modified"
+printf "%-24s\t\t%s\n" "View" "Last-Modified"
 echo "------------------------------------------------------------------------"
 for v in ${vws}; do
+	v_len=`echo ${#v}`
 	vw_path=${vws_dir}/${v}
 	last_mod="`stat --printf=\"%y\n\" ${vw_path} | awk -F. '{print $1}'`"
-	printf "%-20s\t\t%s\n" $v "$last_mod"
+	if [ $v_len -ge 24 ]; then
+		tabs="\t"
+	else
+		tabs="\t\t"
+	fi
+	printf "%-24s${tabs}%s\n" $v "$last_mod"
 done
 echo "------------------------------------------------------------------------"
