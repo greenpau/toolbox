@@ -3,10 +3,19 @@
 usage() {
 	echo "usage: ${progname} [options]"
 	echo "options:"
-	echo "    -c: changelist ID specifier"
+	echo "    -c <cid>: changelist ID specifier"
 	echo "    -d: describe a changelist"
 	echo "    -r: create a ccollab review"
+	echo "    -R <rid>: update review rid with a new changelist"
 	echo "    -l: list all reviews launched by ${whoami}"
+	echo "examples:"
+	echo "    ${progname} -l -- list all changelists by ${whoami}"
+	echo "    ${progname} -- create a new changelist"
+	echo "    ${progname} -c <cid> -- update a changelist"
+	echo "    ${progname} -r -- create a new changelist and start a new review"
+	echo "    ${progname} -c <cid> -r -- update a changelist and start a review"
+	echo "    ${progname} -c <cid> -r -R <rid> -- update a changelist and post to review"
+	echo "    ${progname} -c <cid> -d -- describe a changelist"
 	exit 1
 }
 
@@ -21,13 +30,16 @@ clid=
 review=0
 list=0
 describe=0
-while getopts ":hc:rld" arg; do
+rid=
+while getopts ":hc:rldR:" arg; do
 	case $arg in
 	c)	clid=${OPTARG}
 		;;
 	d)	describe=1
 		;;
 	r)	review=1
+		;;
+	R)	rid=${OPTARG}
 		;;
 	l)	list=1
 		;;
@@ -56,6 +68,10 @@ fi
 
 if [ ${review} -eq 1 ]; then
 	if [ -n "${clid}" ]; then
-		ccollab addchangelist new ${clid}
+		if [ -n "${rid}" ]; then
+			ccollab addchangelist ${rid} ${clid}
+		else
+			ccollab addchangelist new ${clid}
+		fi
 	fi
 fi
