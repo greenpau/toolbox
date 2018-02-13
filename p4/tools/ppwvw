@@ -1,12 +1,14 @@
 #!/bin/bash
 
+. /usr/local/p4-tools/libp4.sh
+
 progname=`basename $0`
 if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	echo "${progname}: not inside any perforce view"
 	exit 1
 fi
 
-branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
+branch=`get_branch`
 
 echo "Current working view directory:" ${P4CLIENT_DIR}
 echo "Current working view:" ${P4CLIENT}

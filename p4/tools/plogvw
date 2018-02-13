@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /usr/local/p4-tools/libp4.sh
+
 usage() {
 	echo "usage: ${progname} [-f <filename>]"
 	echo "       -f: display log of a particular file"

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /usr/local/p4-tools/libp4.sh
+
 usage() {
 	echo "usage: ${progname} [options]"
 	echo "options:"
@@ -59,6 +61,7 @@ elif [ ${describe} -eq 1 ]; then
 	exit 0
 else
 	p4 change ${clid}
+	sleep 2
 fi
 
 if [ -z "${clid}" ]; then

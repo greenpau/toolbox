@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /usr/local/p4-tools/libp4.sh
+
 user=`whoami`
 vws_dir=/data/${user}/adu/views
 vws="`ls -1 ${vws_dir}`"

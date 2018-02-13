@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /usr/local/p4-tools/libp4.sh
+
 usage() {
 	echo "usage: ${progname} [options]"
 	echo "options:"
@@ -79,7 +81,7 @@ while getopts ":hf:F:o:d:" arg; do
 	esac
 done
 
-branch=`adu mappings | tail -2 | grep -v ^$ | awk '{print $1}' | awk -F/ '{print $NF}'`
+branch=`get_branch`
 
 if [ -n "${outfile}" ]; then
 	out_dirname=`dirname ${outfile}`
