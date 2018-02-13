@@ -43,6 +43,7 @@ install__ 0755 plogvw
 install__ 0755 pman
 install__ 0755 pmkvw
 install__ 0755 ppwvw
+install__ 0755 preview
 install__ 0755 pstatvw
 
 %clean
@@ -56,6 +57,7 @@ install__ 0755 pstatvw
 /usr/local/p4-tools/pman
 /usr/local/p4-tools/pmkvw
 /usr/local/p4-tools/ppwvw
+/usr/local/p4-tools/preview
 /usr/local/p4-tools/pstatvw
 
 %pre

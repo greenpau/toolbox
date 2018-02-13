@@ -1,0 +1,61 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} [options]"
+	echo "options:"
+	echo "    -c: changelist ID specifier"
+	echo "    -d: describe a changelist"
+	echo "    -r: create a ccollab review"
+	echo "    -l: list all reviews launched by ${whoami}"
+	exit 1
+}
+
+if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
+	echo "Must be ran inside a view"
+	exit 1
+fi
+
+progname=`basename $0`
+whoami=`whoami`
+clid=
+review=0
+list=0
+describe=0
+while getopts ":hc:rld" arg; do
+	case $arg in
+	c)	clid=${OPTARG}
+		;;
+	d)	describe=1
+		;;
+	r)	review=1
+		;;
+	l)	list=1
+		;;
+	*)	usage
+	esac
+done
+
+if [ ${list} -eq 1 ]; then
+	p4 changes -u ${whoami}
+	exit 0
+elif [ ${describe} -eq 1 ]; then
+	if [ -z ${clid} ]; then
+		echo "${progname}: missing changelist identifier"
+		exit 1
+	fi
+	p4 describe -du ${clid}
+	exit 0
+else
+	p4 change ${clid}
+fi
+
+if [ -z "${clid}" ]; then
+	clid=`p4 changes -u ${whoami} | grep pending | head -1 | awk '{print $2}'`
+	echo "p4 changelist ID: ${clid}"
+fi
+
+if [ ${review} -eq 1 ]; then
+	if [ -n "${clid}" ]; then
+		ccollab addchangelist new ${clid}
+	fi
+fi
