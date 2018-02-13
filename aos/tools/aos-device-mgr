@@ -110,7 +110,7 @@ def manage_controller(device, options):
 			sys.stdout.write(".")
 			sys.stdout.flush()
 			time.sleep(5)
-			if (shell.is_alive(device) == True):
+			if (net.is_alive(device) == True):
 				break
 		print
 		print "Controller " + device + " is now alive"
