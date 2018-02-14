@@ -66,8 +66,15 @@ elif [ ${describe} -eq 1 ]; then
 	fi
 	exit 0
 else
+	n_pending_clids_pre=`get_clid_n_pending ${whoami} ${P4CLIENT}`
 	p4 change ${clid}
 	sleep 2
+	n_pending_clids_post=`get_clid_n_pending ${whoami} ${P4CLIENT}`
+	n_new_clids=`expr ${n_pending_clids_post} - ${n_pending_clids_pre}`
+	if [ ${n_new_clids} -ne 1 ]; then
+		echo "${progname}: no new changelists (${n_new_clids})"
+		exit 1
+	fi
 fi
 
 if [ -z "${clid}" ]; then
