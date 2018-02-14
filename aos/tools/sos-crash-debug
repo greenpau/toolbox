@@ -64,7 +64,7 @@ extract_sym_file() {
 }
 
 copy_sym_file() {
-	symfile_path=`find ${P4CLIENT_BUILD} -name sos.elf.symbols 2> /dev/null | grep ${platform}`
+	symfile_path=`find ${P4CLIENT_BUILD} -name sos.elf.symbols 2> /dev/null | grep -i ${platform}`
 	if [ -z "${symfile_path}" ]; then
 		echo "${progname}: unable to find sos.elf.symbols in ${P4CLIENT_BUILD}"
 		exit 1
@@ -160,7 +160,7 @@ if [ ! -f machineInfo ]; then
 	echo "${progname}: missing machineInfo in ${crashinfo_path}"
 	exit 1
 fi
-platform=`grep -a MODEL machineInfo | awk -F: '{print $2}' | awk '{print $1}' | awk -F")" '{print $1}' | sed 's/Aruba//g' | awk -F- '{print $1}'`
+platform=`grep -a MODEL machineInfo | awk -F: '{print $2}' | awk '{print $1}' | awk -F")" '{print $1}' | sed 's/Aruba//g' | awk -F- '{print $1}' | tr "[:upper:]" "[:lower:]"`
 if [ -z "${platform}" ]; then
 	echo "${progname}: unable to determine platform from machineInfo"
 	exit 1
