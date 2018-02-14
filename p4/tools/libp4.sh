@@ -28,3 +28,19 @@ get_clid_most_recent() {
 	clid=`echo ${clid_list_pending} | awk '{print $NF}'`
 	echo ${clid}
 }
+
+describe_clid() {
+	local clid=$1
+	if [ -z "${clid}" ]; then
+		return 1
+	fi
+	tmp_outfile=/var/tmp/describe_clid.$$
+	echo "Changelist ID: ${clid}" > ${tmp_outfile}
+	p4 describe -du ${clid} >> ${tmp_outfile}
+	echo "" >> ${tmp_outfile}
+	echo "Diff:" >> ${tmp_outfile}
+	echo "" >> ${tmp_outfile}
+	p4 opened -c ${clid} | sed -e 's/#.*//' | p4 -x - diff -du >> ${tmp_outfile}
+	less ${tmp_outfile}
+	rm -rf ${tmp_outfile}
+}

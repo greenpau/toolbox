@@ -17,7 +17,7 @@ usage() {
 	echo "    ${progname} -r -- create a new changelist and start a new review"
 	echo "    ${progname} -c <cid> -r -- update a changelist and start a review"
 	echo "    ${progname} -c <cid> -r -R <rid> -- update a changelist and post to review"
-	echo "    ${progname} -c <cid> -d -- describe a changelist"
+	echo "    ${progname} -c <cid>|all -d -- describe one or all changelist(s) in ${P4CLIENT}"
 	exit 1
 }
 
@@ -59,10 +59,10 @@ elif [ ${describe} -eq 1 ]; then
 	elif [ "${clid}" = "all" ]; then
 		pending_clid_list=`get_clid_list_pending ${whoami} ${P4CLIENT}`
 		for clid in ${pending_clid_list}; do
-			p4 describe -du ${clid} | less
+			describe_clid ${clid}
 		done
 	else
-		p4 describe -du ${clid} | less
+		describe_clid ${clid}
 	fi
 	exit 0
 else
