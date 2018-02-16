@@ -163,6 +163,7 @@ gdbprocs=(\
 'print_dma_info' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
+'sbeth_sae_leak_walk' \
 'route_cache_dump' \
 'route_table_dump' \
 'sess_table_print_v4 1' \
