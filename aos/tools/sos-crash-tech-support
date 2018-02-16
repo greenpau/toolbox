@@ -159,6 +159,7 @@ gdbscripts="\
 gdbprocs=(\
 'print_cpu_utilization' \
 'dump_all_stats' \
+'stall_detect' \
 'print_all_bwms' \
 'print_dma_info' \
 'sbeth_leak_stats' \
