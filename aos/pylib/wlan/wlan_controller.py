@@ -26,6 +26,7 @@ class Device(object):
 	telnet_conn_refused = "Connection refused"
 	telnet_port = "2323"
 	crash_tarfile = "/flash/config/crash.tar"
+	logs_tarfile = "/flash/config/logs.tar"
 
 	def __init__(self, hostname):
 		self.hostname = hostname
@@ -346,6 +347,22 @@ class Device(object):
 		print "done"
 		self.s = None
 
+	def tar_logs_with_tech_support(self):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('tar logs tech-support')
+		self.s.expect(self.ssh_prompt_re, timeout=500)
+		return self.logs_tarfile_exists()
+
+	def logs_tarfile_exists(self):
+		return self.__file_exists(self.logs_tarfile)
+
+	def scp_logs(self, dst_user, dst_host, dst_path):
+		if (self.logs_tarfile_exists() == False):
+			return
+		self.scp_from(self.logs_tarfile, dst_user, dst_host, dst_path)
+		return True
+
 	def tar_crash(self):
 		if self.s == None:
 			self.ssh()
@@ -354,20 +371,23 @@ class Device(object):
 		return self.crash_tarfile_exists()
 
 	def crash_tarfile_exists(self):
+		return self.__file_exists(self.crash_tarfile)
+
+	def __file_exists(self, file):
 		self.enable_telnet()
 		self.telnet()
 		if self.t == None:
 			print "Failed to telnet to " + self.hostname
 			return False
-		cmd = "ls -l " + self.crash_tarfile
+		cmd = "ls -l " + file
 		self.t.sendline(cmd)
 		self.t.expect(self.telnet_prompt_re)
 		output = self.t.before + self.t.after
 		if output == "":
-			print "No output for " + self.crash_tarfile
+			print "No output for " + file
 			return False
-		if output.find(self.crash_tarfile) == -1:
-			print "Unable to find " + self.crash_tarfile
+		if output.find(file) == -1:
+			print "Unable to find " + file
 			return False
 		return True
 
