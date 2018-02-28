@@ -140,10 +140,13 @@ gdbscripts="\
 	python/session.py \
 	station.gdb \
 	python/station.py \
+	trace.gdb \
 	tunnel.gdb \
 	python/tunnel.py \
 	user.gdb \
 	python/user.py \
+	wifi_reasm.gdb \
+	python/wifi_reasm.py \
 	xlp/cpu.gdb \
 	xlp/python/cpu.py \
 	xlp/dma.gdb \
@@ -162,6 +165,7 @@ gdbprocs=(\
 'stall_detect' \
 'print_all_bwms' \
 'print_dma_info' \
+'wifi_reasm_table' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
 'sbeth_sae_leak_walk' \
@@ -173,6 +177,7 @@ gdbprocs=(\
 'user_table_hash_dump' \
 'user_pend_dump' \
 'vlan_table_dump' \
+'trace_dump_fwd' \
 )
 
 gdbcomms=(\
