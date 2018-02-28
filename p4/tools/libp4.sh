@@ -21,6 +21,18 @@ get_clid_n_pending() {
 	echo ${n_clid_pending}
 }
 
+get_clid_flist() {
+	local clid=$1
+	local branch=$2
+	out="`p4 describe -du ${clid} | grep //depot | grep ${branch}`"
+	for e in $out; do
+		if [ "$e" == "..." ] || [ "$e" == "add" ] || [ "$e" == "edit" ]; then
+			continue
+		fi
+		echo $e | awk -F\# '{print $1}' | awk -F${branch}/ '{print $2}'
+	done
+}
+
 get_clid_most_recent() {
 	local user=$1
 	local client=$2

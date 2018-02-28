@@ -8,6 +8,7 @@ usage() {
 	echo "       -d: detailed information about each file checked out"
 	echo "       -u: display untracked files"
 	echo "       -a: display all files (both tracked and untracked)"
+	echo "       -c: display files in a specified changelist"
 	exit 1
 }
 
@@ -49,16 +50,32 @@ pstatvw_untracked() {
 		}' | sed -e 's|^./||g'
 }
 
+pstatvw_changelist() {
+	local clid=$1
+
+	pending_clid_list=`get_clid_list_pending ${whoami} ${P4CLIENT}`
+	found=`echo $pending_clid_list | grep ${clid}`
+	if [ -z "${found}" ]; then
+		echo "${progname}: ${clid} not found in this view"
+		exit 1
+	fi
+	echo "List of files modified in changelist ${clid} in ${P4CLIENT}:"
+	echo 
+	get_clid_flist ${clid} ${branch}
+}
+
 progname=`basename $0`
 if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	echo "${progname}: not inside any perforce view"
 	exit 1
 fi
 
+whoami=`whoami`
 detail=0
 untracked=0
 all=0
-while getopts ":hdua" arg; do
+clid=
+while getopts ":hduac:" arg; do
 	case $arg in
 	d)	detail=1
 		;;
@@ -67,6 +84,8 @@ while getopts ":hdua" arg; do
 	a)	all=1
 		;;
 	h)	usage
+		;;
+	c)	clid=${OPTARG}
 		;;
 	esac
 done
@@ -81,6 +100,8 @@ elif [ ${all} -eq 1 ]; then
 	pstatvw_tracked
 	echo
 	pstatvw_untracked
+elif [ -n "${clid}" ]; then
+	pstatvw_changelist ${clid}
 else
 	pstatvw_tracked
 fi
