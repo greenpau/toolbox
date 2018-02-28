@@ -9,6 +9,7 @@ usage() {
 	echo "       -F <flist>: file containing list of files to be diff'd"
 	echo "       -d <dir>: directory to be diff'd"
 	echo "       -o <outfile>: output file where diff will be stored (default stdout)"
+	echo "       -n: display diff of files NOT in any changelist"
 	exit 1
 }
 
@@ -56,17 +57,27 @@ pdiffvw_dir() {
 
 }
 
+pdiffvw_nochangelist() {
+	new_flist=`get_flist_nochangelist ${whoami} ${P4CLIENT} ${branch}`
+	if [ -z "${new_flist}" ]; then
+		return
+	fi
+	pdiffvw_files "${new_flist}"
+}
+
 progname=`basename $0`
 if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	echo "Must be ran inside a view"
 	exit 1
 fi
 
+whoami=`whoami`
 filename=
 flist=
 outfile=
 dir=
-while getopts ":hf:F:o:d:" arg; do
+nocl=0
+while getopts ":hf:F:o:d:n" arg; do
 	case $arg in
 	f)	filename=${OPTARG}
 		;;
@@ -75,6 +86,8 @@ while getopts ":hf:F:o:d:" arg; do
 	o)	outfile=${OPTARG}
 		;;
 	d)	dir=${OPTARG}
+		;;
+	n)	nocl=1
 		;;
 	*)	usage
 		;;
@@ -95,6 +108,8 @@ elif [ -n "${flist}" ]; then
 	pdiffvw_flist ${flist}
 elif [ -n "${dir}" ]; then
 	pdiffvw_dir ${dir}
+elif [ ${nocl} -eq 1 ]; then
+	pdiffvw_nochangelist
 else
 	pdiffvw_all
 fi
