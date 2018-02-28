@@ -146,6 +146,19 @@ cleanup() {
 	fi
 }
 
+function ctrl_c() {
+	echo
+	echo "${progname}: cleaning up on CTRL-C"
+	for ap in ${ap_platforms}; do
+		pid="`ps ax | grep "/usr/local/bin/adu" | grep "${ap}" | grep -v grep | awk '{print $1}'`"
+		for p in ${pid}; do
+			echo "${progname}: cleaning up AP ${ap} build: ${pid}"
+			kill -9 ${pid} > /dev/null 2>&1
+		done
+	done
+	exit 1
+}
+
 progname=`basename $0`
 logfile=${HOME}/Downloads/logs/${progname}.log
 controller_platforms="porfidio grappa shumway opusone"
@@ -160,6 +173,7 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	exit 1
 fi
 
+trap ctrl_c INT
 tgt_cp=
 tgt_ap=
 module=
