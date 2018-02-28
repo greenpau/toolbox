@@ -9,6 +9,7 @@ usage() {
 	echo "       -u: display untracked files"
 	echo "       -a: display all files (both tracked and untracked)"
 	echo "       -c: display files in a specified changelist"
+	echo "       -n: display files NOT in any changelist"
 	exit 1
 }
 
@@ -20,6 +21,9 @@ pstatvw_tracked() {
 #		}\
 #		printf("%s\n",$NF);\
 #	}'`
+	if [ -z "${flist}" ]; then
+		return
+	fi
 	echo "List of files checked out in ${P4CLIENT}:"
 	echo
 	echo "$flist"
@@ -64,6 +68,16 @@ pstatvw_changelist() {
 	get_clid_flist ${clid} ${branch}
 }
 
+pstatvw_nochangelist() {
+	new_flist=`get_flist_nochangelist ${whoami} ${P4CLIENT} ${branch}`
+	if [ -z "${new_flist}" ]; then
+		return
+	fi
+	echo "List of files NOT in any changelist in ${P4CLIENT}:"
+	echo
+	echo ${new_flist} | tr " " "\n"
+}
+
 progname=`basename $0`
 if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 	echo "${progname}: not inside any perforce view"
@@ -75,7 +89,8 @@ detail=0
 untracked=0
 all=0
 clid=
-while getopts ":hduac:" arg; do
+nocl=0
+while getopts ":hduac:n" arg; do
 	case $arg in
 	d)	detail=1
 		;;
@@ -86,6 +101,8 @@ while getopts ":hduac:" arg; do
 	h)	usage
 		;;
 	c)	clid=${OPTARG}
+		;;
+	n)	nocl=1
 		;;
 	esac
 done
@@ -102,6 +119,8 @@ elif [ ${all} -eq 1 ]; then
 	pstatvw_untracked
 elif [ -n "${clid}" ]; then
 	pstatvw_changelist ${clid}
+elif [ ${nocl} -eq 1 ]; then
+	pstatvw_nochangelist
 else
 	pstatvw_tracked
 fi
