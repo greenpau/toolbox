@@ -68,11 +68,17 @@ get_flist_nochangelist() {
 	for clid in ${pending_clid_list}; do
 		this_clid_flist=`get_clid_flist ${clid} ${branch}`
 		for f in ${flist}; do
-			echo "${this_clid_flist}" | grep $f > /dev/null
+			echo "${this_clid_flist}" | grep $f > /dev/null 2>&1
 			if [ $? -ne 0 ]; then
-				new_flist="$f ${new_flist}"
+				echo "${new_flist}" | tr ' ' '\n' | grep $f > /dev/null 2>&1
+				if [ $? -ne 0 ]; then
+					new_flist="$f ${new_flist}"
+				fi
+			else
+				new_flist="`echo ${new_flist} | tr ' ' '\n' | grep -v $f`"
 			fi
 		done
+		flist="${new_flist}"
 	done
-	echo ${new_flist}
+	echo "${new_flist}"
 }
