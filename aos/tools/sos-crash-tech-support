@@ -177,7 +177,7 @@ gdbprocs=(\
 'user_table_hash_dump' \
 'user_pend_dump' \
 'vlan_table_dump' \
-'trace_dump_fwd' \
+'trace_dump_fwd_max 100' \
 )
 
 gdbcomms=(\
