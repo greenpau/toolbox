@@ -16,21 +16,21 @@ import net
 def usage():
 	print "usage: " + progname + " <type> <device> <options>"
 	print "arguments:"
-	print "    type: 'controller'"
+	print "    type: 'MD'"
 	print "    device: IP address of the device"
 	print "options:"
-	print "    -s: status of a specified controller"
+	print "    -s: status of a specified device"
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
-	print "    -c: generate a controller datapath coredump"
-	print "    -r: reload the specified controller"
+	print "    -c: generate a datapath coredump"
+	print "    -r: reload the specified device"
 	print "    -C: copy out coredump tarball from a device"
-	print "    -L: generate and copy out controller logs with tech-support"
+	print "    -L: generate and copy out device logs with tech-support"
 	exit(1)
 
 def main(argc, argv):
 	all_device_types = [
-		{ 'type' : "controller", 'handler': manage_controller, }
+		{ 'type' : "MD", 'handler': manage_md, }
 	]
 	if (argc < 3):
 		usage()
@@ -39,11 +39,11 @@ def main(argc, argv):
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
-	type = argv[0]
+	type = argv[0].lower()
 	device = argv[1]
 	found = False
 	for d in all_device_types:
-		if (d['type'] == type):
+		if (d['type'].lower() == type):
 			found = True
 			break
 	if (found == False):
@@ -73,11 +73,11 @@ def main(argc, argv):
 			copyout_log = True
 
 	if (device == ""):
-		print progname + ": need a controller device to operate on"
+		print progname + ": need a device to operate on"
 		usage()
 
 	if net.is_alive(device) == False:
-		print progname + ": controller " + device + " appears to be down"
+		print progname + ": " + device + " appears to be down"
 		return
 	options = {
 		'telnet' : telnet,
@@ -89,11 +89,11 @@ def main(argc, argv):
 		'copyout_log': copyout_log,
 	}
 	for d in all_device_types:
-		if (d['type'] == type):
+		if (d['type'].lower() == type):
 			d['handler'](device, options)
 			return
 
-def manage_controller(device, options):
+def manage_md(device, options):
 	telnet = options['telnet']
 	enable_telnet = options['enable_telnet']
 	dp_core = options['dp_core']
