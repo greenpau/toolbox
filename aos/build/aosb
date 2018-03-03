@@ -161,7 +161,7 @@ function ctrl_c() {
 
 progname=`basename $0`
 logfile=${HOME}/Downloads/logs/${progname}.log
-controller_platforms="porfidio grappa shumway opusone"
+controller_platforms="porfidio grappa milagro shumway opusone"
 ap_platforms="ardmore masterson talisker arran springbank octomore x4 glenmorangie"
 user=`whoami`
 build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
