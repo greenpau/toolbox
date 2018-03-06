@@ -9,7 +9,9 @@ if [ -z "${P4CLIENT}" -o -z "${P4CLIENT_DIR}" ]; then
 fi
 
 branch=`get_branch`
+rev=`get_rev`
 
 echo "Current working view directory:" ${P4CLIENT_DIR}
 echo "Current working view:" ${P4CLIENT}
 echo "Current working branch:" ${branch}
+echo "Client revision:" ${rev}

@@ -6,6 +6,12 @@ get_branch() {
 	echo "${branch}"
 }
 
+get_rev() {
+	local rev
+	rev=`p4 changes -m1 \#have | awk '{print $2}'`
+	echo ${rev}
+}
+
 get_clid_list_pending() {
 	local user=$1
 	local client=$2
