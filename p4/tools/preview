@@ -11,8 +11,9 @@ usage() {
 	echo "    -r: create a ccollab review"
 	echo "    -R <rid>: update review rid with a new changelist"
 	echo "    -l: list all reviews launched by ${whoami}"
+	echo "    -L: list reviews launched by ${whoami} in all clients"
 	echo "examples:"
-	echo "    ${progname} -l -- list all changelists by ${whoami}"
+	echo "    ${progname} -l|-L -- list all changelists by ${whoami}"
 	echo "    ${progname} -n -- create a new changelist"
 	echo "    ${progname} -c <cid> -- update a changelist"
 	echo "    ${progname} -n -r -- create a new changelist and start a new review"
@@ -35,7 +36,8 @@ list=0
 describe=0
 rid=
 new=0
-while getopts ":hc:rldR:n" arg; do
+listall=0
+while getopts ":hc:rlLdR:n" arg; do
 	case $arg in
 	c)	clid=${OPTARG}
 		;;
@@ -47,6 +49,8 @@ while getopts ":hc:rldR:n" arg; do
 		;;
 	l)	list=1
 		;;
+	L)	listall=1
+		;;
 	n)	new=1
 		;;
 	*)	usage
@@ -54,6 +58,9 @@ while getopts ":hc:rldR:n" arg; do
 done
 
 if [ ${list} -eq 1 ]; then
+	p4 changes -u ${whoami} | grep ${P4CLIENT}
+	exit 0
+elif [ ${listall} -eq 1 ]; then
 	p4 changes -u ${whoami}
 	exit 0
 elif [ ${describe} -eq 1 ]; then
