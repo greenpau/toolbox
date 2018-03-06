@@ -54,6 +54,7 @@ build_ap_images() {
 		printf "Building AP ${ap} - `date` ... "
 		echo "== Running mktree of ${ap} - `date`" >> ${logfile}
 		adu mktree ${ap} >> ${logfile} 2>&1
+		init_ap_images_paths
 		if [ ${quick} == true ]; then
 			adu build ${ap} > /dev/null 2>&1 &
 			echo "(running in background)"
@@ -144,6 +145,19 @@ cleanup() {
 			echo "done"
 		done
 	fi
+}
+
+init_ap_images_paths() {
+	ap_images_data=mk/data/AP-images
+	ap_images_paths="`awk '{if ($2 == "yes") print $3}' ${ap_images_data}`"
+
+	for cp in ${controller_platforms}; do
+		for p in ${ap_images_paths}; do
+			this_ap_images_path=${build_rootdir}/${cp}/${p}
+			echo "Creating this_ap_images_path: ${this_ap_images_path}" >> ${logfile} 2>&1
+			mkdir -p ${this_ap_images_path}
+		done
+	done
 }
 
 function ctrl_c() {
