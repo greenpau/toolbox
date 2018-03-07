@@ -179,6 +179,10 @@ print_ap_images() {
 
 	echo "AP Image Path(s):"
 	for cp in ${controller_platforms}; do
+		pid="`build_pids ${cp}`"
+		if [ -n "${pid}" ]; then
+			return 1
+		fi
 		apim_list=
 		for p in ${ap_images_paths}; do
 			this_ap_images_path=${build_rootdir}/${cp}/${p}
@@ -197,11 +201,17 @@ print_images() {
 	print_ap_images
 }
 
+build_pids() {
+	local plat=$1
+	pid="`ps ax | grep -E "make.*${plat} image" | grep -v grep | awk '{print $1}'`"
+	echo ${pid}
+}
+
 function ctrl_c() {
 	echo
 	echo "${progname}: cleaning up on CTRL-C"
 	for ap in ${ap_platforms}; do
-		pid="`ps ax | grep "/usr/local/bin/adu" | grep "${ap}" | grep -v grep | awk '{print $1}'`"
+		pid="`build_pids ${ap}`"
 		for p in ${pid}; do
 			echo "${progname}: cleaning up AP ${ap} build: ${pid}"
 			kill -9 ${pid} > /dev/null 2>&1
