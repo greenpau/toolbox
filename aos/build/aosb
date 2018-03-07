@@ -1,8 +1,9 @@
 #!/bin/bash
 
 usage() {
-	echo "usage: ${progname} [-C|-P|-q] [-a <platform>] [-c <platform>] [-m <module>]"
+	echo "usage: ${progname} [-s|-C|-P|-q] [-a <platform>] [-c <platform>] [-m <module>]"
 	echo "options:"
+	echo "       -s: display status of last build"
 	echo "       -C: do a full cleanup of build area of the view"
 	echo "       -P: do a full production build"
 	echo "       -q: do a quick build (parallelize wherever possible)"
@@ -10,6 +11,12 @@ usage() {
 	echo "       -c platform: 'all' or one of Controller '${controller_platforms}' platforms"
 	echo "       -m module: 'sos'"
 	exit 1
+}
+
+aosb_stat() {
+	echo "Build Machine:" ${build_host}
+	echo "Login/password: guest/guest1234 (use scp to copy over the image)"
+	print_images
 }
 
 validate_platforms() {
@@ -148,8 +155,7 @@ cleanup() {
 }
 
 init_ap_images_paths() {
-	ap_images_data=mk/data/AP-images
-	ap_images_paths="`awk '{if ($2 == "yes") print $3}' ${ap_images_data}`"
+	ap_images_paths="`awk '{if ($2 == "yes") print $3}' ${ap_images_data} | uniq`"
 
 	for cp in ${controller_platforms}; do
 		for p in ${ap_images_paths}; do
@@ -158,6 +164,37 @@ init_ap_images_paths() {
 			mkdir -p ${this_ap_images_path}
 		done
 	done
+}
+
+print_controller_images() {
+	image_loc="`find /tftpboot -name "ArubaOS_7*${P4CLIENT}*"`"
+	echo "Controller Image Path(s):"
+	for im in ${image_loc}; do
+		printf "\t${im}\n"
+	done
+}
+
+print_ap_images() {
+	ap_images_paths="`awk '{if ($2 == "yes") print $3}' ${ap_images_data} | uniq`"
+
+	echo "AP Image Path(s):"
+	for cp in ${controller_platforms}; do
+		apim_list=
+		for p in ${ap_images_paths}; do
+			this_ap_images_path=${build_rootdir}/${cp}/${p}
+			ap_images="`ls -l ${this_ap_images_path}/*.ari 2> /dev/null | awk '{print $NF}'`"
+			for apim in ${ap_images}; do
+				this_apim=`echo ${apim} | xargs basename`
+				apim_list="${this_apim} ${apim_list}"
+			done
+		done
+		printf "\t${cp}: ${apim_list}\n"
+	done
+}
+
+print_images() {
+	print_controller_images
+	print_ap_images
 }
 
 function ctrl_c() {
@@ -179,6 +216,8 @@ controller_platforms="porfidio grappa milagro shumway opusone"
 ap_platforms="ardmore masterson talisker arran springbank octomore x4 glenmorangie"
 user=`whoami`
 build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
+ap_images_data=mk/data/AP-images
+build_host=`ifconfig eth0 | grep "inet addr:" | awk '{print $2}' | awk -F: '{print $2}'`
 
 [ $# -eq 0 ] && usage
 
@@ -195,8 +234,11 @@ apbuild=false
 full_cleanup=false
 quick=false
 production=false
-while getopts ":ha:c:m:CqP" arg; do
+stat=false
+while getopts ":ha:c:m:CqPs" arg; do
 	case $arg in
+	s) stat=true
+	;;
 	a) tgt_ap=${OPTARG}
 	   apbuild=true
 	;;
@@ -219,10 +261,16 @@ while getopts ":ha:c:m:CqP" arg; do
 	esac
 done
 
+if [ ${stat} == true ]; then
+	aosb_stat
+	exit 0
+fi
+
 mkdir -p `dirname ${logfile}`
 
 echo > ${logfile}
 
+echo "Build Machine:" ${build_host}
 echo "Logfile:" ${logfile}
 echo "Client:" ${P4CLIENT}
 echo "View:" ${P4CLIENT_DIR}
@@ -259,7 +307,6 @@ fi
 build_controller_images
 
 if [ -z "${module}" ]; then
-	image_loc=`find /tftpboot -name "ArubaOS_7*${P4CLIENT}*"`
-	echo "Images: ${image_loc}"
+	print_images
 fi
 echo "All done - `date`"
