@@ -48,6 +48,8 @@ class Device(object):
 			print "Failed to ssh to " + self.hostname
 			exit(1)
 		self.s = s
+		self.s.sendline('no paging')
+		self.s.expect(self.ssh_prompt_re)
 
 	def scp_to(self, src_host, src_user, src_path, dst_path):
 		if self.s == None:
