@@ -14,8 +14,9 @@ usage() {
 }
 
 aosb_stat() {
-	echo "Build Machine:" ${build_host}
-	echo "Login/password: guest/guest1234 (use scp to copy over the image)"
+	print_build_machine
+	print_build_status
+	print_access_info
 	print_images
 }
 
@@ -196,15 +197,60 @@ print_ap_images() {
 	done
 }
 
+print_build_machine() {
+	echo "Build Machine:" ${build_host}
+}
+
 print_images() {
 	print_controller_images
 	print_ap_images
+}
+
+print_build_status() {
+	is_build_running
+	if [ $? -eq 1 ]; then
+		echo "Build Status: running"
+		exit 0
+	fi
+}
+
+print_access_info() {
+	echo "Login/password: ${scpuser}/${scppass} (use scp to copy over the image)"
 }
 
 build_pids() {
 	local plat=$1
 	pid="`ps ax | grep -E "make.*${plat} image" | grep -v grep | awk '{print $1}'`"
 	echo ${pid}
+}
+
+is_build_running() {
+	for ap in ${ap_platforms}; do
+		pid="`build_pids ${ap}`"
+		if [ -n "${pid}" ]; then
+			return 1
+		fi
+	done
+	for cp in ${controller_platforms}; do
+		pid="`build_pids ${cp}`"
+		if [ -n "${pid}" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+
+print_build_params() {
+	echo "Logfile:" ${logfile}
+	echo "Client:" ${P4CLIENT}
+	echo "View:" ${P4CLIENT_DIR}
+	echo "Production:" ${production}
+	echo "Quick:" ${quick}
+	echo "Full cleanup:" ${full_cleanup}
+	echo "Module:" ${module}
+	echo "AP-Build:" ${apbuild}
+	echo "AP Platform(s):" ${tgt_ap}
+	echo "Controller Platform(s):" ${tgt_cp}
 }
 
 function ctrl_c() {
@@ -228,6 +274,8 @@ user=`whoami`
 build_rootdir=/data/${user}/adu/build/${P4CLIENT}/Default
 ap_images_data=mk/data/AP-images
 build_host=`ifconfig eth0 | grep "inet addr:" | awk '{print $2}' | awk -F: '{print $2}'`
+scpuser=guest
+scppass=guest1234
 
 [ $# -eq 0 ] && usage
 
@@ -280,17 +328,8 @@ mkdir -p `dirname ${logfile}`
 
 echo > ${logfile}
 
-echo "Build Machine:" ${build_host}
-echo "Logfile:" ${logfile}
-echo "Client:" ${P4CLIENT}
-echo "View:" ${P4CLIENT_DIR}
-echo "Production:" ${production}
-echo "Quick:" ${quick}
-echo "Full cleanup:" ${full_cleanup}
-echo "Module:" ${module}
-echo "AP-Build:" ${apbuild}
-echo "AP Platform(s):" ${tgt_ap}
-echo "Controller Platform(s):" ${tgt_cp}
+print_build_machine
+print_build_params
 
 if [ -z "${tgt_cp}" ]; then
 	echo "${progname}: missing platform"
