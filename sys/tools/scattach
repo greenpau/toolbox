@@ -1,22 +1,17 @@
 #!/bin/bash
 
-progname=`basename $0`
-hostname=`hostname | awk -F. '{print $1}'`
-screen="`screen -list | grep ${hostname} | grep -v Socket |awk '{print $1}'`"
-
-if [ "${screen}" = "" ]; then
-	echo "${progname}: no screen found in host ${hostname}"
+usage() {
+	echo "usage: ${progname} [screen-name]"
 	exit 1
-fi
+}
 
-n_screen=`echo ${screen} | wc -w`
-if [ ${n_screen} -eq 1 ]; then
-	screen -r -R -D ${screen}
-else
+launch() {
+	local screen_list="$1"
+
 	typeset -a _array_entries
 	typeset -i count=0
 	echo "You have the following active screens available:"
-	for s in ${screen}; do
+	for s in ${screen_list}; do
 		count=${count}+1
 		_array_entries[${count}]=${s}
 	done
@@ -28,7 +23,7 @@ else
 		then
 			screen_id=${_array_entries[${REPLY}]}
 		else
-			screen_id=`echo "${screen}" | awk -F. -v reply=${REPLY} 'reply==$1{ print $0 }'`
+			screen_id=`echo "${screen_list}" | awk -F. -v reply=${REPLY} 'reply==$1{ print $0 }'`
 		fi
 		if [ -n "${screen_id}" ]; then
 			screen -r -D -R ${screen_id}
@@ -44,4 +39,31 @@ else
 	esac
 	REPLY=""
 	done
+}
+
+progname=`basename $0`
+target="$1"
+hostname=`hostname | awk -F. '{print $1}'`
+screen_list="`screen -list | grep ${hostname} | grep -v Socket |awk '{print $1}'`"
+if [ "${target}" = "-h" ]; then
+	usage
+fi
+
+if [ "${screen_list}" = "" ]; then
+	echo "${progname}: no screen found in host ${hostname}"
+	exit 1
+fi
+
+n_screen=`echo ${screen_list} | wc -w`
+if [ ${n_screen} -eq 1 ]; then
+	screen -r -R -D ${screen_list}
+elif [ -n "${target}" ]; then
+	match="`echo "${screen_list}" | grep "${target}"`"
+	if [ -z "${match}" ]; then
+		echo "${progname}: no active screens matches with name ${target}"
+		exit 1
+	fi
+	launch "${match}"
+else
+	launch "${screen_list}"
 fi
