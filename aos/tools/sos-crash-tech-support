@@ -5,6 +5,7 @@ usage() {
 	echo "options:"
 	echo "       -p <path>: P4 view root directory (default /data/<login>/adu/views)"
 	echo "       -t <path>: AOS tools path (default /usr/local/aos/tools)"
+	echo "       -s <view>: view name wherefrom gdbscripts to be picked up"
 	exit 1
 }
 
@@ -208,10 +209,13 @@ fi
 
 shift;shift
 
-while getopts ":p:t:" arg; do
+while getopts ":p:t:s:" arg; do
 	case ${arg} in
 	p)
 	P4VIEW_ROOTDIR=${OPTARG}
+	;;
+	s)
+	GDBSCRIPTS_CLIENT=${OPTARG}
 	;;
 	t)
 	AOS_TOOLS_DIR=${OPTARG}
@@ -226,7 +230,11 @@ done
 user=`whoami`
 P4VIEWDIR_DEF=/data/${user}/adu/views
 P4CLIENT_DIR=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${P4CLIENT}
-gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
+if [ -n "${GDBSCRIPTS_CLIENT}" ]; then
+	gdbscripts_dir=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${GDBSCRIPTS_CLIENT}/sos/gdbscripts
+else
+	gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
+fi
 
 AOS_TOOLS_DEF=/usr/local/aos/tools
 AOS_TOOLS=${AOS_TOOLS_DIR:-${AOS_TOOLS_DEF}}
