@@ -63,7 +63,12 @@ elif [ -n "${target}" ]; then
 		echo "${progname}: no active screens matches with name ${target}"
 		exit 1
 	fi
-	launch "${match}"
+	n_screen=`echo ${match} | wc -w`
+	if [ ${n_screen} -eq 1 ]; then
+		screen -r -R -D ${match}
+	else
+		launch "${match}"
+	fi
 else
 	launch "${screen_list}"
 fi
