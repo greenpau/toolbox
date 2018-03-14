@@ -235,6 +235,10 @@ if [ -n "${GDBSCRIPTS_CLIENT}" ]; then
 else
 	gdbscripts_dir=${P4CLIENT_DIR}/sos/gdbscripts
 fi
+if [ ! -d ${gdbscripts_dir} ]; then
+	echo "${progname}: ${gdbscripts_dir} not found"
+	exit 1
+fi
 
 AOS_TOOLS_DEF=/usr/local/aos/tools
 AOS_TOOLS=${AOS_TOOLS_DIR:-${AOS_TOOLS_DEF}}
