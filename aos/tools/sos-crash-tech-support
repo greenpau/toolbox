@@ -133,6 +133,8 @@ finalize_log() {
 gdbscripts="\
 	bwm.gdb \
 	python/bwm.py \
+	ip_reasm.gdb \
+	python/ip_reasm.py \
 	routecache.gdb \
 	python/routecache.py \
 	route_table_hash.gdb \
@@ -167,6 +169,7 @@ gdbprocs=(\
 'print_all_bwms' \
 'print_dma_info' \
 'wifi_reasm_table' \
+'ip_reasm_table' \
 'sbeth_leak_stats' \
 'sbeth_print_freelist' \
 'sbeth_sae_leak_walk' \
