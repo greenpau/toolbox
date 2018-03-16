@@ -164,6 +164,20 @@ class Device(object):
 			break
 		return switchrole
 
+	def get_nusers(self, name):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline('show user ap-name ' + name)
+		self.s.expect(self.ssh_prompt_re)
+		output = self.s.before + self.s.after
+		nusers = 0
+		for l in output.splitlines():
+			if (l.find("User Entries") == -1):
+				continue
+			nusers = int(l.split(":")[1].split("/")[0])
+			break
+		return nusers
+
 	def get_naps(self, type):
 		if self.s == None:
 			self.ssh()

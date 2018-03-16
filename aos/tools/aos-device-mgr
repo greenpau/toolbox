@@ -161,10 +161,11 @@ def manage_md(device, options):
 		print "\tBuild Date: %s" % (build_date)
 		print "Number of active APs: %d" %(naps)
 		if (naps != 0):
-			print "%-17s %-15s %-5s %-s" %("Name", "IP", "Type", "Group")
+			print "%-17s %-15s %-5s %-8s %-8s" %("Name", "IP", "Type", "Group", "Users")
 			for i in range(0, naps):
 				ap = apList.info(i)
-				print "%-17s %-15s %-5s %-s" %(ap.name, ap.ip, ap.type, ap.group)
+				nusers = ap.get_nusers()
+				print "%-17s %-15s %-5s %-8s %-8d" %(ap.name, ap.ip, ap.type, ap.group, nusers)
 	elif (reload == True):
 		c.reload()
 	else:

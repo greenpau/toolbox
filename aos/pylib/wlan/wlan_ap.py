@@ -13,11 +13,16 @@ class Device():
 	group = ""
 	type = ""
 	ip = ""
-	def __init__(self, name, group, ip, type):
+	c = None
+	def __init__(self, c, name, group, ip, type):
 		self.name = name
 		self.group = group
 		self.ip = ip
 		self.type = "AP" + type
+		self.c = c
+
+	def get_nusers(self):
+		return self.c.get_nusers(self.name)
 
 class APList():
 	naps = 0
@@ -38,7 +43,7 @@ class APList():
 		aplines = self.c.get_aplines("active")
 		for i in range(0, int(self.naps)):
 			apline = aplines[i].split()
-			ap = Device(apline[0], apline[1], apline[2], apline[3])
+			ap = Device(self.c, apline[0], apline[1], apline[2], apline[3])
 			self.apList.append(ap)
 		return self.naps
 
