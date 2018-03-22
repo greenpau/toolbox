@@ -70,7 +70,11 @@ get_flist_nochangelist() {
 
 	pending_clid_list=`get_clid_list_pending ${user} ${client}`
 	flist="`p4 opened | awk '{print $1}' | awk -Fdepot '{print $2}' | awk -F'#' '{print $1}' | awk -F${branch}/ '{print $2}'`"
-	new_flist=
+	if [ -z "${pending_clid_list}" ]; then
+		new_flist="${flist}"
+	else
+		new_flist=
+	fi
 	for clid in ${pending_clid_list}; do
 		this_clid_flist=`get_clid_flist ${clid} ${branch}`
 		for f in ${flist}; do
