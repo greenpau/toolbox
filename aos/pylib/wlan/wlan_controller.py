@@ -412,3 +412,13 @@ class Device(object):
 			return
 		self.scp_from(self.crash_tarfile, dst_user, dst_host, dst_path)
 		return True
+
+	def execute(self, cmd):
+		if self.s == None:
+			self.ssh()
+		self.s.sendline(cmd)
+		self.s.expect(self.ssh_prompt_re, timeout=300)
+		output = self.s.before + self.s.after
+		sys.stdout.write("CMD: ")
+		sys.stdout.flush()
+		print output

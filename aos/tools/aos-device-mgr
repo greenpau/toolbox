@@ -26,6 +26,7 @@ def usage():
 	print "    -r: reload the specified device"
 	print "    -C: copy out coredump tarball from a device"
 	print "    -L: generate and copy out device logs with tech-support"
+	print "    -e: execute a specified command from device CLI"
 	exit(1)
 
 def main(argc, argv):
@@ -35,7 +36,7 @@ def main(argc, argv):
 	if (argc < 3):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[2:], "htTcsrCL");
+		opts, args = getopt.getopt(argv[2:], "htTcsrCLe:");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -56,6 +57,7 @@ def main(argc, argv):
 	reload = False
 	copyout_core = False
 	copyout_log = False
+	cmd = ""
 	for opt, arg in opts:
 		if opt == "-t":
 			enable_telnet = True
@@ -71,6 +73,8 @@ def main(argc, argv):
 			reload = True
 		elif opt == "-L":
 			copyout_log = True
+		elif opt == "-e":
+			cmd = arg
 
 	if (device == ""):
 		print progname + ": need a device to operate on"
@@ -87,6 +91,7 @@ def main(argc, argv):
 		'reload': reload,
 		'copyout_core': copyout_core,
 		'copyout_log': copyout_log,
+		'cmd': cmd,
 	}
 	for d in all_device_types:
 		if (d['type'].lower() == type):
@@ -101,6 +106,7 @@ def manage_md(device, options):
 	reload = options['reload']
 	copyout_core = options['copyout_core']
 	copyout_log = options['copyout_log']
+	cmd = options['cmd']
 
 	c = wlan_controller.Device(device)
 	apList = wlan_ap.APList(c)
@@ -168,6 +174,8 @@ def manage_md(device, options):
 				print "%-17s %-15s %-5s %-8s %-8d" %(ap.name, ap.ip, ap.type, ap.group, nusers)
 	elif (reload == True):
 		c.reload()
+	elif (cmd != ""):
+		c.execute(cmd)
 	else:
 		print progname + ": Unsupported operation"
 		usage()
