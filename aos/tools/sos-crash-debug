@@ -64,10 +64,16 @@ extract_sym_file() {
 }
 
 copy_sym_file() {
-	symfile_path=`find ${P4CLIENT_BUILD} -name sos.elf.symbols 2> /dev/null | grep -i ${platform}`
+	symfile_path=`find . -name sos.elf.symbols 2> /dev/null`
 	if [ -z "${symfile_path}" ]; then
-		echo "${progname}: unable to find sos.elf.symbols in ${P4CLIENT_BUILD}"
-		exit 1
+		symfile_path=`find ${P4CLIENT_BUILD} -name sos.elf.symbols 2> /dev/null | grep -i ${platform}`
+		if [ -z "${symfile_path}" ]; then
+			echo "${progname}: unable to find sos.elf.symbols in ${P4CLIENT_BUILD}"
+			exit 1
+		fi
+		echo "${progname}: copying ${symfile_path} to ${PWD}"
+		cp ${symfile_path} .
+		symfile_path=${PWD}/sos.elf.symbols
 	fi
 	echo "${progname}: using ${symfile_path}"
 }
