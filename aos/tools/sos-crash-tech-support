@@ -131,6 +131,8 @@ finalize_log() {
 }
 
 gdbscripts="\
+	bridge.gdb \
+	python/bridge.py \
 	bwm.gdb \
 	python/bwm.py \
 	ip_reasm.gdb \
@@ -167,6 +169,7 @@ gdbprocs=(\
 'print_cpu_utilization' \
 'dump_all_stats' \
 'stall_detect' \
+'bridge_table_dump' \
 'print_all_bwms' \
 'print_dma_info' \
 'wifi_reasm_table' \
