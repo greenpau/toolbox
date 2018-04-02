@@ -422,3 +422,45 @@ class Device(object):
 		sys.stdout.write("CMD: ")
 		sys.stdout.flush()
 		print output
+
+	def license_add(self, key, value):
+		if self.s == None:
+			self.ssh()
+		if (self.__enable_support() == False):
+			self.s = None
+			return
+		if (value != '') and (key != ''):
+			self.s.sendline('genkey feature ' + key + ' ' + value)
+		elif (key != ''):
+			self.s.sendline('genkey feature ' + key)
+		else:
+			return
+		i = self.s.expect(["KEY:", pexpect.EOF, pexpect.TIMEOUT],
+				  timeout=30)
+		if (i == 0):
+			output = self.s.after + self.s.buffer
+			lkeyelems = output.split("KEY:")
+			if (len(lkeyelems) == 0):
+				print "unable to find license key for {%s,%s}" % (key, value)
+				return
+			lkey = lkeyelems[1].lstrip().rstrip()
+			self.s.sendline('license add ' + lkey)
+			self.s.expect([pexpect.EOF, pexpect.TIMEOUT],
+				      timeout=10)
+			print "added license for {%s,%s -> %s}" % (key, value, lkey)
+		else:
+			print "failed to add license for {%s,%s}" %(key, value)
+
+	def gen_ap_licenses(self):
+		ap_prov_kv_basic = {
+			'ap' : '2048',
+			'acr-limit' : '2048',
+			'pef-limit' : '2048',
+			'rfp-limit' : '2048',
+			'internal' : '',
+			'pef-vpn' : '',
+			'voice' : '',
+			'firewall' : '',
+		}
+		for key,val in ap_prov_kv_basic.items():
+			self.license_add(key, val)
