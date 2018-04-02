@@ -1,0 +1,39 @@
+#!/bin/bash
+
+. /usr/local/p4-tools/libp4.sh
+
+usage() {
+	echo "usage: ${progname} [options] <filename>"
+	echo "options:"
+	echo "    -b <branch>: branch wherefrom annotation is to be obtained"
+	exit 1
+}
+
+
+progname=`basename $0`
+whoami=`whoami`
+filename=
+branch=sw
+
+while getopts ":hb:" arg; do
+	case $arg in
+	b)	branch=${OPTARG}
+		shift
+		;;
+	*)	usage
+		;;
+	esac
+done
+
+if [ -z "${P4CLIENT}" ]; then
+	echo "${progname}: must be ran inside a P4 Client"
+	exit 1
+fi
+
+file=$1
+
+if [ -z "${file}" ]; then
+	usage
+fi
+
+p4 annotate -I //depot/margot/${branch}/${file} | less

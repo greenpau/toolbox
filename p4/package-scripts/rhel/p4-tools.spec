@@ -37,6 +37,7 @@ mkdir -p $RPM_BUILD_ROOT $basedir
 
 cd %{pkg_name}/p4/tools
 install__ 0755 libp4.sh
+install__ 0755 panot
 install__ 0755 pdiffvw
 install__ 0755 pentervw
 install__ 0755 plsvw
@@ -52,6 +53,7 @@ install__ 0755 pstatvw
 %files
 %defattr(-,root,root)
 /usr/local/p4-tools/libp4.sh
+/usr/local/p4-tools/panot
 /usr/local/p4-tools/pdiffvw
 /usr/local/p4-tools/pentervw
 /usr/local/p4-tools/plsvw
