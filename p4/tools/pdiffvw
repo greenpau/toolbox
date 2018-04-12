@@ -10,6 +10,7 @@ usage() {
 	echo "       -d <dir>: directory to be diff'd"
 	echo "       -o <outfile>: output file where diff will be stored (default stdout)"
 	echo "       -n: display diff of files NOT in any changelist"
+	echo "       -c <clid>: describe and diff a changelist"
 	exit 1
 }
 
@@ -77,7 +78,8 @@ flist=
 outfile=
 dir=
 nocl=0
-while getopts ":hf:F:o:d:n" arg; do
+clid=
+while getopts ":hf:F:o:d:nc:" arg; do
 	case $arg in
 	f)	filename=${OPTARG}
 		;;
@@ -88,6 +90,8 @@ while getopts ":hf:F:o:d:n" arg; do
 	d)	dir=${OPTARG}
 		;;
 	n)	nocl=1
+		;;
+	c)	clid=${OPTARG}
 		;;
 	*)	usage
 		;;
@@ -110,6 +114,16 @@ elif [ -n "${dir}" ]; then
 	pdiffvw_dir ${dir}
 elif [ ${nocl} -eq 1 ]; then
 	pdiffvw_nochangelist
+elif [ -n "${clid}" ]; then
+	if [ "${clid}" = "all" ]; then
+		pending_clid_list=`get_clid_list_pending ${whoami} ${P4CLIENT}`
+		for clid in ${pending_clid_list}; do
+			describe_clid ${clid}
+		done
+	else
+		describe_clid ${clid}
+	fi
+	exit 0
 else
 	pdiffvw_all
 fi
