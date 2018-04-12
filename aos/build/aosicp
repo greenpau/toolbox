@@ -6,6 +6,7 @@ import getopt
 
 sys.path.append("/usr/local/aos/pylib/system")
 import shell
+import net
 
 sys.path.append("/usr/local/aos/pylib/wlan")
 import wlan_controller
