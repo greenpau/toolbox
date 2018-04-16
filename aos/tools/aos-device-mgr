@@ -121,7 +121,8 @@ def manage_md(device, options):
 	wait_time = options['wait_time']
 
 	c = wlan_controller.Device(device)
-	apList = wlan_ap.APList(c)
+	if (status == True):
+		apList = wlan_ap.APList(c)
 
 	if (telnet == True):
 		c.telnet_session()
