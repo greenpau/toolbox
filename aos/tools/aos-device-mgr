@@ -23,6 +23,7 @@ def usage():
 	print "    -t: enable telnet at specified device"
 	print "    -T: establish a telnet session with specified device"
 	print "    -c: generate a datapath coredump"
+	print "    -w: wait for specified seconds"
 	print "    -r: reload the specified device"
 	print "    -C: copy out coredump tarball from a device"
 	print "    -L: generate and copy out device logs with tech-support"
@@ -37,7 +38,7 @@ def main(argc, argv):
 	if (argc < 3):
 		usage()
 	try:
-		opts, args = getopt.getopt(argv[2:], "htTcsrCLe:l");
+		opts, args = getopt.getopt(argv[2:], "htTcw:srCLe:l");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -60,6 +61,7 @@ def main(argc, argv):
 	copyout_log = False
 	cmd = ""
 	license = False
+	wait_time = 0
 	for opt, arg in opts:
 		if opt == "-t":
 			enable_telnet = True
@@ -67,6 +69,8 @@ def main(argc, argv):
 			telnet = True
 		elif opt == "-c":
 			dp_core = True
+		elif opt == "-w":
+			wait_time = int(arg)
 		elif opt == "-C":
 			copyout_core = True
 		elif opt == "-s":
@@ -97,6 +101,7 @@ def main(argc, argv):
 		'copyout_log': copyout_log,
 		'license' : license,
 		'cmd': cmd,
+		'wait_time': wait_time,
 	}
 	for d in all_device_types:
 		if (d['type'].lower() == type):
@@ -113,6 +118,7 @@ def manage_md(device, options):
 	copyout_log = options['copyout_log']
 	license = options['license']
 	cmd = options['cmd']
+	wait_time = options['wait_time']
 
 	c = wlan_controller.Device(device)
 	apList = wlan_ap.APList(c)
@@ -123,6 +129,11 @@ def manage_md(device, options):
 		c.enable_telnet()
 	elif (dp_core == True):
 		c.gen_dp_core()
+		if (wait_time != 0):
+			sys.stdout.write("Waiting %d secs for completing sos core collection, please wait ... " %wait_time)
+			sys.stdout.flush()
+			time.sleep(wait_time)
+			print "done"
 		print "Waiting for " + device + " to reboot, please wait"
 		while (True):
 			sys.stdout.write(".")
@@ -132,12 +143,11 @@ def manage_md(device, options):
 				break
 		print
 		print "Controller " + device + " is now alive"
-		if c.tar_crash() == True:
-			time.sleep(5)
-			dst_user = shell.whoami()
-			dst_host_canon = "dev-" + dst_user
-			dst_host = net.getent(dst_host_canon)
-			c.scp_crash(dst_user, dst_host, "/var/tmp")
+		copyout_core = True
+		next_action = {
+			'copyout_core': copyout_core,
+		}
+		manage_md(device, next_action)
 	elif (copyout_core == True):
 		if c.tar_crash() == True:
 			time.sleep(5)
