@@ -174,7 +174,7 @@ gdbprocs=(\
 'print_dma_info' \
 'wifi_reasm_table' \
 'ip_reasm_table' \
-'sbeth_leak_stats' \
+'sbeth_leak_stats_summary' \
 'sbeth_print_freelist' \
 'sbeth_sae_leak_walk' \
 'route_cache_dump' \
