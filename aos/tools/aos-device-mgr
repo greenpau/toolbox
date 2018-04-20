@@ -145,8 +145,18 @@ def manage_md(device, options):
 		print
 		print "Controller " + device + " is now alive"
 		copyout_core = True
+		dp_core = False
 		next_action = {
+			'telnet' : telnet,
+			'enable_telnet': enable_telnet,
+			'dp_core': dp_core,
+			'status': status,
+			'reload': reload,
 			'copyout_core': copyout_core,
+			'copyout_log': copyout_log,
+			'license' : license,
+			'cmd': cmd,
+			'wait_time': wait_time,
 		}
 		manage_md(device, next_action)
 	elif (copyout_core == True):
