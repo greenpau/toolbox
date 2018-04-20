@@ -220,7 +220,7 @@ print_access_info() {
 
 build_pids() {
 	local plat=$1
-	pid="`ps ax | grep -E "make.*${plat} image" | grep -v grep | awk '{print $1}'`"
+	pid="`ps ax | grep -E "make.*${plat} image" | grep -v grep | grep ${P4CLIENT} | awk '{print $1}'`"
 	echo ${pid}
 }
 
