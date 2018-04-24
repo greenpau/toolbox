@@ -221,11 +221,9 @@ class Device(object):
 	def reload(self):
 		if self.s == None:
 			self.ssh()
-		cmd = "reload"
+		cmd = "reload force"
 		print cmd
 		self.s.sendline(cmd)
-		self.s.expect("Do you really want to restart the system.*y/n.*:")
-		self.s.sendline("y")
 		self.s.expect(pexpect.EOF)
 		self.s = None
 
