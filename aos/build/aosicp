@@ -17,13 +17,14 @@ def usage():
 	print "    -b <ip>: IP address of build machine"
 	print "    -c <ip>: IP address of target controller"
 	print "    -p <path>: path of AOS image to be copied"
+	print "    -P <part>: partition number where image to be copied"
 	print "    -s: copy sos-startupscript to controller (usually with sos.elf)"
 	print "    -r: reload (reboot) target controller after image copy"
 	exit(1)
 
 def main(argc, argv):
 	try:
-		opts, args = getopt.getopt(argv, "hb:c:p:rs");
+		opts, args = getopt.getopt(argv, "hb:c:p:P:rs");
 	except getopt.GetoptError as err:
 		print progname + ": invalid argument, " + str(err)
 		usage()
@@ -37,12 +38,15 @@ def main(argc, argv):
 	aos_tools_path = "/usr/local/aos/tools"
 	reload = False
 	copy_startup = False
+	tgt_partition = ""
 
 	for opt, arg in opts:
 		if opt == "-c":
 			device = arg
 		elif opt == "-b":
 			src_host = arg
+		elif opt == "-P":
+			tgt_partition = arg
 		elif opt == "-p":
 			src_path = arg
 			if (src_path.find("sos.elf") != -1):
@@ -69,7 +73,10 @@ def main(argc, argv):
 			usage()
 
 	c = wlan_controller.Device(device)
-	dst_partition = c.get_boot_partition()
+	if (tgt_partition == ""):
+		dst_partition = c.get_boot_partition()
+	else:
+		dst_partition = tgt_partition
 	if (sos_elf == False):
 		dst_path = dst_path + dst_partition
 
