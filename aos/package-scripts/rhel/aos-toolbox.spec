@@ -51,6 +51,7 @@ install__ 0755 tools/aos-device-mgr
 install__ 0755 tools/sos-crash-fmn-trace
 install__ 0755 tools/sos-crash-debug
 install__ 0755 tools/sos-crash-tech-support
+install__ 0755 tools/sos-exe-debug
 install__ 0755 tools/sos-startupscript
 
 %clean
@@ -72,6 +73,7 @@ install__ 0755 tools/sos-startupscript
 /usr/local/aos/tools/sos-crash-fmn-trace
 /usr/local/aos/tools/sos-crash-debug
 /usr/local/aos/tools/sos-crash-tech-support
+/usr/local/aos/tools/sos-exe-debug
 /usr/local/aos/tools/sos-startupscript
 
 %pre

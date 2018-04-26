@@ -1,0 +1,106 @@
+#!/bin/bash
+
+usage() {
+	echo "usage: ${progname} <view> [options]"
+	echo "arguments:"
+	echo "       view: name of any perforce view for obtaining cross tool location"
+	echo "options:"
+	echo "       -p <path>: P4 view root directory (default /data/<login>/adu/views)"
+	echo "       -x <script>: run specified gdbscript at startup"
+	echo "       -t <path>: AOS tools path (default /usr/local/aos/tools)"
+	echo "       -b <build_codename>: build codename of platform"
+	echo "       -P <platform>: specific platform"
+	exit 1
+}
+
+get_sym_file() {
+	symfile_path=`find . -name sos.elf.symbols 2> /dev/null`
+	if [ -z "${symfile_path}" ]; then
+		symfile_path=`find ${P4CLIENT_BUILD_PLATFORM} -name sos.elf.symbols 2> /dev/null | grep -i ${platform}_obj`
+		if [ -z "${symfile_path}" ]; then
+			echo "${progname}: unable to find sos.elf.symbols in ${P4CLIENT_BUILD}"
+			exit 1
+		fi
+	fi
+	echo "${progname}: using ${symfile_path}"
+}
+
+run_gdb() {
+	if [ ! -f ${symfile_path} ]; then
+		echo "${progname}: missing ${symfile_path}"
+		return
+	fi
+	${mips_xgdb} ${gdb_addl_opts} ${symfile_path}
+}
+
+progname=`basename $0`
+P4CLIENT=$1
+logfile=/var/tmp/${progname}.log
+
+if [ -z "${P4CLIENT}" ]; then
+	usage
+fi
+
+shift
+gdb_addl_opts=
+P4VIEW_ROOTDIR=
+AOS_TOOLS_DIR=
+build=
+platform=
+while getopts ":x:p:t:b:P:" arg; do
+	case ${arg} in
+	x)
+	gdb_addl_opts="-q -x ${OPTARG}"
+	;;
+	p)
+	P4VIEW_ROOTDIR=${OPTARG}
+	;;
+	t)
+	AOS_TOOLS_DIR=${OPTARG}
+	;;
+	b)
+	build=${OPTARG}
+	;;
+	P)
+	platform=${OPTARG}
+	;;
+	*)
+	echo "${progname}: invalid option ${arg}"
+	usage
+	;;
+	esac
+done
+
+if [ -z "${platform}" -o -z "${build}" ]; then
+	echo "${progname}: missing platform or build directory"
+	usage
+fi
+
+AOS_TOOLS_DEF=/usr/local/aos/tools
+user=`whoami`
+P4VIEWDIR_DEF=/data/${user}/adu/views
+P4CLIENT_DIR=${P4VIEW_ROOTDIR:-${P4VIEWDIR_DEF}}/${P4CLIENT}
+P4CLIENT_BUILD=`echo ${P4CLIENT_DIR} | sed -e 's/views/build/g'`
+P4CLIENT_BUILD_PLATFORM=${P4CLIENT_BUILD}/Default/${build}
+export ARUBA_SRC=${P4CLIENT_DIR}
+export PYTHONHOME=$P4CLIENT_DIR/tools/python/python-2.7.2
+mips_xgdb=$P4CLIENT_DIR/tools/mipscross-xlp/linux/bin/mips64-nlm-linux-gdb
+if [ ! -d ${P4CLIENT_DIR} ]; then
+	echo "${progname}: ${P4CLIENT_DIR} does not map to a valid view"
+	exit 1
+fi
+export SHELL=/bin/bash
+is_private_build="1"
+
+echo > ${logfile}
+
+echo "MIPS xGDB:" ${mips_xgdb}
+echo "Build dir:" ${P4CLIENT_BUILD_PLATFORM}
+echo "Platform:" ${platform}
+
+if [ -n "${is_private_build}" ]; then
+	get_sym_file
+fi
+run_gdb
+exit 0
+
