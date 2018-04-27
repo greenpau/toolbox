@@ -104,7 +104,7 @@ run_gdb() {
 	if [ -n "${AOS_TOOLS_DIR}" ]; then
 		tools_opt="-t ${AOS_TOOLS_DIR}"
 	fi
-	${sos_crash_debug} ${P4CLIENT} ${crashdump_path} -x ${gdbscript} -n ${tools_opt} ${p4view_opt}
+	${sos_crash_debug} ${P4CLIENT} ${crashdump_path} -x ${gdbscript} ${tools_opt} ${p4view_opt}
 }
 
 cleanup_gdbscript() {

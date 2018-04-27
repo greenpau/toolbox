@@ -6,7 +6,7 @@ usage() {
 	echo "       view: name of any perforce view for obtaining cross tool location"
 	echo "       crashinfo-path: path to top of your crashinfo location"
 	echo "options:"
-	echo "       -n: donot cleanup temporary files after reading corefile"
+	echo "       -n: donot keep temporary files after reading corefile"
 	echo "       -x <script>: run specified gdbscript at startup"
 	echo "       -p <path>: P4 view root directory (default /data/<login>/adu/views)"
 	echo "       -t <path>: AOS tools path (default /usr/local/aos/tools)"
@@ -115,13 +115,13 @@ if [ ! -d ${crashinfo_path} ]; then
 fi
 
 shift;shift
-do_cleanup=true
+do_cleanup=false
 gdb_addl_opts=
 P4VIEW_ROOTDIR=
 AOS_TOOLS_DIR=
 while getopts ":nx:p:t:" arg; do
 	case ${arg} in
-	n) do_cleanup=false
+	n) do_cleanup=true
 	;;
 	x)
 	gdb_addl_opts="-q -x ${OPTARG}"
