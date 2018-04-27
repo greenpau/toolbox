@@ -162,11 +162,14 @@ gdbscripts="\
 	xlp/python/stats.py \
 	xlp/vlan.gdb \
 	xlp/python/vlan.py \
+	xlp/malloc.gdb \
+	xlp/python/malloc.py \
 "
 
 gdbprocs=(\
 'print_cpu_allocation' \
 'print_cpu_utilization' \
+'print_heap' \
 'dump_all_stats' \
 'stall_detect' \
 'bridge_table_dump' \
